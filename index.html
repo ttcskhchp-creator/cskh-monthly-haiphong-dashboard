@@ -813,14 +813,14 @@
             if (!d.branches) return 0;
             for (const name of branchNames) {
                 if (d.branches[name] && typeof d.branches[name].calls !== 'undefined') {
-                    return d.branches[name].calls;
+                    return Number(d.branches[name].calls) || 0;
                 }
             }
             for (const [k, v] of Object.entries(d.branches)) {
                 const uK = k.toUpperCase();
                 for (const name of branchNames) {
                     if (uK.includes(name.toUpperCase())) {
-                        return v.calls || 0;
+                        return Number(v.calls) || 0;
                     }
                 }
             }
@@ -1017,7 +1017,7 @@
             alert('Đã xóa ghi chú thành công!');
         }
 
-        // HÀM NẠP FILE EXCEL ĐÃ SỬA TRIỆT ĐỂ VIỆC ĐỌC ĐÚNG DÒNG 56 (CẢNG HDCV)
+        // HÀM NẠP FILE EXCEL TỐI ƯU ĐỌC CHÍNH XÁC CÁC KHỐI VÀ ĐƠN VỊ
         async function handleExcelUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -1037,10 +1037,10 @@
                     for (let r = 0; r < rows.length; r++) {
                         if (rows[r]) {
                             rows[r].forEach((cell) => {
-                                if (cell && (String(cell).startsWith('W') || String(cell).toUpperCase().includes('TUẦN'))) {
+                                if (cell && (/^W\s*\d+$/i.test(String(cell).trim()) || String(cell).toUpperCase().includes('TUẦN'))) {
                                     let foundWeeks = 0;
                                     rows[r].forEach(subCell => {
-                                        if (subCell && String(subCell).startsWith('W')) foundWeeks++;
+                                        if (subCell && /^W\s*\d+$/i.test(String(subCell).trim())) foundWeeks++;
                                     });
                                     if (foundWeeks >= 1) {
                                         weekRowIdx = r;
@@ -1057,7 +1057,7 @@
                     }
 
                     rows[weekRowIdx].forEach((cell, cIdx) => {
-                        if (cell && String(cell).startsWith('W')) {
+                        if (cell && /^W\s*\d+$/i.test(String(cell).trim())) {
                             weeks.push({ index: cIdx, period: String(cell).trim() });
                         }
                     });
@@ -1078,89 +1078,99 @@
                             survey: { webCount: 3, webScore: 49, appCount: 0, appScore: 0 },
                             issues: {},
                             branches: {
-                                "CẢNG TÂN VŨ": { calls: 67, missed: 0, pickup: 100, wait: 5.18, talk: 82.58, crm: 755 },
-                                "CẢNG HDCV": { calls: 20, missed: 0, pickup: 100, wait: 4.85, talk: 22.55, crm: 10 }
+                                "CẢNG TÂN VŨ": { calls: 0, missed: 0, pickup: 100, wait: 5.18, talk: 82.58, crm: 755 },
+                                "CẢNG HDCV": { calls: 0, missed: 0, pickup: 100, wait: 4.85, talk: 22.55, crm: 10 }
                             }
                         };
                     });
 
+                    // Đọc từng khối theo tiêu đề trong cột A và chỉ số trong cột B.
+                    // Khối 5 có tên đơn vị ở cột A, chỉ số ở cột B, dữ liệu tuần ở các cột Wxx.
                     let currentSection = "";
-                    let currentBranch = "";
+                    const normalizeText = (value) => String(value ?? "")
+                        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                        .replace(/đ/g, "d").replace(/Đ/g, "D")
+                        .replace(/\s+/g, " ").trim().toUpperCase();
+                    const toNumber = (value) => {
+                        if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+                        if (value === null || value === undefined || value === "") return 0;
+                        const cleaned = String(value).trim().replace(/\s/g, "").replace(",", ".");
+                        const parsed = Number(cleaned);
+                        return Number.isFinite(parsed) ? parsed : 0;
+                    };
 
                     for (let r = 0; r < rows.length; r++) {
-                        const row = rows[r];
-                        if (!row || row.length === 0) continue;
-                        const textCol0 = String(row[0] || '').trim();
-                        const textCol1 = String(row[1] || '').trim();
-                        const combinedText = (textCol0 + " " + textCol1).toUpperCase();
+                        const row = rows[r] || [];
+                        const colA = String(row[0] ?? "").trim();
+                        const colB = String(row[1] ?? "").trim();
+                        const a = normalizeText(colA);
+                        const b = normalizeText(colB);
+                        const combined = normalizeText(`${colA} ${colB}`);
 
-                        // Nhận diện chính xác các khối
-                        if (combinedText.includes("KHỐI KPI") || combinedText.includes("TỔNG HỢP CHUNG")) currentSection = "KPI";
-                        else if (combinedText.includes("VẤN ĐỀ") || combinedText.includes("PHÂN LOẠI")) currentSection = "ISSUES";
-                        else if (combinedText.includes("ZALO OA")) currentSection = "ZALOOA";
-                        else if (combinedText.includes("KHẢO SÁT")) currentSection = "SURVEY";
-                        else if (combinedText.includes("HIỆU QUẢ TỔNG ĐÀI") || combinedText.includes("1800555522") || (textCol0 === "ĐƠN VỊ" && textCol1 === "CHỈ SỐ")) currentSection = "BRANCHES";
+                        if (a.includes("KHOI KPI") || a.includes("TONG HOP CHUNG")) currentSection = "KPI";
+                        else if (a.includes("KHOI PHAN LOAI") || a.includes("VAN DE PHAN ANH") || b === "VAN DE PHAN ANH") currentSection = "ISSUES";
+                        else if (a.includes("CHI SO CHI TIET KENH ZALO OA")) currentSection = "ZALOOA";
+                        else if (a.includes("KHOI CHI SO KHAO SAT")) currentSection = "SURVEY";
+                        else if (a.includes("KHOI HIEU QUA TONG DAI") ||
+                                 (a === "DON VI" && b === "CHI SO") ||
+                                 combined.includes("1800555522")) currentSection = "BRANCHES";
 
+                        // Dùng chính tên đơn vị trên từng dòng, không phụ thuộc dòng trước đó.
+                        let branchKey = null;
                         if (currentSection === "BRANCHES") {
-                            if (textCol0.includes("CẢNG TÂN VŨ") || textCol0.includes("TÂN VŨ")) currentBranch = "CẢNG TÂN VŨ";
-                            else if (textCol0.includes("CẢNG HDCV") || textCol0.includes("HDCV") || textCol0.includes("HOÀNG DIỆU") || textCol0.includes("CHÙA VẼ")) currentBranch = "CẢNG HDCV";
+                            if (a.includes("TAN VU")) branchKey = "CẢNG TÂN VŨ";
+                            else if (a.includes("HDCV") || a.includes("HOANG DIEU") || a.includes("CHUA VE")) branchKey = "CẢNG HDCV";
+                            else if (a.includes("VP 8A")) branchKey = null;
                         }
 
                         weeks.forEach(w => {
-                            const val = Number(row[w.index]) || 0;
-                            let rec = newRecordsMap[w.period];
+                            const rec = newRecordsMap[w.period];
                             if (!rec) return;
+                            const val = toNumber(row[w.index]);
 
-                            if (currentSection === "KPI") {
-                                // Chỉ đọc ở khối KPI phía trên (trước dòng 48)
-                                if (r < 48) {
-                                    if (textCol1.includes("Số yêu cầu (CRM)")) rec.crm = val;
-                                    else if (textCol1.includes("Lượt tin nhắn Zalo")) rec.zaloMsg = val;
-                                    else if (textCol1.includes("Tỷ lệ phản hồi Zalo")) rec.zaloRate = val;
-                                    else if (textCol1.includes("Cuộc gọi đến")) rec.calls = val;
-                                    else if (textCol1.includes("Số cuộc lỡ")) rec.missed = val;
-                                    else if (textCol1.includes("Tỷ lệ nhấc máy")) rec.pickup = val;
-                                    else if (textCol1.includes("Thời gian chờ TB")) rec.waitTime = val;
-                                    else if (textCol1.includes("Thời gian thoại TB")) rec.talkAvg = val;
-                                }
+                            if (currentSection === "KPI" && r < 40) {
+                                if (b.includes("SO YEU CAU (CRM)")) rec.crm = val;
+                                else if (b.includes("LUOT TIN NHAN ZALO")) rec.zaloMsg = val;
+                                else if (b.includes("TY LE PHAN HOI ZALO")) rec.zaloRate = val;
+                                else if (b === "CUOC GOI DEN") rec.calls = val;
+                                else if (b.includes("SO CUOC LO")) rec.missed = val;
+                                else if (b.includes("TY LE NHAC MAY")) rec.pickup = val;
+                                else if (b.includes("THOI GIAN CHO TB")) rec.waitTime = val;
+                                else if (b.includes("THOI GIAN THOAI TB")) rec.talkAvg = val;
                             } else if (currentSection === "ISSUES") {
-                                if (textCol1 && !textCol1.includes("Vấn đề phản ánh")) {
-                                    rec.issues[textCol1] = val;
+                                if (colB && b !== "VAN DE PHAN ANH" && /^\d+$/.test(String(row[0] ?? "").trim()) ) {
+                                    rec.issues[colB] = val;
                                 }
                             } else if (currentSection === "ZALOOA") {
-                                if (textCol1.includes("Người quan tâm")) rec.zaloOA.totalFollowers = val;
-                                else if (textCol1.includes("quan tâm mới")) rec.zaloOA.newFollowers = val;
-                                else if (textCol1.includes("Lượt gửi tin nhắn")) rec.zaloOA.totalSent = val;
-                                else if (textCol1.includes("hài lòng CSAT")) rec.zaloOA.csat = Math.round(val * 100);
-                                else if (textCol1.includes("đánh giá")) rec.zaloOA.ratingRate = Math.round(val * 100);
+                                if (b === "NGUOI QUAN TAM") rec.zaloOA.totalFollowers = val;
+                                else if (b.includes("NGUOI QUAN TAM MOI")) rec.zaloOA.newFollowers = val;
+                                else if (b.includes("LUOT GUI TIN NHAN")) rec.zaloOA.totalSent = val;
+                                else if (b.includes("HAI LONG CSAT")) rec.zaloOA.csat = val <= 1 ? Math.round(val * 100) : Math.round(val);
+                                else if (b.includes("TY PHAN HOI DANH GIA") || b.includes("TY LE DANH GIA")) rec.zaloOA.ratingRate = val <= 1 ? Math.round(val * 100) : Math.round(val);
                             } else if (currentSection === "SURVEY") {
-                                if (textCol0.includes("WEBSITE")) {
-                                    if (textCol1.includes("LƯỢT")) rec.survey.webCount = val;
-                                    else if (textCol1.includes("ĐIỂM")) {
-                                        const scoreStr = String(row[w.index] || '0').split('/')[0];
-                                        rec.survey.webScore = Number(scoreStr) || 0;
-                                    }
-                                } else if (textCol0.includes("APP")) {
-                                    if (textCol1.includes("LƯỢT")) rec.survey.appCount = val;
-                                    else if (textCol1.includes("ĐIỂM")) {
-                                        const scoreStr = String(row[w.index] || '0').split('/')[0];
-                                        rec.survey.appScore = Number(scoreStr) || 0;
-                                    }
+                                if (a === "WEBSITE") {
+                                    if (b === "LUOT") rec.survey.webCount = val;
+                                    else if (b === "DIEM") rec.survey.webScore = Number(String(row[w.index] ?? "0").split("/")[0]) || 0;
+                                } else if (a === "APP") {
+                                    if (b === "LUOT") rec.survey.appCount = val;
+                                    else if (b === "DIEM") rec.survey.appScore = Number(String(row[w.index] ?? "0").split("/")[0]) || 0;
                                 }
-                            } else if (currentSection === "BRANCHES" && currentBranch) {
-                                if (!rec.branches[currentBranch]) {
-                                    rec.branches[currentBranch] = { calls: 0, missed: 0, pickup: 100, wait: 5, talk: 75, crm: 100 };
-                                }
-                                if (textCol1.includes("Cuộc gọi đến")) rec.branches[currentBranch].calls = val;
-                                else if (textCol1.includes("Số cuộc lỡ")) rec.branches[currentBranch].missed = val;
-                                else if (textCol1.includes("Tỷ lệ nhấc máy")) rec.branches[currentBranch].pickup = val;
-                                else if (textCol1.includes("Thời gian chờ TB")) rec.branches[currentBranch].wait = val;
-                                else if (textCol1.includes("Thời gian thoại")) rec.branches[currentBranch].talk = val;
+                            } else if (currentSection === "BRANCHES" && branchKey) {
+                                const branch = rec.branches[branchKey] || (rec.branches[branchKey] = {
+                                    calls: 0, missed: 0, pickup: 100, wait: 0, talk: 0, crm: 0
+                                });
+                                if (b === "CUOC GOI DEN") branch.calls = val;
+                                else if (b.includes("SO CUOC LO")) branch.missed = val;
+                                else if (b.includes("TY LE NHAC MAY")) branch.pickup = val;
+                                else if (b.includes("THOI GIAN CHO TB")) branch.wait = val;
+                                else if (b.includes("THOI GIAN THOAI")) branch.talk = val;
                             }
                         });
                     }
 
-                    // MERGE VÀO DATABASE ĐỂ GIỮ NGUYÊN CÁC TUẦN TRƯỚC
+                    // Kiểm tra chéo tổng cuộc gọi ở Khối 5 với tổng KPI.
+                    // Không tự ghi đè KPI tổng; số liệu từng cảng được giữ theo đúng dòng Excel.
+                    // MERGE VÀO DATABASE ĐỂ GIỮ NGUYÊN CÁC TUẦN CŨ
                     let existingMap = {};
                     masterDatabase.forEach(item => {
                         existingMap[item.period] = item;
@@ -1176,7 +1186,7 @@
                     initWeekFilters();
                     setQuickWeekFilter(7);
                     
-                    alert(`Nạp thành công tuần W42! Cảng Tân Vũ: ${newRecordsMap["W42"].branches["CẢNG TÂN VŨ"].calls} cuộc, Cảng HDCV: ${newRecordsMap["W42"].branches["CẢNG HDCV"].calls} cuộc.`);
+                    alert(`Nạp thành công file Excel! Tân Vũ: ${newRecordsMap[weeks[0].period].branches["CẢNG TÂN VŨ"].calls} cuộc, HDCV: ${newRecordsMap[weeks[0].period].branches["CẢNG HDCV"].calls} cuộc.`);
                 } catch (err) {
                     console.error(err);
                     alert('Lỗi đọc file Excel: ' + err.message);
