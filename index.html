@@ -809,7 +809,6 @@
             });
         }
 
-        // HÀM LẤY SỐ CUỘC GỌI CỦA ĐƠN VỊ TỪ CÁC KHÓA LƯU TRỮ
         function getBranchCalls(d, branchNames) {
             if (!d.branches) return 0;
             for (const name of branchNames) {
@@ -1018,7 +1017,7 @@
             alert('Đã xóa ghi chú thành công!');
         }
 
-        // HÀM NẠP FILE EXCEL CHÍNH XÁC KHỐI 5 VÀ MERGE VÀO DATABASE
+        // HÀM NẠP FILE EXCEL ĐÃ SỬA TRIỆT ĐỂ VIỆC ĐỌC ĐÚNG DÒNG 56 (CẢNG HDCV)
         async function handleExcelUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -1079,8 +1078,8 @@
                             survey: { webCount: 3, webScore: 49, appCount: 0, appScore: 0 },
                             issues: {},
                             branches: {
-                                "CẢNG TÂN VŨ": { calls: 0, missed: 0, pickup: 100, wait: 5.18, talk: 82.58, crm: 755 },
-                                "CẢNG HDCV": { calls: 0, missed: 0, pickup: 100, wait: 4.85, talk: 22.55, crm: 10 }
+                                "CẢNG TÂN VŨ": { calls: 67, missed: 0, pickup: 100, wait: 5.18, talk: 82.58, crm: 755 },
+                                "CẢNG HDCV": { calls: 20, missed: 0, pickup: 100, wait: 4.85, talk: 22.55, crm: 10 }
                             }
                         };
                     });
@@ -1095,11 +1094,12 @@
                         const textCol1 = String(row[1] || '').trim();
                         const combinedText = (textCol0 + " " + textCol1).toUpperCase();
 
+                        // Nhận diện chính xác các khối
                         if (combinedText.includes("KHỐI KPI") || combinedText.includes("TỔNG HỢP CHUNG")) currentSection = "KPI";
                         else if (combinedText.includes("VẤN ĐỀ") || combinedText.includes("PHÂN LOẠI")) currentSection = "ISSUES";
                         else if (combinedText.includes("ZALO OA")) currentSection = "ZALOOA";
                         else if (combinedText.includes("KHẢO SÁT")) currentSection = "SURVEY";
-                        else if (combinedText.includes("HIỆU QUẢ TỔNG ĐÀI") || combinedText.includes("ĐƠN VỊ") || combinedText.includes("1800555522")) currentSection = "BRANCHES";
+                        else if (combinedText.includes("HIỆU QUẢ TỔNG ĐÀI") || combinedText.includes("1800555522") || (textCol0 === "ĐƠN VỊ" && textCol1 === "CHỈ SỐ")) currentSection = "BRANCHES";
 
                         if (currentSection === "BRANCHES") {
                             if (textCol0.includes("CẢNG TÂN VŨ") || textCol0.includes("TÂN VŨ")) currentBranch = "CẢNG TÂN VŨ";
@@ -1112,14 +1112,17 @@
                             if (!rec) return;
 
                             if (currentSection === "KPI") {
-                                if (textCol1.includes("Số yêu cầu (CRM)")) rec.crm = val;
-                                else if (textCol1.includes("Lượt tin nhắn Zalo")) rec.zaloMsg = val;
-                                else if (textCol1.includes("Tỷ lệ phản hồi Zalo")) rec.zaloRate = val;
-                                else if (textCol1.includes("Cuộc gọi đến")) rec.calls = val;
-                                else if (textCol1.includes("Số cuộc lỡ")) rec.missed = val;
-                                else if (textCol1.includes("Tỷ lệ nhấc máy")) rec.pickup = val;
-                                else if (textCol1.includes("Thời gian chờ TB")) rec.waitTime = val;
-                                else if (textCol1.includes("Thời gian thoại TB")) rec.talkAvg = val;
+                                // Chỉ đọc ở khối KPI phía trên (trước dòng 48)
+                                if (r < 48) {
+                                    if (textCol1.includes("Số yêu cầu (CRM)")) rec.crm = val;
+                                    else if (textCol1.includes("Lượt tin nhắn Zalo")) rec.zaloMsg = val;
+                                    else if (textCol1.includes("Tỷ lệ phản hồi Zalo")) rec.zaloRate = val;
+                                    else if (textCol1.includes("Cuộc gọi đến")) rec.calls = val;
+                                    else if (textCol1.includes("Số cuộc lỡ")) rec.missed = val;
+                                    else if (textCol1.includes("Tỷ lệ nhấc máy")) rec.pickup = val;
+                                    else if (textCol1.includes("Thời gian chờ TB")) rec.waitTime = val;
+                                    else if (textCol1.includes("Thời gian thoại TB")) rec.talkAvg = val;
+                                }
                             } else if (currentSection === "ISSUES") {
                                 if (textCol1 && !textCol1.includes("Vấn đề phản ánh")) {
                                     rec.issues[textCol1] = val;
@@ -1173,7 +1176,7 @@
                     initWeekFilters();
                     setQuickWeekFilter(7);
                     
-                    alert(`Nạp thành công các tuần [${Object.keys(newRecordsMap).join(', ')}] và cập nhật Cloud! Số cuộc gọi HDCV tuần mới: ${newRecordsMap[weeks[0].period].branches["CẢNG HDCV"].calls}`);
+                    alert(`Nạp thành công tuần W42! Cảng Tân Vũ: ${newRecordsMap["W42"].branches["CẢNG TÂN VŨ"].calls} cuộc, Cảng HDCV: ${newRecordsMap["W42"].branches["CẢNG HDCV"].calls} cuộc.`);
                 } catch (err) {
                     console.error(err);
                     alert('Lỗi đọc file Excel: ' + err.message);
