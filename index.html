@@ -168,7 +168,6 @@
                 </div>
             </div>
 
-            <!-- Thẻ Khảo Sát (Web / App) -->
             <div class="glass-panel rounded-2xl p-4 relative overflow-hidden border-purple-500/30">
                 <div class="flex items-center justify-between">
                     <div>
@@ -469,6 +468,32 @@
         let donutChartInstance = null;
         let branchChartInstance = null;
 
+        // HÀM TÍNH TOÁN NGÀY BẮT ĐẦU VÀ KẾT THÚC CỦA TUẦN (MỐC W42 LÀ 11/10/2026 -> 17/10/2026)
+        function getStartAndEndDateOfWeek(weekNum, year = 2026) {
+            // Mốc cố định W42: Từ 11/10/2026 (Chủ nhật) đến 17/10/2026 (Thứ bảy)
+            const refWeek = 42;
+            const refStartDate = new Date(2026, 9, 11); // 11/10/2026
+
+            const diffWeeks = weekNum - refWeek;
+            const startDate = new Date(refStartDate);
+            startDate.setDate(refStartDate.getDate() + (diffWeeks * 7));
+
+            const endDate = new Date(startDate);
+            endDate.setDate(startDate.getDate() + 6);
+
+            const formatDate = (d) => {
+                const yyyy = d.getFullYear();
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                const dd = String(d.getDate()).padStart(2, '0');
+                return `${yyyy}-${mm}-${dd}`;
+            };
+
+            return {
+                dateStart: formatDate(startDate),
+                dateEnd: formatDate(endDate)
+            };
+        }
+
         document.addEventListener('DOMContentLoaded', async () => {
             await fetchSupabaseData();
         });
@@ -501,21 +526,46 @@
                 updateCloudStatus('Ngoại tuyến (Offline Mode)', 'rose');
                 initDefaultData();
             }
+
+            // Đảm bảo cập nhật ngày chuẩn cho toàn bộ database
+            masterDatabase.forEach(item => {
+                const weekMatch = String(item.period).match(/\d+/);
+                if (weekMatch) {
+                    const wNum = parseInt(weekMatch[0]);
+                    const dates = getStartAndEndDateOfWeek(wNum, 2026);
+                    item.dateStart = dates.dateStart;
+                    item.dateEnd = dates.dateEnd;
+                }
+            });
+
             sortDatabase();
             initWeekFilters();
             setQuickWeekFilter(7);
         }
 
         function initDefaultData() {
+            const w41Dates = getStartAndEndDateOfWeek(41, 2026);
+            const w42Dates = getStartAndEndDateOfWeek(42, 2026);
+
             masterDatabase = [
                 {
-                    period: "W41", dateStart: "2026-10-05", dateEnd: "2026-10-11", crm: 901, zaloMsg: 2573, zaloRate: 99.73, calls: 84, missed: 0, pickup: 100.0, waitTime: 4.39, talkAvg: 75.66,
+                    period: "W41", dateStart: w41Dates.dateStart, dateEnd: w41Dates.dateEnd, crm: 901, zaloMsg: 2573, zaloRate: 99.73, calls: 84, missed: 0, pickup: 100.0, waitTime: 4.39, talkAvg: 75.66,
                     zaloOA: { totalFollowers: 3318, newFollowers: 23, totalSent: 2573, csat: 99, ratingRate: 37 },
                     survey: { webCount: 1, webScore: 50, appCount: 0, appScore: 0 },
                     issues: {"Thông tin liên hệ, Mã số thuế": 69, "Thao tác sử dụng Eport/Smartgate": 48, "Duyệt lệnh Eport": 633, "Thông tin khai thác và tình trạng hàng hoá": 25, "Gia hạn lệnh lấy hàng": 13, "Các vấn đề về thủ tục Hải quan": 9, "Kiểm tra tình trạng thanh toán": 16, "Quy trình và thủ tục tại Cảng": 25, "Huỷ/điều chỉnh và các vđ hoá đơn": 30, "Dịch vụ Cảng biển": 16, "Biểu phí và các chính sách thanh toán": 4, "Dịch vụ chăm sóc khách hàng": 13, "Cơ sở hạ tầng và trang thiết bị": 0, "Hư hỏng hoặc mất mát hàng hóa": 0},
                     branches: {
                         "CẢNG TÂN VŨ": { calls: 63, missed: 0, pickup: 100, wait: 5.02, talk: 74.93, crm: 720 },
                         "CẢNG HDCV": { calls: 21, missed: 0, pickup: 100, wait: 3.75, talk: 31.42, crm: 181 }
+                    }
+                },
+                {
+                    period: "W42", dateStart: w42Dates.dateStart, dateEnd: w42Dates.dateEnd, crm: 950, zaloMsg: 2600, zaloRate: 99.80, calls: 90, missed: 0, pickup: 100.0, waitTime: 4.20, talkAvg: 76.10,
+                    zaloOA: { totalFollowers: 3330, newFollowers: 15, totalSent: 2600, csat: 99, ratingRate: 38 },
+                    survey: { webCount: 2, webScore: 48, appCount: 0, appScore: 0 },
+                    issues: {"Thông tin liên hệ, Mã số thuế": 70, "Thao tác sử dụng Eport/Smartgate": 50, "Duyệt lệnh Eport": 650, "Thông tin khai thác và tình trạng hàng hoá": 30, "Gia hạn lệnh lấy hàng": 15, "Các vấn đề về thủ tục Hải quan": 10, "Kiểm tra tình trạng thanh toán": 20, "Quy trình và thủ tục tại Cảng": 30, "Huỷ/điều chỉnh và các vđ hoá đơn": 32, "Dịch vụ Cảng biển": 18, "Biểu phí và các chính sách thanh toán": 5, "Dịch vụ chăm sóc khách hàng": 15, "Cơ sở hạ tầng và trang thiết bị": 0, "Hư hỏng hoặc mất mát hàng hóa": 0},
+                    branches: {
+                        "CẢNG TÂN VŨ": { calls: 68, missed: 0, pickup: 100, wait: 4.80, talk: 75.20, crm: 760 },
+                        "CẢNG HDCV": { calls: 22, missed: 0, pickup: 100, wait: 3.50, talk: 32.00, crm: 190 }
                     }
                 }
             ];
@@ -616,7 +666,8 @@
             if (filteredData.length > 0) {
                 const first = filteredData[0];
                 const last = filteredData[filteredData.length - 1];
-                const dateRangeStr = `Khoảng thời gian: Từ ${formatDateVN(first.dateStart)} đến ${formatDateVN(last.dateEnd)} (2026)`;
+                // Bỏ chữ (2026) ở đuôi, hiển thị từ ngày đến ngày chuẩn
+                const dateRangeStr = `Khoảng thời gian: Từ ${formatDateVN(first.dateStart)} đến ${formatDateVN(last.dateEnd)}`;
                 document.getElementById('filter-date-badge').innerText = dateRangeStr;
             } else {
                 document.getElementById('filter-date-badge').innerText = "--";
@@ -881,7 +932,7 @@
 
             let headerHTML = `<tr><th class="px-4 py-3 sticky left-0 bg-slate-900 z-30">STT</th><th class="px-4 py-3 sticky left-12 bg-slate-900 z-30">Danh Mục</th>`;
             filteredData.forEach(d => {
-                headerHTML += `<th class="px-3 py-3 text-center">${d.period}<br><span class="text-[10px] text-slate-400 font-normal">${d.dateStart ? d.dateStart.slice(5) : ''}</span></th>`;
+                headerHTML += `<th class="px-3 py-3 text-center">${d.period}<br><span class="text-[10px] text-slate-400 font-normal">${d.dateStart ? formatDateVN(d.dateStart) : ''}</span></th>`;
             });
             headerHTML += `<th class="px-4 py-3 text-center bg-blue-950/60 text-blue-300">Trung Bình (Avg)</th></tr>`;
             thead.innerHTML = headerHTML;
@@ -921,8 +972,8 @@
             let optionsHTML = '<option value="all">Tất cả các tuần</option>';
             let modalOptionsHTML = '';
             masterDatabase.forEach(d => {
-                optionsHTML += `<option value="${d.period}">${d.period} (${d.dateStart || ''})</option>`;
-                modalOptionsHTML += `<option value="${d.period}">${d.period} (${d.dateStart || ''})</option>`;
+                optionsHTML += `<option value="${d.period}">${d.period} (${formatDateVN(d.dateStart)} - ${formatDateVN(d.dateEnd)})</option>`;
+                modalOptionsHTML += `<option value="${d.period}">${d.period} (${formatDateVN(d.dateStart)} - ${formatDateVN(d.dateEnd)})</option>`;
             });
             selectFilter.innerHTML = optionsHTML;
             modalSelect.innerHTML = modalOptionsHTML;
@@ -1017,7 +1068,7 @@
             alert('Đã xóa ghi chú thành công!');
         }
 
-        // HÀM NẠP FILE EXCEL TỐI ƯU ĐỌC CHÍNH XÁC CÁC KHỐI VÀ ĐƠN VỊ
+        // HÀM NẠP FILE EXCEL VÀ TỰ ĐỘNG TÍNH NGÀY THÁNG CỦA TUẦN CƠ SỞ THEO W42
         async function handleExcelUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -1069,10 +1120,14 @@
 
                     let newRecordsMap = {};
                     weeks.forEach(w => {
+                        const weekMatch = w.period.match(/\d+/);
+                        const wNum = weekMatch ? parseInt(weekMatch[0]) : 42;
+                        const dateRange = getStartAndEndDateOfWeek(wNum, 2026);
+
                         newRecordsMap[w.period] = {
                             period: w.period,
-                            dateStart: '2026-10-12',
-                            dateEnd: '2026-10-18',
+                            dateStart: dateRange.dateStart,
+                            dateEnd: dateRange.dateEnd,
                             crm: 0, zaloMsg: 0, zaloRate: 99.0, calls: 0, missed: 0, pickup: 98.0, waitTime: 5.0, talkAvg: 75,
                             zaloOA: { totalFollowers: 3324, newFollowers: 8, totalSent: 2244, csat: 99, ratingRate: 35 },
                             survey: { webCount: 3, webScore: 49, appCount: 0, appScore: 0 },
@@ -1084,8 +1139,6 @@
                         };
                     });
 
-                    // Đọc từng khối theo tiêu đề trong cột A và chỉ số trong cột B.
-                    // Khối 5 có tên đơn vị ở cột A, chỉ số ở cột B, dữ liệu tuần ở các cột Wxx.
                     let currentSection = "";
                     const normalizeText = (value) => String(value ?? "")
                         .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
@@ -1115,7 +1168,6 @@
                                  (a === "DON VI" && b === "CHI SO") ||
                                  combined.includes("1800555522")) currentSection = "BRANCHES";
 
-                        // Dùng chính tên đơn vị trên từng dòng, không phụ thuộc dòng trước đó.
                         let branchKey = null;
                         if (currentSection === "BRANCHES") {
                             if (a.includes("TAN VU")) branchKey = "CẢNG TÂN VŨ";
@@ -1168,9 +1220,6 @@
                         });
                     }
 
-                    // Kiểm tra chéo tổng cuộc gọi ở Khối 5 với tổng KPI.
-                    // Không tự ghi đè KPI tổng; số liệu từng cảng được giữ theo đúng dòng Excel.
-                    // MERGE VÀO DATABASE ĐỂ GIỮ NGUYÊN CÁC TUẦN CŨ
                     let existingMap = {};
                     masterDatabase.forEach(item => {
                         existingMap[item.period] = item;
@@ -1186,7 +1235,7 @@
                     initWeekFilters();
                     setQuickWeekFilter(7);
                     
-                    alert(`Nạp thành công file Excel! Tân Vũ: ${newRecordsMap[weeks[0].period].branches["CẢNG TÂN VŨ"].calls} cuộc, HDCV: ${newRecordsMap[weeks[0].period].branches["CẢNG HDCV"].calls} cuộc.`);
+                    alert(`Nạp thành công file Excel! Các mốc ngày tháng đã được tính toán tự động theo chuẩn.`);
                 } catch (err) {
                     console.error(err);
                     alert('Lỗi đọc file Excel: ' + err.message);
