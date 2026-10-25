@@ -59,13 +59,12 @@
             outline: none;
             box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
         }
-        /* Custom scrollbar */
         ::-webkit-scrollbar { width: 5px; height: 5px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #64748b; }
         .notes-scroll-container {
-            max-height: 290px; /* Cố định hiển thị 5 dòng, vượt quá tự có thanh cuộn */
+            max-height: 290px; /* Hiển thị 5 dòng, quá 5 dòng tự có thanh cuộn */
             overflow-y: auto;
         }
     </style>
@@ -108,12 +107,11 @@
                     <span id="status-text">Đang kết nối Cloud...</span>
                 </div>
 
-                <!-- Nạp File Excel (Có mã bảo mật ẩn) -->
-                <button onclick="requestUploadAuth()" class="px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold rounded-xl shadow-md shadow-blue-500/20 transition flex items-center space-x-1.5">
+                <!-- Nút Nạp File Excel (Mở Modal Bảo Mật Trực Tiếp) -->
+                <button onclick="openUploadModal()" class="px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold rounded-xl shadow-md shadow-blue-500/20 transition flex items-center space-x-1.5">
                     <i class="fa-solid fa-file-excel fa-bounce" style="--fa-bounce-height: 3px;"></i>
                     <span>Nạp Excel (Đơn / Đa tuần)</span>
                 </button>
-                <input type="file" id="excel-file-input" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleExcelUpload(event)">
 
                 <!-- Xuất Excel Backup -->
                 <button onclick="exportDatabase()" class="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl transition flex items-center space-x-1.5">
@@ -253,7 +251,7 @@
                             <i class="fa-solid fa-chart-line text-blue-500"></i>
                             <span>Xu Hướng Tiếp Nhận CSKH (CRM, Zalo, Tổng Đài)</span>
                         </h2>
-                        <p class="text-[11px] text-slate-400">Theo dõi số lượng theo tuần</p>
+                        <p class="text-[11px] text-slate-400">Theo dõi số lượng theo chuỗi tuần</p>
                     </div>
                     <select id="chart1-mode" onchange="renderTrendChart()" class="glass-input text-xs rounded-xl px-2.5 py-1 font-semibold">
                         <option value="line" selected>Dạng Đường (Line)</option>
@@ -369,7 +367,7 @@
                         <i class="fa-solid fa-table-cells text-blue-500"></i>
                         <span>Bảng Ma Trận Chi Tiết Các Vấn Đề Tiếp Nhận</span>
                     </h2>
-                    <p class="text-[11px] text-slate-400">Cột Trung Bình (Avg) đặt sát cột danh mục để tiện theo dõi nhanh</p>
+                    <p class="text-[11px] text-slate-400">Cột Trung Bình (Avg) đặt sát cột danh mục để tiện theo dõi</p>
                 </div>
                 <div class="relative w-full sm:w-64">
                     <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-xs text-slate-400"></i>
@@ -408,7 +406,6 @@
                 </div>
             </div>
 
-            <!-- Bảng ghi chú với thanh trượt mượt mà khi > 5 bản ghi -->
             <div class="notes-scroll-container rounded-xl border dark:border-slate-800 border-slate-200">
                 <table class="w-full text-left text-xs">
                     <thead class="dark:bg-slate-900/95 bg-slate-100 text-amber-500 uppercase tracking-wider sticky top-0 z-20 border-b dark:border-slate-800 border-slate-200">
@@ -427,16 +424,56 @@
         </section>
     </main>
 
-    <!-- Modal Nhập Mật Khẩu Bảo Vệ (Chỉ nhập ký tự ẩn, không hiện mã ra ngoài) -->
+    <!-- ========================================== -->
+    <!-- MODAL 1: NẠP FILE EXCEL AN TOÀN TRỰC TIẾP -->
+    <!-- ========================================== -->
+    <div id="upload-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm hidden p-4">
+        <div class="glass-panel rounded-2xl p-5 w-full max-w-md border border-blue-500/30 space-y-4 shadow-2xl dark:bg-slate-900 bg-white">
+            <div class="flex items-center justify-between border-b dark:border-slate-800 border-slate-200 pb-3">
+                <div class="flex items-center space-x-3 text-blue-500">
+                    <div class="p-2.5 bg-blue-500/15 rounded-xl border border-blue-500/20">
+                        <i class="fa-solid fa-file-excel text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100">Nạp Dữ Liệu Excel</h3>
+                        <p class="text-xs text-slate-400">Hỗ trợ file tuần đơn lẻ hoặc nhiều tuần</p>
+                    </div>
+                </div>
+                <button onclick="closeUploadModal()" class="text-slate-400 hover:text-slate-200"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold mb-1 text-slate-700 dark:text-slate-200">1. Chọn tệp Excel (.xlsx, .xls):</label>
+                    <input type="file" id="modal-excel-file" accept=".xlsx, .xls, .csv" class="glass-input text-xs rounded-xl p-2 w-full file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-500 cursor-pointer">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold mb-1 text-slate-700 dark:text-slate-200">2. Mật khẩu bảo mật quản trị:</label>
+                    <input type="password" id="upload-passcode" class="glass-input text-sm rounded-xl px-3 py-2 w-full text-center tracking-widest font-mono" placeholder="••••" maxlength="10">
+                    <p id="upload-error-msg" class="text-[11px] text-rose-500 mt-1.5 hidden text-center font-medium">Vui lòng kiểm tra lại tệp và mã xác thực!</p>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end space-x-2 pt-2 border-t dark:border-slate-800 border-slate-200">
+                <button onclick="closeUploadModal()" class="px-3.5 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 font-semibold text-xs transition">Hủy</button>
+                <button onclick="executeUploadFromModal()" id="upload-submit-btn" class="px-4 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs rounded-xl shadow transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                    <span>Xác Nhận Nạp & Đồng Bộ</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: XÁC THỰC BẢO VỆ CHO SỬA / XÓA GHI CHÚ -->
     <div id="auth-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm hidden p-4">
-        <div class="glass-panel rounded-2xl p-5 w-full max-w-sm border border-blue-500/30 space-y-4 shadow-2xl dark:bg-slate-900 bg-white">
-            <div class="flex items-center space-x-3 text-blue-500">
-                <div class="p-2.5 bg-blue-500/15 rounded-xl border border-blue-500/20">
+        <div class="glass-panel rounded-2xl p-5 w-full max-w-sm border border-amber-500/30 space-y-4 shadow-2xl dark:bg-slate-900 bg-white">
+            <div class="flex items-center space-x-3 text-amber-500">
+                <div class="p-2.5 bg-amber-500/15 rounded-xl border border-amber-500/20">
                     <i class="fa-solid fa-lock text-xl"></i>
                 </div>
                 <div>
                     <h3 id="auth-modal-title" class="text-sm font-bold text-slate-800 dark:text-slate-100">Xác Thực Quản Trị</h3>
-                    <p class="text-xs text-slate-400">Nhập mã PIN để cấp quyền thao tác</p>
+                    <p class="text-xs text-slate-400">Nhập mã xác thực để tiếp tục</p>
                 </div>
             </div>
             <div>
@@ -445,12 +482,12 @@
             </div>
             <div class="flex items-center justify-end space-x-2 pt-1">
                 <button onclick="closeAuthModal()" class="px-3.5 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 font-semibold text-xs transition">Hủy</button>
-                <button onclick="submitAuthModal()" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow transition">Xác Nhận</button>
+                <button onclick="submitAuthModal()" class="px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-xl shadow transition">Xác Nhận</button>
             </div>
         </div>
     </div>
 
-    <!-- Modal Thêm/Sửa Ghi Chú -->
+    <!-- MODAL 3: THÊM / SỬA GHI CHÚ -->
     <div id="note-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm hidden p-4">
         <div class="glass-panel rounded-2xl p-5 w-full max-w-lg border border-amber-500/30 space-y-4 shadow-2xl dark:bg-slate-900 bg-white">
             <div class="flex items-center justify-between">
@@ -481,7 +518,7 @@
         </div>
     </div>
 
-    <!-- Modal Xác Thực Xóa Tuần -->
+    <!-- MODAL 4: XÓA KHOẢNG TUẦN -->
     <div id="delete-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm hidden p-4">
         <div class="glass-panel rounded-2xl p-5 w-full max-w-md border border-rose-500/30 space-y-4 shadow-2xl dark:bg-slate-900 bg-white">
             <div class="flex items-center space-x-3 text-rose-500">
@@ -580,7 +617,58 @@
             }
         }
 
-        // Xác thực bảo mật ẩn (Không hiện mật khẩu cho người xem)
+        // ==========================================
+        // QUẢN LÝ MODAL NẠP EXCEL TRỰC TIẾP
+        // ==========================================
+        function openUploadModal() {
+            document.getElementById('modal-excel-file').value = '';
+            document.getElementById('upload-passcode').value = '';
+            document.getElementById('upload-error-msg').classList.add('hidden');
+            document.getElementById('upload-modal').classList.remove('hidden');
+        }
+
+        function closeUploadModal() {
+            document.getElementById('upload-modal').classList.add('hidden');
+        }
+
+        async function executeUploadFromModal() {
+            const fileInput = document.getElementById('modal-excel-file');
+            const passcode = document.getElementById('upload-passcode').value.trim();
+            const errorMsg = document.getElementById('upload-error-msg');
+
+            if (!fileInput.files || fileInput.files.length === 0) {
+                errorMsg.innerText = "Vui lòng chọn tệp Excel trước khi tiếp tục!";
+                errorMsg.classList.remove('hidden');
+                return;
+            }
+
+            if (passcode !== MASTER_PIN) {
+                errorMsg.innerText = "Mã xác thực quản trị không chính xác!";
+                errorMsg.classList.remove('hidden');
+                document.getElementById('upload-passcode').value = '';
+                document.getElementById('upload-passcode').focus();
+                return;
+            }
+
+            errorMsg.classList.add('hidden');
+            const file = fileInput.files[0];
+            const submitBtn = document.getElementById('upload-submit-btn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang xử lý...`;
+
+            try {
+                await processExcelFile(file);
+                closeUploadModal();
+            } catch (err) {
+                errorMsg.innerText = "Lỗi xử lý: " + err.message;
+                errorMsg.classList.remove('hidden');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> Xác Nhận Nạp & Đồng Bộ`;
+            }
+        }
+
+        // Quản lý xác thực cho thao tác sửa/xóa ghi chú
         function promptAuth(actionCallback, titleText = "Xác Thực Quản Trị") {
             pendingAction = actionCallback;
             document.getElementById('auth-modal-title').innerText = titleText;
@@ -612,36 +700,29 @@
         document.getElementById('auth-passcode').addEventListener('keyup', (e) => {
             if (e.key === 'Enter') submitAuthModal();
         });
+        document.getElementById('upload-passcode').addEventListener('keyup', (e) => {
+            if (e.key === 'Enter') executeUploadFromModal();
+        });
 
-        // Bảo vệ thao tác nạp Excel
-        function requestUploadAuth() {
-            promptAuth(() => {
-                document.getElementById('excel-file-input').click();
-            }, "Xác Thực Nạp File Excel");
-        }
-
-        // Bảo vệ thao tác thêm ghi chú
         function requestAddNoteAuth() {
             promptAuth(() => {
                 openAddNoteModalDirect();
             }, "Xác Thực Thêm Ghi Chú");
         }
 
-        // Bảo vệ thao tác sửa ghi chú
         function requestEditNoteAuth(id) {
             promptAuth(() => {
                 editNoteDirect(id);
             }, "Xác Thực Sửa Ghi Chú");
         }
 
-        // Bảo vệ thao tác xóa ghi chú
         function requestDeleteNoteAuth(id) {
             promptAuth(() => {
                 deleteNoteDirect(id);
             }, "Xác Thực Xóa Ghi Chú");
         }
 
-        // Tính ngày chuẩn theo mốc W42
+        // Tính ngày chuẩn theo tuần
         function getStartAndEndDateOfWeek(weekNum, year = 2026) {
             const refWeek = 42;
             const refStartDate = new Date(2026, 9, 11);
@@ -679,7 +760,7 @@
                     if (backupRow && backupRow.payload && backupRow.payload.masterDatabase) {
                         masterDatabase = backupRow.payload.masterDatabase || [];
                         notesDatabase = backupRow.payload.notesDatabase || [];
-                        updateCloudStatus('Đã đồng bộ Supabase Cloud', 'emerald');
+                        updateCloudStatus('Đã đồng bộ Cloud', 'emerald');
                     } else {
                         initDefaultData();
                         await syncDatabaseToSupabase();
@@ -736,7 +817,6 @@
                 }
             ];
             
-            // Dữ liệu mẫu ghi chú chuẩn theo ảnh
             notesDatabase = [
                 {
                     id: 'n_1',
@@ -750,7 +830,7 @@
                     period: 'W43',
                     date: '2026-10-25',
                     title: 'Sự cố vận hành Hotline, Zalo oa và CRM',
-                    content: '-23/10/2026: Đường dây số Hotline 1800555522 nhánh 1 gặp sự cố, không tiếp nhận được các cuộc gọi, đường truyền chập chờn tại một số thời điểm... -22/10/2026: Hệ thống nhập ticket CRM không đăng nhập được... -21/10/2026: Cuộc gọi lỡ Cảng HDCV... -19/10/2026: Lỗi hệ thống Hải quan...'
+                    content: '-23/10/2026: Đường dây số Hotline 1800555522 nhánh 1 gặp sự cố, không tiếp nhận được các cuộc gọi... -22/10/2026: Hệ thống nhập ticket CRM chậm... -21/10/2026: Cuộc gọi lỡ Cảng HDCV... -19/10/2026: Lỗi hệ thống Hải quan...'
                 }
             ];
         }
@@ -1117,9 +1197,7 @@
             });
         }
 
-        // =========================================================================
-        // BẢNG MA TRẬN CHI TIẾT: CỘT TRUNG BÌNH (AVG) SÁT CỘT DANH MỤC
-        // =========================================================================
+        // BẢNG MA TRẬN CHI TIẾT (CỘT TB AVG ĐẶT SÁT CỘT DANH MỤC)
         function renderMatrixTable() {
             const thead = document.getElementById('matrix-thead');
             const tbody = document.getElementById('matrix-tbody');
@@ -1128,7 +1206,6 @@
 
             if (filteredData.length === 0) return;
 
-            // Thứ tự: STT -> Danh Mục -> Trung Bình (Avg) -> Các tuần W...
             let headerHTML = `<tr>
                 <th class="px-3 py-2.5 sticky left-0 dark:bg-slate-900 bg-slate-100 z-30 w-12 text-center">STT</th>
                 <th class="px-4 py-2.5 sticky left-12 dark:bg-slate-900 bg-slate-100 z-30 min-w-[240px]">Danh Mục Tiếp Nhận</th>
@@ -1177,7 +1254,6 @@
             let optionsHTML = '<option value="all">Tất cả các tuần</option>';
             let modalOptionsHTML = '';
 
-            // Sắp xếp các tuần từ mới nhất đến cũ hơn cho dropdown
             const reversedDb = [...masterDatabase].reverse();
             reversedDb.forEach(d => {
                 optionsHTML += `<option value="${d.period}">${d.period} (${formatDateVN(d.dateStart)} - ${formatDateVN(d.dateEnd)})</option>`;
@@ -1187,20 +1263,16 @@
             modalSelect.innerHTML = modalOptionsHTML;
         }
 
-        // =========================================================================
-        // SỔ TAY GHI CHÚ: HIỂN THỊ TUẦN MỚI NHẤT ĐẦU TIÊN & CUỘN KHI >5 DÒNG
-        // =========================================================================
+        // SỔ TAY GHI CHÚ: TUẦN MỚI NHẤT TRÊN ĐẦU & SCROLL KHI >5 DÒNG
         function renderNotesTable() {
             const tbody = document.getElementById('notes-tbody');
             const filterPeriod = document.getElementById('note-period-filter').value;
             let notes = filterPeriod === 'all' ? [...notesDatabase] : notesDatabase.filter(n => n.period === filterPeriod);
 
-            // SẮP XẾP TUẦN MỚI NHẤT ĐẦU TIÊN (W43 -> W42 -> W41...)
             notes.sort((a, b) => {
                 const numA = parseInt(String(a.period).replace(/\D/g, '')) || 0;
                 const numB = parseInt(String(b.period).replace(/\D/g, '')) || 0;
                 if (numB !== numA) return numB - numA;
-                // Nếu cùng tuần thì sắp xếp theo ngày tạo mới nhất
                 return String(b.date || '').localeCompare(String(a.date || ''));
             });
 
@@ -1286,13 +1358,10 @@
             renderNotesTable();
         }
 
-        // =========================================================================
-        // THUẬT TOÁN NẠP EXCEL THÔNG MINH (BẢO TOÀN DỮ LIỆU CŨ & GHI ĐÈ TRÙNG)
-        // =========================================================================
-        async function handleExcelUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
+        // ==============================================================
+        // HÀM XỬ LÝ ĐỌC FILE EXCEL (ĐƠN LẺ VÀ ĐA TUẦN) - BẢO TOÀN DỮ LIỆU
+        // ==============================================================
+        async function processExcelFile(file) {
             try {
                 const safeName = `CSKH_${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
                 await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET_NAME}/${safeName}`, {
@@ -1308,174 +1377,174 @@
                 console.warn("Storage upload bypass:", err);
             }
 
-            const reader = new FileReader();
-            reader.onload = async function(e) {
-                try {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    
-                    let sheetName = workbook.SheetNames.find(s => s.trim().toUpperCase() === "TH1") || workbook.SheetNames[0];
-                    const sheet = workbook.Sheets[sheetName];
-                    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = async function(e) {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        
+                        let sheetName = workbook.SheetNames.find(s => s.trim().toUpperCase() === "TH1") || workbook.SheetNames[0];
+                        const sheet = workbook.Sheets[sheetName];
+                        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
-                    let weeks = [];
-                    let weekRowIdx = -1;
+                        let weeks = [];
+                        let weekRowIdx = -1;
 
-                    for (let r = 0; r < Math.min(25, rows.length); r++) {
-                        if (rows[r]) {
-                            let matchCount = 0;
-                            rows[r].forEach((cell) => {
-                                if (cell && /^W\s*\d+$/i.test(String(cell).trim())) {
-                                    matchCount++;
-                                }
-                            });
-                            if (matchCount >= 1) {
-                                weekRowIdx = r;
-                                break;
-                            }
-                        }
-                    }
-
-                    if (weekRowIdx === -1) {
-                        alert('Không tìm thấy dòng tiêu đề tuần (W...) trong file Excel!');
-                        return;
-                    }
-
-                    rows[weekRowIdx].forEach((cell, cIdx) => {
-                        if (cell && /^W\s*\d+$/i.test(String(cell).trim())) {
-                            weeks.push({ index: cIdx, period: String(cell).trim().toUpperCase() });
-                        }
-                    });
-
-                    if (weeks.length === 0) {
-                        alert('Không tìm thấy mã tuần hợp lệ!');
-                        return;
-                    }
-
-                    let newRecordsMap = {};
-                    weeks.forEach(w => {
-                        const weekMatch = w.period.match(/\d+/);
-                        const wNum = weekMatch ? parseInt(weekMatch[0]) : 42;
-                        const dateRange = getStartAndEndDateOfWeek(wNum, 2026);
-
-                        newRecordsMap[w.period] = {
-                            period: w.period,
-                            dateStart: dateRange.dateStart,
-                            dateEnd: dateRange.dateEnd,
-                            crm: 0, zaloMsg: 0, zaloRate: 99.0, calls: 0, missed: 0, pickup: 100.0, waitTime: 4.5, talkAvg: 75.0,
-                            zaloOA: { totalFollowers: 3320, newFollowers: 10, totalSent: 2000, csat: 99, ratingRate: 35 },
-                            survey: { webCount: 0, webScore: 0, appCount: 0, appScore: 0 },
-                            issues: {},
-                            branches: {
-                                "CẢNG TÂN VŨ": { calls: 0, missed: 0, pickup: 100, wait: 0, talk: 0, crm: 0 },
-                                "CẢNG HDCV": { calls: 0, missed: 0, pickup: 100, wait: 0, talk: 0, crm: 0 }
-                            }
-                        };
-                    });
-
-                    let currentSection = "";
-                    const normalizeText = (value) => String(value ?? "")
-                        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-                        .replace(/đ/g, "d").replace(/Đ/g, "D")
-                        .replace(/\s+/g, " ").trim().toUpperCase();
-
-                    const toNumber = (value) => {
-                        if (typeof value === "number") return Number.isFinite(value) ? value : 0;
-                        if (!value) return 0;
-                        const cleaned = String(value).trim().replace(/\s/g, "").replace(",", ".");
-                        const parsed = Number(cleaned);
-                        return Number.isFinite(parsed) ? parsed : 0;
-                    };
-
-                    for (let r = 0; r < rows.length; r++) {
-                        const row = rows[r] || [];
-                        const colA = String(row[0] ?? "").trim();
-                        const colB = String(row[1] ?? "").trim();
-                        const a = normalizeText(colA);
-                        const b = normalizeText(colB);
-
-                        if (a.includes("KHOI KPI") || a.includes("TONG HOP CHUNG")) currentSection = "KPI";
-                        else if (a.includes("KHOI PHAN LOAI") || a.includes("VAN DE PHAN ANH") || b.includes("VAN DE PHAN ANH")) currentSection = "ISSUES";
-                        else if (a.includes("ZALO OA") || b.includes("CHI SO ZALO OA")) currentSection = "ZALOOA";
-                        else if (a.includes("KHAO SAT") || a.includes("KHOI CHI SO KHAO SAT")) currentSection = "SURVEY";
-                        else if (a.includes("HIEU QUA TONG DAI") || (a.includes("DON VI") && b.includes("CHI SO"))) currentSection = "BRANCHES";
-
-                        let branchKey = null;
-                        if (currentSection === "BRANCHES") {
-                            if (a.includes("TAN VU")) branchKey = "CẢNG TÂN VŨ";
-                            else if (a.includes("HDCV") || a.includes("HOANG DIEU") || a.includes("CHUA VE")) branchKey = "CẢNG HDCV";
-                        }
-
-                        weeks.forEach(w => {
-                            const rec = newRecordsMap[w.period];
-                            if (!rec) return;
-                            const val = toNumber(row[w.index]);
-
-                            if (currentSection === "KPI" && r < 25) {
-                                if (b.includes("SO YEU CAU (CRM)") || b.includes("CRM")) rec.crm = val;
-                                else if (b.includes("TIN NHAN ZALO")) rec.zaloMsg = val;
-                                else if (b.includes("TY LE PHAN HOI ZALO")) rec.zaloRate = val;
-                                else if (b === "CUOC GOI DEN" || b.includes("CUOC GOI DEN")) rec.calls = val;
-                                else if (b.includes("SO CUOC LO")) rec.missed = val;
-                                else if (b.includes("TY LE NHAC MAY")) rec.pickup = val;
-                                else if (b.includes("THOI GIAN CHO TB")) rec.waitTime = val;
-                                else if (b.includes("THOI GIAN THOAI TB")) rec.talkAvg = val;
-                            } else if (currentSection === "ISSUES") {
-                                if (colB && b !== "VAN DE PHAN ANH" && /^\d+$/.test(String(row[0] ?? "").trim())) {
-                                    rec.issues[colB] = val;
-                                }
-                            } else if (currentSection === "ZALOOA") {
-                                if (b.includes("NGUOI QUAN TAM MOI")) rec.zaloOA.newFollowers = val;
-                                else if (b === "NGUOI QUAN TAM") rec.zaloOA.totalFollowers = val;
-                                else if (b.includes("LUOT GUI TIN NHAN")) rec.zaloOA.totalSent = val;
-                                else if (b.includes("HAI LONG CSAT")) rec.zaloOA.csat = val <= 1 ? Math.round(val * 100) : Math.round(val);
-                                else if (b.includes("TY LE DANH GIA") || b.includes("TY PHAN HOI DANH GIA")) rec.zaloOA.ratingRate = val <= 1 ? Math.round(val * 100) : Math.round(val);
-                            } else if (currentSection === "SURVEY") {
-                                if (a === "WEBSITE") {
-                                    if (b === "LUOT") rec.survey.webCount = val;
-                                    else if (b === "DIEM") rec.survey.webScore = Number(String(row[w.index] ?? "0").split("/")[0]) || 0;
-                                } else if (a === "APP") {
-                                    if (b === "LUOT") rec.survey.appCount = val;
-                                    else if (b === "DIEM") rec.survey.appScore = Number(String(row[w.index] ?? "0").split("/")[0]) || 0;
-                                }
-                            } else if (currentSection === "BRANCHES" && branchKey) {
-                                const branch = rec.branches[branchKey] || (rec.branches[branchKey] = {
-                                    calls: 0, missed: 0, pickup: 100, wait: 0, talk: 0, crm: 0
+                        for (let r = 0; r < Math.min(25, rows.length); r++) {
+                            if (rows[r]) {
+                                let matchCount = 0;
+                                rows[r].forEach((cell) => {
+                                    if (cell && /^W\s*\d+$/i.test(String(cell).trim())) {
+                                        matchCount++;
+                                    }
                                 });
-                                if (b.includes("CUOC GOI DEN")) branch.calls = val;
-                                else if (b.includes("SO CUOC LO")) branch.missed = val;
-                                else if (b.includes("TY LE NHAC MAY")) branch.pickup = val;
-                                else if (b.includes("THOI GIAN CHO")) branch.wait = val;
-                                else if (b.includes("THOI GIAN THOAI")) branch.talk = val;
+                                if (matchCount >= 1) {
+                                    weekRowIdx = r;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (weekRowIdx === -1) {
+                            throw new Error('Không tìm thấy dòng tiêu đề tuần (W...) trong file Excel!');
+                        }
+
+                        rows[weekRowIdx].forEach((cell, cIdx) => {
+                            if (cell && /^W\s*\d+$/i.test(String(cell).trim())) {
+                                weeks.push({ index: cIdx, period: String(cell).trim().toUpperCase() });
                             }
                         });
+
+                        if (weeks.length === 0) {
+                            throw new Error('Không tìm thấy mã tuần hợp lệ!');
+                        }
+
+                        let newRecordsMap = {};
+                        weeks.forEach(w => {
+                            const weekMatch = w.period.match(/\d+/);
+                            const wNum = weekMatch ? parseInt(weekMatch[0]) : 42;
+                            const dateRange = getStartAndEndDateOfWeek(wNum, 2026);
+
+                            newRecordsMap[w.period] = {
+                                period: w.period,
+                                dateStart: dateRange.dateStart,
+                                dateEnd: dateRange.dateEnd,
+                                crm: 0, zaloMsg: 0, zaloRate: 99.0, calls: 0, missed: 0, pickup: 100.0, waitTime: 4.5, talkAvg: 75.0,
+                                zaloOA: { totalFollowers: 3320, newFollowers: 10, totalSent: 2000, csat: 99, ratingRate: 35 },
+                                survey: { webCount: 0, webScore: 0, appCount: 0, appScore: 0 },
+                                issues: {},
+                                branches: {
+                                    "CẢNG TÂN VŨ": { calls: 0, missed: 0, pickup: 100, wait: 0, talk: 0, crm: 0 },
+                                    "CẢNG HDCV": { calls: 0, missed: 0, pickup: 100, wait: 0, talk: 0, crm: 0 }
+                                }
+                            };
+                        });
+
+                        let currentSection = "";
+                        const normalizeText = (value) => String(value ?? "")
+                            .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                            .replace(/đ/g, "d").replace(/Đ/g, "D")
+                            .replace(/\s+/g, " ").trim().toUpperCase();
+
+                        const toNumber = (value) => {
+                            if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+                            if (!value) return 0;
+                            const cleaned = String(value).trim().replace(/\s/g, "").replace(",", ".");
+                            const parsed = Number(cleaned);
+                            return Number.isFinite(parsed) ? parsed : 0;
+                        };
+
+                        for (let r = 0; r < rows.length; r++) {
+                            const row = rows[r] || [];
+                            const colA = String(row[0] ?? "").trim();
+                            const colB = String(row[1] ?? "").trim();
+                            const a = normalizeText(colA);
+                            const b = normalizeText(colB);
+
+                            if (a.includes("KHOI KPI") || a.includes("TONG HOP CHUNG")) currentSection = "KPI";
+                            else if (a.includes("KHOI PHAN LOAI") || a.includes("VAN DE PHAN ANH") || b.includes("VAN DE PHAN ANH")) currentSection = "ISSUES";
+                            else if (a.includes("ZALO OA") || b.includes("CHI SO ZALO OA")) currentSection = "ZALOOA";
+                            else if (a.includes("KHAO SAT") || a.includes("KHOI CHI SO KHAO SAT")) currentSection = "SURVEY";
+                            else if (a.includes("HIEU QUA TONG DAI") || (a.includes("DON VI") && b.includes("CHI SO"))) currentSection = "BRANCHES";
+
+                            let branchKey = null;
+                            if (currentSection === "BRANCHES") {
+                                if (a.includes("TAN VU")) branchKey = "CẢNG TÂN VŨ";
+                                else if (a.includes("HDCV") || a.includes("HOANG DIEU") || a.includes("CHUA VE")) branchKey = "CẢNG HDCV";
+                            }
+
+                            weeks.forEach(w => {
+                                const rec = newRecordsMap[w.period];
+                                if (!rec) return;
+                                const val = toNumber(row[w.index]);
+
+                                if (currentSection === "KPI" && r < 25) {
+                                    if (b.includes("SO YEU CAU (CRM)") || b.includes("CRM")) rec.crm = val;
+                                    else if (b.includes("TIN NHAN ZALO")) rec.zaloMsg = val;
+                                    else if (b.includes("TY LE PHAN HOI ZALO")) rec.zaloRate = val;
+                                    else if (b === "CUOC GOI DEN" || b.includes("CUOC GOI DEN")) rec.calls = val;
+                                    else if (b.includes("SO CUOC LO")) rec.missed = val;
+                                    else if (b.includes("TY LE NHAC MAY")) rec.pickup = val;
+                                    else if (b.includes("THOI GIAN CHO TB")) rec.waitTime = val;
+                                    else if (b.includes("THOI GIAN THOAI TB")) rec.talkAvg = val;
+                                } else if (currentSection === "ISSUES") {
+                                    if (colB && b !== "VAN DE PHAN ANH" && /^\d+$/.test(String(row[0] ?? "").trim())) {
+                                        rec.issues[colB] = val;
+                                    }
+                                } else if (currentSection === "ZALOOA") {
+                                    if (b.includes("NGUOI QUAN TAM MOI")) rec.zaloOA.newFollowers = val;
+                                    else if (b === "NGUOI QUAN TAM") rec.zaloOA.totalFollowers = val;
+                                    else if (b.includes("LUOT GUI TIN NHAN")) rec.zaloOA.totalSent = val;
+                                    else if (b.includes("HAI LONG CSAT")) rec.zaloOA.csat = val <= 1 ? Math.round(val * 100) : Math.round(val);
+                                    else if (b.includes("TY LE DANH GIA") || b.includes("TY PHAN HOI DANH GIA")) rec.zaloOA.ratingRate = val <= 1 ? Math.round(val * 100) : Math.round(val);
+                                } else if (currentSection === "SURVEY") {
+                                    if (a === "WEBSITE") {
+                                        if (b === "LUOT") rec.survey.webCount = val;
+                                        else if (b === "DIEM") rec.survey.webScore = Number(String(row[w.index] ?? "0").split("/")[0]) || 0;
+                                    } else if (a === "APP") {
+                                        if (b === "LUOT") rec.survey.appCount = val;
+                                        else if (b === "DIEM") rec.survey.appScore = Number(String(row[w.index] ?? "0").split("/")[0]) || 0;
+                                    }
+                                } else if (currentSection === "BRANCHES" && branchKey) {
+                                    const branch = rec.branches[branchKey] || (rec.branches[branchKey] = {
+                                        calls: 0, missed: 0, pickup: 100, wait: 0, talk: 0, crm: 0
+                                    });
+                                    if (b.includes("CUOC GOI DEN")) branch.calls = val;
+                                    else if (b.includes("SO CUOC LO")) branch.missed = val;
+                                    else if (b.includes("TY LE NHAC MAY")) branch.pickup = val;
+                                    else if (b.includes("THOI GIAN CHO")) branch.wait = val;
+                                    else if (b.includes("THOI GIAN THOAI")) branch.talk = val;
+                                }
+                            });
+                        }
+
+                        // GỘP VÀ BẢO TOÀN DỮ LIỆU CŨ TRÊN SUPABASE
+                        let mergedMap = {};
+                        masterDatabase.forEach(item => {
+                            mergedMap[item.period] = item;
+                        });
+
+                        Object.keys(newRecordsMap).forEach(pKey => {
+                            mergedMap[pKey] = newRecordsMap[pKey];
+                        });
+
+                        masterDatabase = Object.values(mergedMap);
+                        sortDatabase();
+                        await syncDatabaseToSupabase();
+                        initWeekFilters();
+                        setQuickWeekFilter(7);
+
+                        const uploadedWeeksStr = weeks.map(w => w.period).join(', ');
+                        alert(`Nạp thành công! Các tuần được xử lý: [${uploadedWeeksStr}]. Dữ liệu cũ đã được bảo toàn an toàn trên Cloud.`);
+                        resolve();
+                    } catch (err) {
+                        reject(err);
                     }
-
-                    // BẢO TOÀN DỮ LIỆU CŨ: Chỉ ghi đè tuần trùng tên
-                    let mergedMap = {};
-                    masterDatabase.forEach(item => {
-                        mergedMap[item.period] = item;
-                    });
-
-                    Object.keys(newRecordsMap).forEach(pKey => {
-                        mergedMap[pKey] = newRecordsMap[pKey];
-                    });
-
-                    masterDatabase = Object.values(mergedMap);
-                    sortDatabase();
-                    await syncDatabaseToSupabase();
-                    initWeekFilters();
-                    setQuickWeekFilter(7);
-
-                    const uploadedWeeksStr = weeks.map(w => w.period).join(', ');
-                    alert(`Nạp thành công! Các tuần được xử lý: [${uploadedWeeksStr}]. Dữ liệu cũ đã được bảo toàn an toàn trên Cloud.`);
-                } catch (err) {
-                    console.error("Lỗi phân tích Excel:", err);
-                    alert('Lỗi nạp Excel: ' + err.message);
-                }
-            };
-            reader.readAsArrayBuffer(file);
-            event.target.value = '';
+                };
+                reader.onerror = () => reject(new Error("Không thể đọc tệp Excel!"));
+                reader.readAsArrayBuffer(file);
+            });
         }
 
         function exportDatabase() {
