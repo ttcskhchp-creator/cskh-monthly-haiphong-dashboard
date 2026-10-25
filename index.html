@@ -64,7 +64,7 @@
         ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #64748b; }
         .notes-scroll-container {
-            max-height: 290px; /* Hiển thị 5 dòng, quá 5 dòng tự có thanh cuộn */
+            max-height: 290px;
             overflow-y: auto;
         }
     </style>
@@ -149,9 +149,13 @@
                 </div>
             </div>
 
+            <!-- Các nút bấm nhanh: Tuần gần nhất đặt đầu tiên & làm nổi bật -->
             <div class="flex items-center space-x-1.5">
+                <button onclick="setQuickWeekFilter(1)" class="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white transition font-bold shadow-sm flex items-center gap-1">
+                    <i class="fa-solid fa-bolt text-amber-300"></i> Tuần gần nhất
+                </button>
                 <button onclick="setQuickWeekFilter(4)" class="px-2.5 py-1 rounded-lg bg-slate-200 dark:bg-slate-800 hover:bg-blue-600 hover:text-white transition font-semibold">4 tuần</button>
-                <button onclick="setQuickWeekFilter(7)" class="px-2.5 py-1 rounded-lg bg-blue-600 text-white transition font-bold shadow-sm">7 tuần gần nhất</button>
+                <button onclick="setQuickWeekFilter(7)" class="px-2.5 py-1 rounded-lg bg-slate-200 dark:bg-slate-800 hover:bg-blue-600 hover:text-white transition font-semibold">7 tuần</button>
                 <button onclick="setQuickWeekFilter('all')" class="px-2.5 py-1 rounded-lg bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 transition font-semibold">Tất cả</button>
                 <button onclick="openDeleteModal()" class="px-2.5 py-1 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-600 dark:text-rose-400 rounded-lg transition font-bold flex items-center gap-1">
                     <i class="fa-solid fa-trash-can fa-shake" style="--fa-animation-duration: 3s;"></i> Xóa tuần
@@ -424,9 +428,7 @@
         </section>
     </main>
 
-    <!-- ========================================== -->
     <!-- MODAL 1: NẠP FILE EXCEL AN TOÀN TRỰC TIẾP -->
-    <!-- ========================================== -->
     <div id="upload-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm hidden p-4">
         <div class="glass-panel rounded-2xl p-5 w-full max-w-md border border-blue-500/30 space-y-4 shadow-2xl dark:bg-slate-900 bg-white">
             <div class="flex items-center justify-between border-b dark:border-slate-800 border-slate-200 pb-3">
@@ -617,9 +619,7 @@
             }
         }
 
-        // ==========================================
-        // QUẢN LÝ MODAL NẠP EXCEL TRỰC TIẾP
-        // ==========================================
+        // Quản lý Modal Nạp Excel
         function openUploadModal() {
             document.getElementById('modal-excel-file').value = '';
             document.getElementById('upload-passcode').value = '';
@@ -722,7 +722,7 @@
             }, "Xác Thực Xóa Ghi Chú");
         }
 
-        // Tính ngày chuẩn theo tuần
+        // Tính ngày chuẩn theo mốc W42
         function getStartAndEndDateOfWeek(weekNum, year = 2026) {
             const refWeek = 42;
             const refStartDate = new Date(2026, 9, 11);
@@ -787,7 +787,9 @@
 
             sortDatabase();
             initWeekFilters();
-            setQuickWeekFilter(7);
+
+            // MẶC ĐỊNH HIỂN THỊ TUẦN GẦN NHẤT (1 tuần mới nhất)
+            setQuickWeekFilter(1);
         }
 
         function initDefaultData() {
@@ -830,7 +832,7 @@
                     period: 'W43',
                     date: '2026-10-25',
                     title: 'Sự cố vận hành Hotline, Zalo oa và CRM',
-                    content: '-23/10/2026: Đường dây số Hotline 1800555522 nhánh 1 gặp sự cố, không tiếp nhận được các cuộc gọi... -22/10/2026: Hệ thống nhập ticket CRM chậm... -21/10/2026: Cuộc gọi lỡ Cảng HDCV... -19/10/2026: Lỗi hệ thống Hải quan...'
+                    content: '-23/10/2026: Đường dây số Hotline 1800555522 nhánh 1 gặp sự cố... -22/10/2026: Hệ thống nhập ticket CRM chậm... -21/10/2026: Cuộc gọi lỡ Cảng HDCV... -19/10/2026: Lỗi hệ thống Hải quan...'
                 }
             ];
         }
@@ -906,14 +908,18 @@
             }
         }
 
+        // HÀM CHỌN KHOẢNG TUẦN NHANH: HỖ TRỢ count = 1 (TUẦN GẦN NHẤT)
         function setQuickWeekFilter(count) {
             const total = masterDatabase.length;
+            if (total === 0) return;
+
             if (count === 'all' || count >= total) {
                 document.getElementById('filter-start-week').value = 0;
-                document.getElementById('filter-end-week').value = Math.max(0, total - 1);
+                document.getElementById('filter-end-week').value = total - 1;
             } else {
+                // Ví dụ count = 1 -> start = total - 1, end = total - 1 (chỉ đúng 1 tuần mới nhất)
                 document.getElementById('filter-start-week').value = Math.max(0, total - count);
-                document.getElementById('filter-end-week').value = Math.max(0, total - 1);
+                document.getElementById('filter-end-week').value = total - 1;
             }
             applyWeekFilter();
         }
@@ -930,7 +936,12 @@
             if (filteredData.length > 0) {
                 const first = filteredData[0];
                 const last = filteredData[filteredData.length - 1];
-                const dateRangeStr = `Kỳ: ${formatDateVN(first.dateStart)} - ${formatDateVN(last.dateEnd)}`;
+                let dateRangeStr = "";
+                if (first.period === last.period) {
+                    dateRangeStr = `Tuần ${first.period}: ${formatDateVN(first.dateStart)} - ${formatDateVN(first.dateEnd)}`;
+                } else {
+                    dateRangeStr = `Kỳ: ${first.period} (${formatDateVN(first.dateStart)}) đến ${last.period} (${formatDateVN(last.dateEnd)})`;
+                }
                 document.getElementById('filter-date-badge').innerText = dateRangeStr;
             } else {
                 document.getElementById('filter-date-badge').innerText = "--";
@@ -989,10 +1000,10 @@
             const avgAppScore = totalAppCount > 0 ? Math.round(appScoreWeighted / totalAppCount) : 0;
 
             document.getElementById('kpi-crm').innerText = totalCrm.toLocaleString();
-            document.getElementById('kpi-crm-avg').innerText = `TB: ${avgCrm.toLocaleString()}/tuần`;
+            document.getElementById('kpi-crm-avg').innerText = count === 1 ? `Tuần này` : `TB: ${avgCrm.toLocaleString()}/tuần`;
 
             document.getElementById('kpi-zalo').innerText = totalZalo.toLocaleString();
-            document.getElementById('kpi-zalo-avg').innerText = `TB: ${avgZalo.toLocaleString()} tin/tuần`;
+            document.getElementById('kpi-zalo-avg').innerText = count === 1 ? `Tuần này` : `TB: ${avgZalo.toLocaleString()} tin/tuần`;
             document.getElementById('kpi-zalo-rate').innerText = `Tỷ lệ PH: ${avgZaloRate}%`;
 
             document.getElementById('kpi-calls').innerText = totalCalls.toLocaleString();
@@ -1263,7 +1274,7 @@
             modalSelect.innerHTML = modalOptionsHTML;
         }
 
-        // SỔ TAY GHI CHÚ: TUẦN MỚI NHẤT TRÊN ĐẦU & SCROLL KHI >5 DÒNG
+        // SỔ TAY GHI CHÚ: TUẦN MỚI NHẤT TRÊN ĐẦU & SCROLL KHI >5 DÒNG[cite: 2]
         function renderNotesTable() {
             const tbody = document.getElementById('notes-tbody');
             const filterPeriod = document.getElementById('note-period-filter').value;
@@ -1358,9 +1369,7 @@
             renderNotesTable();
         }
 
-        // ==============================================================
-        // HÀM XỬ LÝ ĐỌC FILE EXCEL (ĐƠN LẺ VÀ ĐA TUẦN) - BẢO TOÀN DỮ LIỆU
-        // ==============================================================
+        // HÀM ĐỌC EXCEL - BẢO TOÀN DỮ LIỆU & TỰ ĐỘNG CHUYỂN VỀ TUẦN GẦN NHẤT SAU KHI NẠP
         async function processExcelFile(file) {
             try {
                 const safeName = `CSKH_${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
@@ -1519,7 +1528,7 @@
                             });
                         }
 
-                        // GỘP VÀ BẢO TOÀN DỮ LIỆU CŨ TRÊN SUPABASE
+                        // GỘP BẢO TOÀN DỮ LIỆU
                         let mergedMap = {};
                         masterDatabase.forEach(item => {
                             mergedMap[item.period] = item;
@@ -1533,7 +1542,9 @@
                         sortDatabase();
                         await syncDatabaseToSupabase();
                         initWeekFilters();
-                        setQuickWeekFilter(7);
+
+                        // SAU KHI NẠP: MẶC ĐỊNH HIỂN THỊ NGAY TUẦN MỚI NHẤT
+                        setQuickWeekFilter(1);
 
                         const uploadedWeeksStr = weeks.map(w => w.period).join(', ');
                         alert(`Nạp thành công! Các tuần được xử lý: [${uploadedWeeksStr}]. Dữ liệu cũ đã được bảo toàn an toàn trên Cloud.`);
@@ -1613,7 +1624,9 @@
 
             await syncDatabaseToSupabase();
             initWeekFilters();
-            setQuickWeekFilter(7);
+
+            // Mặc định về tuần gần nhất sau khi xóa
+            setQuickWeekFilter(1);
             closeDeleteModal();
             alert(`Đã xóa các tuần từ ${startW} đến ${endW} thành công!`);
         }
