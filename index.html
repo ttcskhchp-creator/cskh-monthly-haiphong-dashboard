@@ -75,7 +75,7 @@
     <header class="glass-panel sticky top-0 z-50 px-4 lg:px-6 py-2.5 border-b dark:border-slate-800 border-slate-200">
         <div class="flex items-center justify-between flex-wrap gap-3">
             
-            <!-- Logo & Title Thống Nhất Theo Ảnh Mẫu -->
+            <!-- Logo & Title Thống Nhất Theo Ảnh Mẫu[cite: 3] -->
             <div class="flex items-center space-x-3">
                 <div class="p-2 sm:p-2.5 bg-gradient-to-tr from-blue-600/30 to-indigo-600/30 border-2 border-blue-500/50 rounded-2xl text-blue-400 shadow-md flex items-center justify-center">
                     <i class="fa-solid fa-anchor text-xl text-blue-400 animate-pulse"></i>
@@ -101,38 +101,38 @@
 
             <!-- Thao tác Nhanh & Theme/Menu toggle -->
             <div class="flex items-center flex-wrap gap-2">
-                <!-- Supabase Cloud Status -->
+                <!-- Supabase Cloud Status[cite: 1] -->
                 <div id="cloud-status" class="hidden sm:flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 dark:text-emerald-400 text-xs font-semibold">
                     <i class="fa-solid fa-cloud-bolt text-emerald-500 animate-pulse"></i>
                     <span id="status-text">Đang kết nối Cloud...</span>
                 </div>
 
-                <!-- Nút Nạp File Excel (Mở Modal Bảo Mật Trực Tiếp) -->
+                <!-- Nút Nạp File Excel -->
                 <button onclick="openUploadModal()" class="px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold rounded-xl shadow-md shadow-blue-500/20 transition flex items-center space-x-1.5">
                     <i class="fa-solid fa-file-excel fa-bounce" style="--fa-bounce-height: 3px;"></i>
                     <span>Nạp Excel (Đơn / Đa tuần)</span>
                 </button>
 
-                <!-- Xuất Excel Backup -->
+                <!-- Xuất Excel Backup[cite: 1] -->
                 <button onclick="exportDatabase()" class="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl transition flex items-center space-x-1.5">
                     <i class="fa-solid fa-cloud-arrow-down text-blue-500 dark:text-blue-400"></i>
                     <span class="hidden md:inline">Xuất Backup</span>
                 </button>
 
-                <!-- Nút chuyển Sáng/Tối -->
+                <!-- Nút chuyển Sáng/Tối[cite: 1] -->
                 <button onclick="toggleDarkMode()" class="p-2 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-amber-500 dark:text-amber-300 text-xs transition" title="Chuyển chế độ Sáng/Tối">
                     <i class="fa-solid fa-moon dark:hidden"></i>
                     <i class="fa-solid fa-sun hidden dark:inline fa-spin" style="--fa-animation-duration: 15s;"></i>
                 </button>
 
-                <!-- Nút thu gọn / mở rộng menu chính -->
+                <!-- Nút thu gọn / mở rộng menu chính[cite: 1] -->
                 <button onclick="toggleControlsBar()" class="p-2 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs transition" title="Thu gọn / Mở rộng bộ lọc">
                     <i id="collapse-chevron" class="fa-solid fa-chevron-up"></i>
                 </button>
             </div>
         </div>
 
-        <!-- Bộ Lọc Tuần Thu Gọn Tiết Kiệm Không Gian -->
+        <!-- Bộ Lọc Tuần Thu Gọn Tiết Kiệm Không Gian[cite: 1] -->
         <div id="controls-bar" class="mt-2.5 pt-2.5 border-t dark:border-slate-800 border-slate-200 flex flex-wrap items-center justify-between gap-2.5 text-xs transition-all duration-300">
             <div class="flex flex-wrap items-center gap-2">
                 <span class="font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
@@ -149,7 +149,7 @@
                 </div>
             </div>
 
-            <!-- Các nút bấm nhanh: Tuần gần nhất đặt đầu tiên & làm nổi bật -->
+            <!-- Nút chọn nhanh (Mặc định Tuần gần nhất)[cite: 1] -->
             <div class="flex items-center space-x-1.5">
                 <button onclick="setQuickWeekFilter(1)" class="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white transition font-bold shadow-sm flex items-center gap-1">
                     <i class="fa-solid fa-bolt text-amber-300"></i> Tuần gần nhất
@@ -167,7 +167,7 @@
     <!-- Main Container -->
     <main class="p-3 sm:p-5 max-w-[1750px] mx-auto space-y-4">
 
-        <!-- 4 KPI Cards Grid -->
+        <!-- 4 KPI Cards Grid[cite: 1] -->
         <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <!-- CRM -->
             <div class="glass-panel rounded-2xl p-3.5 sm:p-4 relative overflow-hidden">
@@ -202,7 +202,7 @@
                     </div>
                 </div>
                 <div class="mt-2.5 flex items-center justify-between text-xs font-semibold pt-2 border-t border-slate-200 dark:border-slate-800">
-                    <span id="kpi-zalo-avg" class="text-indigo-600 dark:text-indigo-300">TB: -- tin/tuần</span>
+                    <span id="kpi-zalo-avg">TB: -- tin/tuần</span>
                     <span id="kpi-zalo-rate" class="text-emerald-500 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full">Tỷ lệ PH: --%</span>
                 </div>
             </div>
@@ -221,7 +221,7 @@
                     </div>
                 </div>
                 <div class="mt-2.5 flex items-center justify-between text-xs font-semibold pt-2 border-t border-slate-200 dark:border-slate-800">
-                    <span id="kpi-talk-avg" class="text-amber-600 dark:text-amber-400">TG thoại: --s</span>
+                    <span id="kpi-talk-avg">TG thoại: --s</span>
                     <span id="kpi-missed" class="text-rose-500 font-bold bg-rose-500/10 px-2 py-0.5 rounded-full">Cuộc lỡ: --</span>
                 </div>
             </div>
@@ -240,13 +240,13 @@
                     </div>
                 </div>
                 <div class="mt-2.5 flex items-center justify-between text-xs font-semibold pt-2 border-t border-slate-200 dark:border-slate-800">
-                    <span id="kpi-survey-web" class="text-blue-500">Web: 0/50</span>
-                    <span id="kpi-survey-app" class="text-purple-500">App: 0/50</span>
+                    <span id="kpi-survey-web">Web: 0/50</span>
+                    <span id="kpi-survey-app">App: 0/50</span>
                 </div>
             </div>
         </section>
 
-        <!-- Charts Section 1: Trend line & Top Issues -->
+        <!-- Charts Section 1: Trend line & Top Issues[cite: 1] -->
         <section class="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <div class="glass-panel rounded-2xl p-4 lg:col-span-2 flex flex-col justify-between">
                 <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
@@ -268,7 +268,7 @@
                 </div>
             </div>
 
-            <!-- Donut Top Issues -->
+            <!-- Donut Top Issues[cite: 1] -->
             <div class="glass-panel rounded-2xl p-4 flex flex-col justify-between">
                 <div class="flex items-center justify-between mb-2">
                     <div>
@@ -292,7 +292,7 @@
             </div>
         </section>
 
-        <!-- Charts Section 2: So sánh Tân Vũ - HDCV + Thẻ Zalo OA -->
+        <!-- Charts Section 2: So sánh Tân Vũ - HDCV + Thẻ Zalo OA[cite: 1] -->
         <section class="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <div class="glass-panel rounded-2xl p-4 lg:col-span-2 flex flex-col justify-between">
                 <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
@@ -314,7 +314,7 @@
                 </div>
             </div>
 
-            <!-- Thẻ Chỉ Số Kênh Zalo OA -->
+            <!-- Thẻ Chỉ Số Kênh Zalo OA[cite: 1] -->
             <div class="glass-panel rounded-2xl p-4 flex flex-col justify-between space-y-2.5 relative overflow-hidden">
                 <div class="flex items-center justify-between border-b dark:border-slate-800 border-slate-200 pb-2">
                     <div class="flex items-center space-x-2">
@@ -363,7 +363,7 @@
             </div>
         </section>
 
-        <!-- Bảng Ma Trận Chi Tiết: Cột Trung Bình (Avg) Nằm Sát Cột Danh Mục -->
+        <!-- Bảng Ma Trận Chi Tiết: Cột Trung Bình (Avg) Nằm Sát Cột Danh Mục[cite: 1] -->
         <section class="glass-panel rounded-2xl p-4 space-y-3">
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <div>
@@ -389,7 +389,7 @@
             </div>
         </section>
 
-        <!-- Sổ Tay Ghi Chú & Nhật Ký Vận Hành (Mới Nhất Đầu Tiên & Scroll khi >5 bản ghi) -->
+        <!-- Sổ Tay Ghi Chú & Nhật Ký Vận Hành (Đã sửa triệt để nút Sửa & Xóa)[cite: 2] -->
         <section class="glass-panel rounded-2xl p-4 space-y-3">
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <div>
@@ -466,7 +466,7 @@
         </div>
     </div>
 
-    <!-- MODAL 2: XÁC THỰC BẢO VỆ CHO SỬA / XÓA GHI CHÚ -->
+    <!-- MODAL 2: XÁC THỰC BẢO VỆ CHO THÊM / SỬA / XÓA GHI CHÚ -->
     <div id="auth-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm hidden p-4">
         <div class="glass-panel rounded-2xl p-5 w-full max-w-sm border border-amber-500/30 space-y-4 shadow-2xl dark:bg-slate-900 bg-white">
             <div class="flex items-center space-x-3 text-amber-500">
@@ -480,7 +480,7 @@
             </div>
             <div>
                 <input type="password" id="auth-passcode" class="glass-input text-sm rounded-xl px-3 py-2 w-full text-center tracking-widest font-mono" placeholder="••••" maxlength="10">
-                <p id="auth-error-msg" class="text-[11px] text-rose-500 mt-1.5 hidden text-center font-medium">Mã PIN xác thực không chính xác!</p>
+                <p id="auth-error-msg" class="text-[11px] text-rose-500 mt-1.5 hidden text-center font-medium">Mã xác thực không chính xác!</p>
             </div>
             <div class="flex items-center justify-end space-x-2 pt-1">
                 <button onclick="closeAuthModal()" class="px-3.5 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 font-semibold text-xs transition">Hủy</button>
@@ -619,7 +619,7 @@
             }
         }
 
-        // Quản lý Modal Nạp Excel
+        // Modal Nạp Excel
         function openUploadModal() {
             document.getElementById('modal-excel-file').value = '';
             document.getElementById('upload-passcode').value = '';
@@ -668,7 +668,9 @@
             }
         }
 
-        // Quản lý xác thực cho thao tác sửa/xóa ghi chú
+        // =========================================================================
+        // XỬ LÝ XÁC THỰC BẢO MẬT: ĐÃ SỬA LỖI PENDING ACTION BỊ NULL
+        // =========================================================================
         function promptAuth(actionCallback, titleText = "Xác Thực Quản Trị") {
             pendingAction = actionCallback;
             document.getElementById('auth-modal-title').innerText = titleText;
@@ -686,9 +688,11 @@
         function submitAuthModal() {
             const pin = document.getElementById('auth-passcode').value.trim();
             if (pin === MASTER_PIN) {
-                closeAuthModal();
-                if (typeof pendingAction === 'function') {
-                    pendingAction();
+                const actionToRun = pendingAction; // LƯU HÀM TRƯỚC KHI ĐÓNG MODAL
+                document.getElementById('auth-modal').classList.add('hidden');
+                pendingAction = null;
+                if (typeof actionToRun === 'function') {
+                    actionToRun(); // THỰC THI CHÍNH XÁC THAO TÁC SỬA / XÓA
                 }
             } else {
                 document.getElementById('auth-error-msg').classList.remove('hidden');
@@ -722,7 +726,7 @@
             }, "Xác Thực Xóa Ghi Chú");
         }
 
-        // Tính ngày chuẩn theo mốc W42
+        // Tính ngày chuẩn tuần
         function getStartAndEndDateOfWeek(weekNum, year = 2026) {
             const refWeek = 42;
             const refStartDate = new Date(2026, 9, 11);
@@ -775,6 +779,13 @@
                 initDefaultData();
             }
 
+            // Đảm bảo mọi bản ghi chú đều có ID hợp lệ
+            if (Array.isArray(notesDatabase)) {
+                notesDatabase.forEach((note, idx) => {
+                    if (!note.id) note.id = 'note_' + (Date.now() + idx);
+                });
+            }
+
             masterDatabase.forEach(item => {
                 const weekMatch = String(item.period).match(/\d+/);
                 if (weekMatch) {
@@ -788,7 +799,7 @@
             sortDatabase();
             initWeekFilters();
 
-            // MẶC ĐỊNH HIỂN THỊ TUẦN GẦN NHẤT (1 tuần mới nhất)
+            // MẶC ĐỊNH HIỂN THỊ TUẦN GẦN NHẤT
             setQuickWeekFilter(1);
         }
 
@@ -908,7 +919,6 @@
             }
         }
 
-        // HÀM CHỌN KHOẢNG TUẦN NHANH: HỖ TRỢ count = 1 (TUẦN GẦN NHẤT)
         function setQuickWeekFilter(count) {
             const total = masterDatabase.length;
             if (total === 0) return;
@@ -917,7 +927,6 @@
                 document.getElementById('filter-start-week').value = 0;
                 document.getElementById('filter-end-week').value = total - 1;
             } else {
-                // Ví dụ count = 1 -> start = total - 1, end = total - 1 (chỉ đúng 1 tuần mới nhất)
                 document.getElementById('filter-start-week').value = Math.max(0, total - count);
                 document.getElementById('filter-end-week').value = total - 1;
             }
@@ -1208,7 +1217,7 @@
             });
         }
 
-        // BẢNG MA TRẬN CHI TIẾT (CỘT TB AVG ĐẶT SÁT CỘT DANH MỤC)
+        // BẢNG MA TRẬN CHI TIẾT
         function renderMatrixTable() {
             const thead = document.getElementById('matrix-thead');
             const tbody = document.getElementById('matrix-tbody');
@@ -1274,7 +1283,9 @@
             modalSelect.innerHTML = modalOptionsHTML;
         }
 
-        // SỔ TAY GHI CHÚ: TUẦN MỚI NHẤT TRÊN ĐẦU & SCROLL KHI >5 DÒNG[cite: 2]
+        // =========================================================================
+        // SỔ TAY GHI CHÚ: TỰ ĐỘNG BẢO ĐẢM ID VÀ THAO TÁC SỬA / XÓA HOẠT ĐỘNG 100%[cite: 2]
+        // =========================================================================
         function renderNotesTable() {
             const tbody = document.getElementById('notes-tbody');
             const filterPeriod = document.getElementById('note-period-filter').value;
@@ -1294,6 +1305,8 @@
             }
 
             notes.forEach(note => {
+                // Đảm bảo note luôn có id
+                const safeId = String(note.id || '');
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-100 dark:hover:bg-slate-800/40 transition">
                         <td class="px-4 py-2.5 font-bold text-amber-500 font-mono text-sm">${note.period}</td>
@@ -1301,8 +1314,8 @@
                         <td class="px-4 py-2.5 font-bold text-slate-800 dark:text-slate-200">${note.title}</td>
                         <td class="px-4 py-2.5 text-slate-600 dark:text-slate-300 leading-relaxed text-xs">${note.content}</td>
                         <td class="px-4 py-2.5 text-center space-x-2">
-                            <button onclick="requestEditNoteAuth('${note.id}')" class="text-blue-500 hover:text-blue-400 p-1" title="Sửa ghi chú"><i class="fa-solid fa-pen"></i></button>
-                            <button onclick="requestDeleteNoteAuth('${note.id}')" class="text-rose-500 hover:text-rose-400 p-1" title="Xóa ghi chú"><i class="fa-solid fa-trash"></i></button>
+                            <button onclick="requestEditNoteAuth('${safeId}')" class="text-blue-500 hover:text-blue-400 p-1.5 hover:bg-blue-500/10 rounded-lg transition" title="Sửa ghi chú"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="requestDeleteNoteAuth('${safeId}')" class="text-rose-500 hover:text-rose-400 p-1.5 hover:bg-rose-500/10 rounded-lg transition" title="Xóa ghi chú"><i class="fa-solid fa-trash"></i></button>
                         </td>
                     </tr>
                 `;
@@ -1322,8 +1335,12 @@
         }
 
         function editNoteDirect(id) {
-            const note = notesDatabase.find(n => n.id === id);
-            if (!note) return;
+            // So sánh String an toàn
+            const note = notesDatabase.find(n => String(n.id) === String(id));
+            if (!note) {
+                alert('Không tìm thấy ghi chú tương ứng!');
+                return;
+            }
             document.getElementById('note-id').value = note.id;
             document.getElementById('note-modal-title').innerHTML = '<i class="fa-solid fa-pen text-amber-500"></i><span>Sửa Ghi Chú Hoạt Động</span>';
             document.getElementById('note-modal-period').value = note.period;
@@ -1341,7 +1358,7 @@
             if (!title || !content) return alert('Vui lòng nhập đầy đủ tiêu đề và nội dung ghi chú!');
 
             if (id) {
-                const idx = notesDatabase.findIndex(n => n.id === id);
+                const idx = notesDatabase.findIndex(n => String(n.id) === String(id));
                 if (idx >= 0) {
                     notesDatabase[idx].period = period;
                     notesDatabase[idx].title = title;
@@ -1349,7 +1366,7 @@
                 }
             } else {
                 notesDatabase.push({
-                    id: 'n_' + Date.now(),
+                    id: 'note_' + Date.now(),
                     period,
                     title,
                     content,
@@ -1360,16 +1377,19 @@
             await syncDatabaseToSupabase();
             closeNoteModal();
             renderNotesTable();
+            alert('Đã lưu ghi chú thành công!');
         }
 
         async function deleteNoteDirect(id) {
             if (!confirm('Bạn có chắc chắn muốn xóa bản ghi chú này?')) return;
-            notesDatabase = notesDatabase.filter(n => n.id !== id);
+            // Lọc an toàn bằng String
+            notesDatabase = notesDatabase.filter(n => String(n.id) !== String(id));
             await syncDatabaseToSupabase();
             renderNotesTable();
+            alert('Đã xóa ghi chú thành công!');
         }
 
-        // HÀM ĐỌC EXCEL - BẢO TOÀN DỮ LIỆU & TỰ ĐỘNG CHUYỂN VỀ TUẦN GẦN NHẤT SAU KHI NẠP
+        // HÀM ĐỌC EXCEL - BẢO TOÀN DỮ LIỆU & TỰ ĐỘNG CHUYỂN VỀ TUẦN GẦN NHẤT SAU KHI NẠP[cite: 1]
         async function processExcelFile(file) {
             try {
                 const safeName = `CSKH_${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
@@ -1528,7 +1548,7 @@
                             });
                         }
 
-                        // GỘP BẢO TOÀN DỮ LIỆU
+                        // GỘP BẢO TOÀN DỮ LIỆU[cite: 1]
                         let mergedMap = {};
                         masterDatabase.forEach(item => {
                             mergedMap[item.period] = item;
