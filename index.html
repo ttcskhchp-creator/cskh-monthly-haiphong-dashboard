@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Vận Hành CSKH - Cảng Hải Phòng</title>
+    <title>TT Khai Thác & Dịch Vụ Khách Hàng - Cảng Hải Phòng</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -12,9 +12,8 @@
             theme: {
                 extend: {
                     colors: {
-                        darkBg: '#0b0f19',
-                        cardBgDark: 'rgba(30, 41, 59, 0.7)',
-                        cardBgLight: 'rgba(255, 255, 255, 0.85)',
+                        darkBg: '#090d16',
+                        darkCard: 'rgba(20, 27, 45, 0.75)',
                     }
                 }
             }
@@ -30,356 +29,357 @@
         .glass-panel {
             backdrop-filter: blur(14px);
             -webkit-backdrop-filter: blur(14px);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.3s ease;
         }
         .dark .glass-panel {
-            background: rgba(22, 30, 46, 0.75);
+            background: rgba(18, 24, 40, 0.8);
             border: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.36);
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.4);
         }
         html:not(.dark) .glass-panel {
-            background: rgba(255, 255, 255, 0.85);
-            border: 1px solid rgba(226, 232, 240, 0.8);
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
         }
         .glass-input {
-            transition: border-color 0.2s, background-color 0.2s;
+            transition: all 0.2s;
         }
         .dark .glass-input {
-            background: rgba(15, 23, 42, 0.75);
+            background: rgba(11, 15, 25, 0.8);
             border: 1px solid rgba(255, 255, 255, 0.12);
             color: #f1f5f9;
         }
         html:not(.dark) .glass-input {
-            background: rgba(248, 250, 252, 0.9);
+            background: #ffffff;
             border: 1px solid #cbd5e1;
             color: #0f172a;
         }
         .glass-input:focus {
             border-color: #3b82f6;
             outline: none;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
         }
-        @keyframes float-icon {
-            0%, 100% { transform: translateY(0px) rotate(0deg); }
-            50% { transform: translateY(-4px) rotate(4deg); }
-        }
-        .animate-float {
-            animation: float-icon 3s ease-in-out infinite;
-        }
+        /* Custom scrollbar */
         ::-webkit-scrollbar { width: 5px; height: 5px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #64748b; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+        .notes-scroll-container {
+            max-height: 290px; /* Cố định hiển thị 5 dòng, vượt quá tự có thanh cuộn */
+            overflow-y: auto;
+        }
     </style>
 </head>
 <body class="bg-slate-50 dark:bg-darkBg text-slate-800 dark:text-slate-100 min-h-screen font-sans selection:bg-blue-500 selection:text-white transition-colors duration-300">
 
-    <!-- Top Sticky Header -->
-    <header class="glass-panel sticky top-0 z-50 px-4 lg:px-6 py-3 border-b dark:border-slate-800 border-slate-200">
+    <!-- Header Chuẩn Thương Hiệu -->
+    <header class="glass-panel sticky top-0 z-50 px-4 lg:px-6 py-2.5 border-b dark:border-slate-800 border-slate-200">
         <div class="flex items-center justify-between flex-wrap gap-3">
             
-            <!-- Left: Logo & Port Title -->
+            <!-- Logo & Title Thống Nhất Theo Ảnh Mẫu -->
             <div class="flex items-center space-x-3">
-                <div class="relative p-2.5 bg-gradient-to-tr from-blue-600 to-indigo-500 rounded-2xl text-white shadow-lg shadow-blue-500/30">
-                    <i class="fa-solid fa-ship text-lg animate-float"></i>
-                    <span class="absolute -top-1 -right-1 flex h-3 w-3">
-                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                        <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-                    </span>
+                <div class="p-2 sm:p-2.5 bg-gradient-to-tr from-blue-600/30 to-indigo-600/30 border-2 border-blue-500/50 rounded-2xl text-blue-400 shadow-md flex items-center justify-center">
+                    <i class="fa-solid fa-anchor text-xl text-blue-400 animate-pulse"></i>
                 </div>
                 <div>
                     <div class="flex items-center space-x-2">
-                        <h1 class="text-base sm:text-lg font-extrabold tracking-tight bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-500 dark:from-blue-400 dark:via-indigo-300 dark:to-cyan-300 bg-clip-text text-transparent">
-                            CSKH CẢNG HẢI PHÒNG
+                        <h1 class="text-sm sm:text-base md:text-lg font-black tracking-tight uppercase text-slate-900 dark:text-white">
+                            TT KHAI THÁC & DỊCH VỤ KHÁCH HÀNG
                         </h1>
-                        <span class="px-2 py-0.5 text-[10px] rounded-full bg-blue-500/10 dark:bg-blue-400/10 text-blue-600 dark:text-blue-300 border border-blue-500/20 font-bold flex items-center gap-1">
-                            <i class="fa-solid fa-sparkles text-amber-400 fa-beat"></i> Live KPI
+                        <span class="px-2 py-0.5 text-[10px] sm:text-xs rounded-full bg-blue-500/20 text-blue-500 dark:text-blue-300 border border-blue-500/30 font-semibold whitespace-nowrap">
+                            Cảng Hải Phòng
                         </span>
                     </div>
-                    <p class="text-[11px] font-medium text-slate-500 dark:text-slate-400 hidden sm:block">Trung tâm Khai thác và Dịch vụ khách hàng</p>
+                    <div class="flex items-center space-x-1.5 text-[10px] sm:text-[11px] font-bold tracking-wider text-blue-500 dark:text-blue-400">
+                        <span>OPERATIONS & CUSTOMER SERVICE CENTER</span>
+                        <span class="text-slate-400">•</span>
+                        <a href="https://haiphongport.com.vn" target="_blank" class="text-slate-500 dark:text-slate-400 hover:text-blue-400 transition flex items-center gap-1 font-normal">
+                            haiphongport.com.vn <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
+                        </a>
+                    </div>
                 </div>
             </div>
 
-            <!-- Right: Quick Actions (Upload, Export, Theme, Collapse Menu) -->
+            <!-- Thao tác Nhanh & Theme/Menu toggle -->
             <div class="flex items-center flex-wrap gap-2">
                 <!-- Supabase Cloud Status -->
-                <div id="cloud-status" class="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold">
-                    <i class="fa-solid fa-cloud-bolt fa-fade text-emerald-500"></i>
+                <div id="cloud-status" class="hidden sm:flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 dark:text-emerald-400 text-xs font-semibold">
+                    <i class="fa-solid fa-cloud-bolt text-emerald-500 animate-pulse"></i>
                     <span id="status-text">Đang kết nối Cloud...</span>
                 </div>
 
-                <!-- Nạp File Excel (Hỗ trợ cả file 1 tuần và nhiều tuần) -->
-                <label class="cursor-pointer px-3.5 py-1.5 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white text-xs font-semibold rounded-xl shadow-md shadow-blue-500/20 transition flex items-center space-x-2">
-                    <i class="fa-solid fa-file-excel fa-beat-fade" style="--fa-beat-fade-opacity: 0.5; --fa-beat-fade-scale: 1.15;"></i>
+                <!-- Nạp File Excel (Có mã bảo mật ẩn) -->
+                <button onclick="requestUploadAuth()" class="px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold rounded-xl shadow-md shadow-blue-500/20 transition flex items-center space-x-1.5">
+                    <i class="fa-solid fa-file-excel fa-bounce" style="--fa-bounce-height: 3px;"></i>
                     <span>Nạp Excel (Đơn / Đa tuần)</span>
-                    <input type="file" id="excel-file-input" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleExcelUpload(event)">
-                </label>
+                </button>
+                <input type="file" id="excel-file-input" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleExcelUpload(event)">
 
                 <!-- Xuất Excel Backup -->
-                <button onclick="exportDatabase()" class="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-xl transition flex items-center space-x-1.5">
+                <button onclick="exportDatabase()" class="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl transition flex items-center space-x-1.5">
                     <i class="fa-solid fa-cloud-arrow-down text-blue-500 dark:text-blue-400"></i>
                     <span class="hidden md:inline">Xuất Backup</span>
                 </button>
 
-                <!-- Nút chuyển Sáng/Tối (Light/Dark Toggle) -->
-                <button onclick="toggleDarkMode()" id="theme-toggle-btn" class="p-2 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-amber-500 dark:text-amber-300 text-sm transition" title="Chuyển chế độ Sáng / Tối">
+                <!-- Nút chuyển Sáng/Tối -->
+                <button onclick="toggleDarkMode()" class="p-2 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-amber-500 dark:text-amber-300 text-xs transition" title="Chuyển chế độ Sáng/Tối">
                     <i class="fa-solid fa-moon dark:hidden"></i>
-                    <i class="fa-solid fa-sun hidden dark:inline fa-spin-pulse" style="--fa-animation-duration: 12s;"></i>
+                    <i class="fa-solid fa-sun hidden dark:inline fa-spin" style="--fa-animation-duration: 15s;"></i>
                 </button>
 
-                <!-- Nút thu gọn / mở rộng menu chính để tiết kiệm không gian -->
-                <button onclick="toggleControlsBar()" class="p-2 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-sm transition" title="Thu gọn / Mở rộng bộ lọc">
+                <!-- Nút thu gọn / mở rộng menu chính -->
+                <button onclick="toggleControlsBar()" class="p-2 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs transition" title="Thu gọn / Mở rộng bộ lọc">
                     <i id="collapse-chevron" class="fa-solid fa-chevron-up"></i>
                 </button>
             </div>
         </div>
 
-        <!-- Collapsible Control Filter Bar -->
-        <div id="controls-bar" class="mt-3 pt-3 border-t dark:border-slate-800/80 border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs transition-all duration-300 overflow-hidden">
-            <div class="flex flex-wrap items-center gap-2.5">
+        <!-- Bộ Lọc Tuần Thu Gọn Tiết Kiệm Không Gian -->
+        <div id="controls-bar" class="mt-2.5 pt-2.5 border-t dark:border-slate-800 border-slate-200 flex flex-wrap items-center justify-between gap-2.5 text-xs transition-all duration-300">
+            <div class="flex flex-wrap items-center gap-2">
                 <span class="font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                    <i class="fa-solid fa-calendar-check text-blue-500 fa-bounce" style="--fa-bounce-height: 4px;"></i> Kỳ hiển thị:
+                    <i class="fa-solid fa-calendar-week text-blue-500"></i> Kỳ báo cáo:
                 </span>
-                <div class="flex items-center space-x-1.5">
-                    <span class="text-slate-500 dark:text-slate-400">Từ</span>
-                    <select id="filter-start-week" onchange="applyWeekFilter()" class="glass-input rounded-lg px-2.5 py-1 font-semibold text-xs"></select>
-                    <span class="text-slate-500 dark:text-slate-400">đến</span>
-                    <select id="filter-end-week" onchange="applyWeekFilter()" class="glass-input rounded-lg px-2.5 py-1 font-semibold text-xs"></select>
+                <div class="flex items-center space-x-1">
+                    <span class="text-slate-400">Từ</span>
+                    <select id="filter-start-week" onchange="applyWeekFilter()" class="glass-input rounded-lg px-2 py-1 font-semibold text-xs"></select>
+                    <span class="text-slate-400">đến</span>
+                    <select id="filter-end-week" onchange="applyWeekFilter()" class="glass-input rounded-lg px-2 py-1 font-semibold text-xs"></select>
                 </div>
                 <div id="filter-date-badge" class="px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-300 font-medium text-xs">
                     --
                 </div>
             </div>
 
-            <div class="flex items-center space-x-2">
-                <button onclick="setQuickWeekFilter(4)" class="px-2.5 py-1 rounded-lg bg-slate-200 dark:bg-slate-800 hover:bg-blue-600 hover:text-white transition font-medium">4 tuần</button>
-                <button onclick="setQuickWeekFilter(7)" class="px-2.5 py-1 rounded-lg bg-blue-600 text-white transition font-semibold shadow-sm">7 tuần gần nhất</button>
-                <button onclick="setQuickWeekFilter('all')" class="px-2.5 py-1 rounded-lg bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 transition font-medium">Tất cả</button>
-                <button onclick="openDeleteModal()" class="px-2.5 py-1 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-600 dark:text-rose-400 rounded-lg transition font-semibold flex items-center gap-1">
-                    <i class="fa-solid fa-trash-can fa-shake" style="--fa-animation-duration: 3s;"></i> Quản lý xóa
+            <div class="flex items-center space-x-1.5">
+                <button onclick="setQuickWeekFilter(4)" class="px-2.5 py-1 rounded-lg bg-slate-200 dark:bg-slate-800 hover:bg-blue-600 hover:text-white transition font-semibold">4 tuần</button>
+                <button onclick="setQuickWeekFilter(7)" class="px-2.5 py-1 rounded-lg bg-blue-600 text-white transition font-bold shadow-sm">7 tuần gần nhất</button>
+                <button onclick="setQuickWeekFilter('all')" class="px-2.5 py-1 rounded-lg bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 transition font-semibold">Tất cả</button>
+                <button onclick="openDeleteModal()" class="px-2.5 py-1 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-600 dark:text-rose-400 rounded-lg transition font-bold flex items-center gap-1">
+                    <i class="fa-solid fa-trash-can fa-shake" style="--fa-animation-duration: 3s;"></i> Xóa tuần
                 </button>
             </div>
         </div>
     </header>
 
     <!-- Main Container -->
-    <main class="p-4 lg:p-6 max-w-[1750px] mx-auto space-y-5">
+    <main class="p-3 sm:p-5 max-w-[1750px] mx-auto space-y-4">
 
-        <!-- 4 KPI Summary Cards Grid -->
-        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            
-            <!-- CRM Requests -->
-            <div class="glass-panel rounded-2xl p-4 relative overflow-hidden group hover:scale-[1.01] transition-transform">
+        <!-- 4 KPI Cards Grid -->
+        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <!-- CRM -->
+            <div class="glass-panel rounded-2xl p-3.5 sm:p-4 relative overflow-hidden">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                            <i class="fa-solid fa-headset text-blue-500 fa-shake" style="--fa-animation-duration: 4s;"></i> Tổng Yêu Cầu CRM
+                            <i class="fa-solid fa-headset text-blue-500 fa-beat"></i> Tổng Yêu Cầu CRM
                         </p>
-                        <h3 id="kpi-crm" class="text-2xl font-black text-slate-900 dark:text-white mt-1">--</h3>
+                        <h3 id="kpi-crm" class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1">--</h3>
                     </div>
-                    <div class="p-3 bg-blue-500/15 border border-blue-500/25 rounded-2xl text-blue-500">
-                        <i class="fa-solid fa-chart-line-up text-xl animate-pulse"></i>
+                    <div class="p-2.5 bg-blue-500/15 border border-blue-500/25 rounded-xl text-blue-500">
+                        <i class="fa-solid fa-chart-line text-lg animate-pulse"></i>
                     </div>
                 </div>
-                <div class="mt-3 flex items-center justify-between text-xs font-semibold text-blue-600 dark:text-blue-300 pt-2 border-t border-slate-200 dark:border-slate-800/80">
-                    <span id="kpi-crm-avg"><i class="fa-solid fa-calculator mr-1"></i>TB/tuần: --</span>
-                    <span class="text-[11px] bg-blue-500/10 px-2 py-0.5 rounded-full font-bold">14 nhóm mục</span>
+                <div class="mt-2.5 flex items-center justify-between text-xs font-semibold text-blue-600 dark:text-blue-300 pt-2 border-t border-slate-200 dark:border-slate-800">
+                    <span id="kpi-crm-avg">TB: --/tuần</span>
+                    <span class="text-[11px] bg-blue-500/10 px-2 py-0.5 rounded-full">14 nhóm mục</span>
                 </div>
             </div>
 
-            <!-- Zalo Messages -->
-            <div class="glass-panel rounded-2xl p-4 relative overflow-hidden group hover:scale-[1.01] transition-transform">
+            <!-- Zalo Msg -->
+            <div class="glass-panel rounded-2xl p-3.5 sm:p-4 relative overflow-hidden">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                            <i class="fa-solid fa-comment-dots text-indigo-500 fa-bounce" style="--fa-bounce-height: 4px;"></i> Tin Nhắn Zalo CSKH
+                            <i class="fa-solid fa-comments text-indigo-500 fa-bounce" style="--fa-bounce-height: 3px;"></i> Tin Nhắn Zalo CSKH
                         </p>
-                        <h3 id="kpi-zalo" class="text-2xl font-black text-slate-900 dark:text-white mt-1">--</h3>
+                        <h3 id="kpi-zalo" class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1">--</h3>
                     </div>
-                    <div class="p-3 bg-indigo-500/15 border border-indigo-500/25 rounded-2xl text-indigo-500">
-                        <i class="fa-brands fa-rocketchat text-xl animate-float"></i>
+                    <div class="p-2.5 bg-indigo-500/15 border border-indigo-500/25 rounded-xl text-indigo-500">
+                        <i class="fa-brands fa-rocketchat text-lg animate-pulse"></i>
                     </div>
                 </div>
-                <div class="mt-3 flex items-center justify-between text-xs font-semibold pt-2 border-t border-slate-200 dark:border-slate-800/80">
+                <div class="mt-2.5 flex items-center justify-between text-xs font-semibold pt-2 border-t border-slate-200 dark:border-slate-800">
                     <span id="kpi-zalo-avg" class="text-indigo-600 dark:text-indigo-300">TB: -- tin/tuần</span>
                     <span id="kpi-zalo-rate" class="text-emerald-500 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full">Tỷ lệ PH: --%</span>
                 </div>
             </div>
 
-            <!-- Call Center Calls -->
-            <div class="glass-panel rounded-2xl p-4 relative overflow-hidden group hover:scale-[1.01] transition-transform">
+            <!-- Call Center -->
+            <div class="glass-panel rounded-2xl p-3.5 sm:p-4 relative overflow-hidden">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                            <i class="fa-solid fa-phone-volume text-amber-500 fa-beat"></i> Cuộc Gọi Tổng Đài
+                            <i class="fa-solid fa-phone-volume text-amber-500 fa-shake"></i> Cuộc Gọi Tổng Đài
                         </p>
-                        <h3 id="kpi-calls" class="text-2xl font-black text-slate-900 dark:text-white mt-1">--</h3>
+                        <h3 id="kpi-calls" class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1">--</h3>
                     </div>
-                    <div class="p-3 bg-amber-500/15 border border-amber-500/25 rounded-2xl text-amber-500">
-                        <i class="fa-solid fa-square-phone text-xl fa-shake"></i>
+                    <div class="p-2.5 bg-amber-500/15 border border-amber-500/25 rounded-xl text-amber-500">
+                        <i class="fa-solid fa-square-phone text-lg"></i>
                     </div>
                 </div>
-                <div class="mt-3 flex items-center justify-between text-xs font-semibold pt-2 border-t border-slate-200 dark:border-slate-800/80">
+                <div class="mt-2.5 flex items-center justify-between text-xs font-semibold pt-2 border-t border-slate-200 dark:border-slate-800">
                     <span id="kpi-talk-avg" class="text-amber-600 dark:text-amber-400">TG thoại: --s</span>
                     <span id="kpi-missed" class="text-rose-500 font-bold bg-rose-500/10 px-2 py-0.5 rounded-full">Cuộc lỡ: --</span>
                 </div>
             </div>
 
-            <!-- Customer Survey -->
-            <div class="glass-panel rounded-2xl p-4 relative overflow-hidden group hover:scale-[1.01] transition-transform">
+            <!-- Survey -->
+            <div class="glass-panel rounded-2xl p-3.5 sm:p-4 relative overflow-hidden">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-xs font-semibold text-purple-600 dark:text-purple-300 flex items-center gap-1.5">
-                            <i class="fa-solid fa-star text-amber-400 fa-spin-slow"></i> Khảo Sát (Web / App)
+                            <i class="fa-solid fa-star text-amber-400"></i> Khảo Sát (Web / App)
                         </p>
-                        <h3 id="kpi-survey-ratio" class="text-lg font-black text-slate-900 dark:text-white mt-1">0 lượt / 0 lượt</h3>
+                        <h3 id="kpi-survey-ratio" class="text-lg sm:text-xl font-black text-slate-900 dark:text-white mt-1">0 lượt / 0 lượt</h3>
                     </div>
-                    <div class="p-3 bg-purple-500/15 border border-purple-500/25 rounded-2xl text-purple-500">
-                        <i class="fa-solid fa-award text-xl animate-pulse"></i>
+                    <div class="p-2.5 bg-purple-500/15 border border-purple-500/25 rounded-xl text-purple-500">
+                        <i class="fa-solid fa-award text-lg animate-pulse"></i>
                     </div>
                 </div>
-                <div class="mt-3 flex items-center justify-between text-xs font-semibold pt-2 border-t border-slate-200 dark:border-slate-800/80">
+                <div class="mt-2.5 flex items-center justify-between text-xs font-semibold pt-2 border-t border-slate-200 dark:border-slate-800">
                     <span id="kpi-survey-web" class="text-blue-500">Web: 0/50</span>
                     <span id="kpi-survey-app" class="text-purple-500">App: 0/50</span>
                 </div>
             </div>
         </section>
 
-        <!-- Charts Section 1: Trend line + Donut Top Issues -->
-        <section class="grid grid-cols-1 lg:grid-cols-3 gap-5">
-            <div class="glass-panel rounded-2xl p-4 sm:p-5 lg:col-span-2 flex flex-col justify-between">
-                <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <!-- Charts Section 1: Trend line & Top Issues -->
+        <section class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div class="glass-panel rounded-2xl p-4 lg:col-span-2 flex flex-col justify-between">
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
                     <div>
-                        <h2 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                        <h2 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
                             <i class="fa-solid fa-chart-line text-blue-500"></i>
                             <span>Xu Hướng Tiếp Nhận CSKH (CRM, Zalo, Tổng Đài)</span>
                         </h2>
-                        <p class="text-[11px] text-slate-500 dark:text-slate-400">Theo dõi sự tăng trưởng và tương quan theo chuỗi tuần</p>
+                        <p class="text-[11px] text-slate-400">Theo dõi số lượng theo tuần</p>
                     </div>
-                    <select id="chart1-mode" onchange="renderTrendChart()" class="glass-input text-xs rounded-xl px-3 py-1.5 font-medium">
-                        <option value="line" selected>Dạng Đường Đồng Bộ (Line)</option>
-                        <option value="bar">Dạng Cột Nhóm (Bar)</option>
-                        <option value="stacked">Dạng Cột Chồng (Stacked)</option>
+                    <select id="chart1-mode" onchange="renderTrendChart()" class="glass-input text-xs rounded-xl px-2.5 py-1 font-semibold">
+                        <option value="line" selected>Dạng Đường (Line)</option>
+                        <option value="bar">Dạng Cột (Bar)</option>
+                        <option value="stacked">Dạng Cột Chồng</option>
                     </select>
                 </div>
-                <div class="relative h-[270px] w-full">
+                <div class="relative h-[250px] w-full">
                     <canvas id="trendChart"></canvas>
                 </div>
             </div>
 
-            <!-- Donut Chart Top Issues -->
-            <div class="glass-panel rounded-2xl p-4 sm:p-5 flex flex-col justify-between">
-                <div class="flex items-center justify-between mb-3">
+            <!-- Donut Top Issues -->
+            <div class="glass-panel rounded-2xl p-4 flex flex-col justify-between">
+                <div class="flex items-center justify-between mb-2">
                     <div>
-                        <h2 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                            <i class="fa-solid fa-pie-chart text-emerald-500 fa-spin-slow"></i>
-                            <span>Phân Bổ Vấn Đề Tiếp Nhận</span>
+                        <h2 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                            <i class="fa-solid fa-chart-pie text-emerald-500"></i>
+                            <span>Phân Bổ Vấn Đề</span>
                         </h2>
-                        <p class="text-[11px] text-slate-500 dark:text-slate-400">Top vấn đề khách hàng thắc mắc</p>
+                        <p class="text-[11px] text-slate-400">Tỷ lệ theo bộ lọc</p>
                     </div>
-                    <select id="donut-filter" onchange="renderDonutChart()" class="glass-input text-xs rounded-xl px-2 py-1 font-medium">
+                    <select id="donut-filter" onchange="renderDonutChart()" class="glass-input text-xs rounded-xl px-2 py-1 font-semibold">
                         <option value="3">Top 3</option>
                         <option value="5" selected>Top 5</option>
                         <option value="7">Top 7</option>
-                        <option value="all">Tất cả (14)</option>
+                        <option value="all">Tất cả</option>
                     </select>
                 </div>
-                <div class="relative h-[200px] w-full flex items-center justify-center">
+                <div class="relative h-[180px] w-full flex items-center justify-center">
                     <canvas id="issueDonutChart"></canvas>
                 </div>
-                <div id="donut-legend" class="mt-2 grid grid-cols-2 gap-1 text-[11px] max-h-[70px] overflow-y-auto"></div>
+                <div id="donut-legend" class="mt-2 grid grid-cols-2 gap-1 text-[11px] max-h-[60px] overflow-y-auto"></div>
             </div>
         </section>
 
-        <!-- Section 2: Branch Comparison (Tân Vũ vs HDCV) + Zalo OA Cards -->
-        <section class="grid grid-cols-1 lg:grid-cols-3 gap-5">
-            <div class="glass-panel rounded-2xl p-4 sm:p-5 lg:col-span-2 flex flex-col justify-between">
-                <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <!-- Charts Section 2: So sánh Tân Vũ - HDCV + Thẻ Zalo OA -->
+        <section class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div class="glass-panel rounded-2xl p-4 lg:col-span-2 flex flex-col justify-between">
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
                     <div>
-                        <h2 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                            <i class="fa-solid fa-buildings text-amber-500"></i>
+                        <h2 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                            <i class="fa-solid fa-building-flag text-amber-500"></i>
                             <span>So Sánh Cuộc Gọi Chi Nhánh (Tân Vũ & HDCV)</span>
                         </h2>
-                        <p class="text-[11px] text-slate-500 dark:text-slate-400">Tỷ trọng cuộc gọi phân phối tại các cảng trực thuộc</p>
+                        <p class="text-[11px] text-slate-400">Hiệu suất cuộc gọi tổng đài giữa 2 cảng</p>
                     </div>
-                    <select id="branch-view-mode" onchange="renderBranchChart()" class="glass-input text-xs rounded-xl px-3 py-1.5 font-medium">
+                    <select id="branch-view-mode" onchange="renderBranchChart()" class="glass-input text-xs rounded-xl px-2.5 py-1 font-semibold">
                         <option value="bar" selected>Cột Song Song</option>
-                        <option value="stacked">Cột Xếp Chồng</option>
+                        <option value="stacked">Cột Chồng</option>
                         <option value="line">Dạng Đường</option>
                     </select>
                 </div>
-                <div class="relative h-[250px] w-full">
+                <div class="relative h-[230px] w-full">
                     <canvas id="branchChart"></canvas>
                 </div>
             </div>
 
-            <!-- Zalo OA Metrics Card -->
-            <div class="glass-panel rounded-2xl p-4 sm:p-5 flex flex-col justify-between space-y-3 relative overflow-hidden">
-                <div class="flex items-center justify-between border-b dark:border-slate-800 border-slate-200 pb-2.5">
-                    <div class="flex items-center space-x-2.5">
-                        <div class="p-2 bg-blue-500/20 text-blue-500 rounded-xl">
-                            <i class="fa-brands fa-whatsapp text-xl"></i>
+            <!-- Thẻ Chỉ Số Kênh Zalo OA -->
+            <div class="glass-panel rounded-2xl p-4 flex flex-col justify-between space-y-2.5 relative overflow-hidden">
+                <div class="flex items-center justify-between border-b dark:border-slate-800 border-slate-200 pb-2">
+                    <div class="flex items-center space-x-2">
+                        <div class="p-1.5 bg-blue-500/20 text-blue-500 rounded-lg">
+                            <i class="fa-brands fa-whatsapp text-lg"></i>
                         </div>
                         <div>
                             <h2 class="text-sm font-bold text-slate-800 dark:text-indigo-300">Kênh Zalo OA</h2>
-                            <p class="text-[10px] text-slate-500 dark:text-slate-400">Hiệu suất vận hành OA</p>
+                            <p class="text-[10px] text-slate-400">Hiệu suất vận hành OA</p>
                         </div>
                     </div>
                     <span class="text-[10px] bg-indigo-500/10 text-indigo-500 border border-indigo-500/20 px-2 py-0.5 rounded-full font-bold">Official Account</span>
                 </div>
 
                 <div class="grid grid-cols-2 gap-2 text-xs">
-                    <div class="col-span-2 bg-gradient-to-r from-blue-600/15 to-indigo-600/15 p-3 rounded-xl border border-indigo-500/20 flex items-center justify-between">
+                    <div class="col-span-2 bg-gradient-to-r from-blue-600/15 to-indigo-600/15 p-2.5 rounded-xl border border-indigo-500/20 flex items-center justify-between">
                         <div>
                             <p class="text-[11px] font-semibold text-slate-500 dark:text-indigo-200">Tổng Người Quan Tâm</p>
                             <h4 id="zalo-total-followers" class="text-xl font-black text-slate-900 dark:text-white mt-0.5">--</h4>
                         </div>
-                        <div class="p-2.5 bg-blue-500/20 rounded-xl text-blue-500">
-                            <i class="fa-solid fa-users text-lg"></i>
+                        <div class="p-2 bg-blue-500/20 rounded-xl text-blue-500">
+                            <i class="fa-solid fa-users text-base"></i>
                         </div>
                     </div>
 
-                    <div class="dark:bg-slate-900/60 bg-slate-100 p-2.5 rounded-xl border dark:border-slate-800 border-slate-200">
-                        <p class="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Quan Tâm Mới</p>
+                    <div class="dark:bg-slate-900/60 bg-slate-100 p-2 rounded-xl border dark:border-slate-800 border-slate-200">
+                        <p class="text-[10px] text-slate-400 font-medium">Quan Tâm Mới</p>
                         <h4 id="zalo-new-followers" class="text-sm font-bold text-emerald-500 mt-0.5">--</h4>
                     </div>
 
-                    <div class="dark:bg-slate-900/60 bg-slate-100 p-2.5 rounded-xl border dark:border-slate-800 border-slate-200">
-                        <p class="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Tổng Gửi Tin Nhắn</p>
+                    <div class="dark:bg-slate-900/60 bg-slate-100 p-2 rounded-xl border dark:border-slate-800 border-slate-200">
+                        <p class="text-[10px] text-slate-400 font-medium">Tổng Gửi Tin Nhắn</p>
                         <h4 id="zalo-total-sent" class="text-sm font-bold text-indigo-500 mt-0.5">--</h4>
                     </div>
 
-                    <div class="dark:bg-slate-900/60 bg-slate-100 p-2.5 rounded-xl border dark:border-slate-800 border-slate-200">
-                        <p class="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Hài Lòng CSAT</p>
+                    <div class="dark:bg-slate-900/60 bg-slate-100 p-2 rounded-xl border dark:border-slate-800 border-slate-200">
+                        <p class="text-[10px] text-slate-400 font-medium">Hài Lòng CSAT</p>
                         <h4 id="zalo-csat" class="text-sm font-bold text-amber-500 mt-0.5">--%</h4>
                     </div>
 
-                    <div class="dark:bg-slate-900/60 bg-slate-100 p-2.5 rounded-xl border dark:border-slate-800 border-slate-200">
-                        <p class="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Tỷ Lệ Đánh Giá</p>
+                    <div class="dark:bg-slate-900/60 bg-slate-100 p-2 rounded-xl border dark:border-slate-800 border-slate-200">
+                        <p class="text-[10px] text-slate-400 font-medium">Tỷ Lệ Đánh Giá</p>
                         <h4 id="zalo-rating-rate" class="text-sm font-bold text-cyan-500 mt-0.5">--%</h4>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Bảng Ma Trận Chi Tiết 14 Nhóm Vấn Đề -->
-        <section class="glass-panel rounded-2xl p-4 sm:p-5 space-y-3">
+        <!-- Bảng Ma Trận Chi Tiết: Cột Trung Bình (Avg) Nằm Sát Cột Danh Mục -->
+        <section class="glass-panel rounded-2xl p-4 space-y-3">
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                    <h2 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                        <i class="fa-solid fa-table-cells-large text-blue-500"></i>
-                        <span>Bảng Ma Trận Chi Tiết 14 Nhóm Vấn Đề Khách Hàng</span>
+                    <h2 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                        <i class="fa-solid fa-table-cells text-blue-500"></i>
+                        <span>Bảng Ma Trận Chi Tiết Các Vấn Đề Tiếp Nhận</span>
                     </h2>
-                    <p class="text-[11px] text-slate-500 dark:text-slate-400">Đối chiếu chi tiết số lượng phát sinh theo từng tuần và tính toán Trung Bình</p>
+                    <p class="text-[11px] text-slate-400">Cột Trung Bình (Avg) đặt sát cột danh mục để tiện theo dõi nhanh</p>
                 </div>
                 <div class="relative w-full sm:w-64">
                     <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-xs text-slate-400"></i>
-                    <input type="text" id="table-search" oninput="filterTableData()" placeholder="Tìm kiếm nhanh danh mục..." class="glass-input text-xs rounded-xl pl-9 pr-3 py-2 w-full">
+                    <input type="text" id="table-search" oninput="filterTableData()" placeholder="Tìm danh mục vấn đề..." class="glass-input text-xs rounded-xl pl-9 pr-3 py-1.5 w-full">
                 </div>
             </div>
 
             <div class="overflow-x-auto rounded-xl border dark:border-slate-800 border-slate-200 max-h-[460px]">
                 <table id="matrix-table" class="w-full text-left text-xs border-collapse">
-                    <thead id="matrix-thead" class="dark:bg-slate-900/90 bg-slate-100 uppercase tracking-wider sticky top-0 z-20 border-b dark:border-slate-800 border-slate-200">
+                    <thead id="matrix-thead" class="dark:bg-slate-900/90 bg-slate-100 uppercase tracking-wider sticky top-0 z-30 border-b dark:border-slate-800 border-slate-200">
                     </thead>
                     <tbody id="matrix-tbody" class="divide-y dark:divide-slate-800/60 divide-slate-200 dark:bg-slate-900/30 bg-white">
                     </tbody>
@@ -387,35 +387,36 @@
             </div>
         </section>
 
-        <!-- Sổ Tay Ghi Chú & Nhật Ký Vận Hành -->
-        <section class="glass-panel rounded-2xl p-4 sm:p-5 space-y-3">
+        <!-- Sổ Tay Ghi Chú & Nhật Ký Vận Hành (Mới Nhất Đầu Tiên & Scroll khi >5 bản ghi) -->
+        <section class="glass-panel rounded-2xl p-4 space-y-3">
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                    <h2 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                        <i class="fa-solid fa-book-sparkles text-amber-500"></i>
-                        <span>Sổ Tay Ghi Chú & Nhật Ký Vận Hành</span>
+                    <h2 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                        <i class="fa-solid fa-book-bookmark text-amber-500"></i>
+                        <span>Sổ Tay Ghi Chú & Nhật Ký Hoạt Động Vận Hành</span>
                     </h2>
-                    <p class="text-[11px] text-slate-500 dark:text-slate-400">Theo dõi sự kiện bất thường, kế hoạch công tác và các lưu ý nghiệp vụ</p>
+                    <p class="text-[11px] text-slate-400">Lưu trữ các sự cố, kế hoạch và ghi chú vận hành theo từng tuần</p>
                 </div>
                 <div class="flex items-center space-x-2">
-                    <select id="note-period-filter" onchange="renderNotesTable()" class="glass-input text-xs rounded-xl px-3 py-1.5 font-medium">
+                    <select id="note-period-filter" onchange="renderNotesTable()" class="glass-input text-xs rounded-xl px-2.5 py-1.5 font-semibold">
                         <option value="all">Tất cả các tuần</option>
                     </select>
-                    <button onclick="openAddNoteModal()" class="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold rounded-xl transition flex items-center space-x-1.5 shadow-md shadow-amber-500/20">
+                    <button onclick="requestAddNoteAuth()" class="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl transition flex items-center space-x-1.5 shadow-md shadow-amber-500/20">
                         <i class="fa-solid fa-plus"></i>
-                        <span>Thêm Ghi Chú</span>
+                        <span>Thêm Ghi Chú Mới</span>
                     </button>
                 </div>
             </div>
 
-            <div class="overflow-x-auto rounded-xl border dark:border-slate-800 border-slate-200">
+            <!-- Bảng ghi chú với thanh trượt mượt mà khi > 5 bản ghi -->
+            <div class="notes-scroll-container rounded-xl border dark:border-slate-800 border-slate-200">
                 <table class="w-full text-left text-xs">
-                    <thead class="dark:bg-slate-900/80 bg-slate-100 text-amber-500 uppercase tracking-wider border-b dark:border-slate-800 border-slate-200">
+                    <thead class="dark:bg-slate-900/95 bg-slate-100 text-amber-500 uppercase tracking-wider sticky top-0 z-20 border-b dark:border-slate-800 border-slate-200">
                         <tr>
                             <th class="px-4 py-2.5 w-24">Tuần / Kỳ</th>
                             <th class="px-4 py-2.5 w-28">Ngày tạo</th>
                             <th class="px-4 py-2.5 w-60">Tiêu đề ghi chú</th>
-                            <th class="px-4 py-2.5">Nội dung chi tiết</th>
+                            <th class="px-4 py-2.5 min-w-[280px]">Nội dung chi tiết</th>
                             <th class="px-4 py-2.5 w-24 text-center">Thao tác</th>
                         </tr>
                     </thead>
@@ -426,11 +427,34 @@
         </section>
     </main>
 
+    <!-- Modal Nhập Mật Khẩu Bảo Vệ (Chỉ nhập ký tự ẩn, không hiện mã ra ngoài) -->
+    <div id="auth-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm hidden p-4">
+        <div class="glass-panel rounded-2xl p-5 w-full max-w-sm border border-blue-500/30 space-y-4 shadow-2xl dark:bg-slate-900 bg-white">
+            <div class="flex items-center space-x-3 text-blue-500">
+                <div class="p-2.5 bg-blue-500/15 rounded-xl border border-blue-500/20">
+                    <i class="fa-solid fa-lock text-xl"></i>
+                </div>
+                <div>
+                    <h3 id="auth-modal-title" class="text-sm font-bold text-slate-800 dark:text-slate-100">Xác Thực Quản Trị</h3>
+                    <p class="text-xs text-slate-400">Nhập mã PIN để cấp quyền thao tác</p>
+                </div>
+            </div>
+            <div>
+                <input type="password" id="auth-passcode" class="glass-input text-sm rounded-xl px-3 py-2 w-full text-center tracking-widest font-mono" placeholder="••••" maxlength="10">
+                <p id="auth-error-msg" class="text-[11px] text-rose-500 mt-1.5 hidden text-center font-medium">Mã PIN xác thực không chính xác!</p>
+            </div>
+            <div class="flex items-center justify-end space-x-2 pt-1">
+                <button onclick="closeAuthModal()" class="px-3.5 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 font-semibold text-xs transition">Hủy</button>
+                <button onclick="submitAuthModal()" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow transition">Xác Nhận</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal Thêm/Sửa Ghi Chú -->
     <div id="note-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm hidden p-4">
         <div class="glass-panel rounded-2xl p-5 w-full max-w-lg border border-amber-500/30 space-y-4 shadow-2xl dark:bg-slate-900 bg-white">
             <div class="flex items-center justify-between">
-                <h3 id="note-modal-title" class="text-sm font-bold flex items-center gap-2">
+                <h3 id="note-modal-title" class="text-sm font-bold flex items-center gap-2 text-slate-800 dark:text-slate-100">
                     <i class="fa-solid fa-pen-nib text-amber-500"></i> Ghi Chú Hoạt Động
                 </h3>
                 <button onclick="closeNoteModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><i class="fa-solid fa-xmark text-lg"></i></button>
@@ -439,20 +463,20 @@
             <div class="space-y-3">
                 <div>
                     <label class="block text-xs font-semibold mb-1">Chọn Tuần / Kỳ liên quan:</label>
-                    <select id="note-modal-period" class="glass-input text-xs rounded-xl px-3 py-2 w-full"></select>
+                    <select id="note-modal-period" class="glass-input text-xs rounded-xl px-3 py-2 w-full font-semibold"></select>
                 </div>
                 <div>
                     <label class="block text-xs font-semibold mb-1">Tiêu đề ghi chú:</label>
-                    <input type="text" id="note-modal-title-input" class="glass-input text-xs rounded-xl px-3 py-2 w-full" placeholder="Ví dụ: Lỗi cổng Smartgate ngày 15/10...">
+                    <input type="text" id="note-modal-title-input" class="glass-input text-xs rounded-xl px-3 py-2 w-full" placeholder="Nhập tiêu đề tóm tắt...">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold mb-1">Nội dung chi tiết:</label>
-                    <textarea id="note-modal-content" rows="4" class="glass-input text-xs rounded-xl p-3 w-full" placeholder="Nhập tóm tắt sự kiện hoặc chỉ đạo công việc..."></textarea>
+                    <textarea id="note-modal-content" rows="4" class="glass-input text-xs rounded-xl p-3 w-full" placeholder="Nhập nội dung ghi chú vận hành..."></textarea>
                 </div>
             </div>
             <div class="flex items-center justify-end space-x-2 pt-2">
                 <button onclick="closeNoteModal()" class="px-3.5 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 font-semibold text-xs transition">Hủy</button>
-                <button onclick="saveNoteRecord()" class="px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-white font-semibold text-xs rounded-xl shadow transition">Lưu Ghi Chú</button>
+                <button onclick="saveNoteRecord()" class="px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-xl shadow transition">Lưu Ghi Chú</button>
             </div>
         </div>
     </div>
@@ -466,7 +490,7 @@
                 </div>
                 <div>
                     <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100">Xác Nhận Xóa Dữ Liệu</h3>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">Chọn khoảng tuần cần xóa và nhập mật khẩu</p>
+                    <p class="text-xs text-slate-400">Chọn khoảng tuần cần xóa và nhập mã xác thực</p>
                 </div>
             </div>
             
@@ -482,14 +506,14 @@
                     </div>
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold mb-1">Mật khẩu bảo mật (6868):</label>
-                    <input type="password" id="delete-passcode" class="glass-input text-xs rounded-xl px-3 py-2 w-full" placeholder="Nhập mã bảo mật...">
+                    <label class="block text-xs font-semibold mb-1">Mã xác thực quản trị:</label>
+                    <input type="password" id="delete-passcode" class="glass-input text-xs rounded-xl px-3 py-2 w-full text-center tracking-widest font-mono" placeholder="••••">
                 </div>
             </div>
 
             <div class="flex items-center justify-end space-x-2 pt-2">
                 <button onclick="closeDeleteModal()" class="px-3.5 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 font-semibold text-xs transition">Hủy</button>
-                <button onclick="executeDeleteRecord()" class="px-4 py-1.5 bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs rounded-xl shadow transition">Xác Nhận Xóa</button>
+                <button onclick="executeDeleteRecord()" class="px-4 py-1.5 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl shadow transition">Xác Nhận Xóa</button>
             </div>
         </div>
     </div>
@@ -500,6 +524,7 @@
         const SUPABASE_KEY = "sb_publishable_wK5FXrtBK7qPdmJ5fS1aag_gJ3Gdv3G";
         const SUPABASE_TABLE_URL = `${SUPABASE_URL}/rest/v1/cskh_monthly_records`;
         const BUCKET_NAME = "cskh-excel-files";
+        const MASTER_PIN = "6868"; // Mã bảo mật ẩn
 
         const STANDARD_14_ISSUES = [
             "Thông tin liên hệ, Mã số thuế",
@@ -524,6 +549,7 @@
         let trendChartInstance = null;
         let donutChartInstance = null;
         let branchChartInstance = null;
+        let pendingAction = null;
 
         // Quản lý Dark/Light Theme
         function initTheme() {
@@ -554,15 +580,74 @@
             }
         }
 
-        // Tính ngày chuẩn theo mốc W42: 11/10/2026 -> 17/10/2026
+        // Xác thực bảo mật ẩn (Không hiện mật khẩu cho người xem)
+        function promptAuth(actionCallback, titleText = "Xác Thực Quản Trị") {
+            pendingAction = actionCallback;
+            document.getElementById('auth-modal-title').innerText = titleText;
+            document.getElementById('auth-passcode').value = '';
+            document.getElementById('auth-error-msg').classList.add('hidden');
+            document.getElementById('auth-modal').classList.remove('hidden');
+            setTimeout(() => document.getElementById('auth-passcode').focus(), 150);
+        }
+
+        function closeAuthModal() {
+            document.getElementById('auth-modal').classList.add('hidden');
+            pendingAction = null;
+        }
+
+        function submitAuthModal() {
+            const pin = document.getElementById('auth-passcode').value.trim();
+            if (pin === MASTER_PIN) {
+                closeAuthModal();
+                if (typeof pendingAction === 'function') {
+                    pendingAction();
+                }
+            } else {
+                document.getElementById('auth-error-msg').classList.remove('hidden');
+                document.getElementById('auth-passcode').value = '';
+                document.getElementById('auth-passcode').focus();
+            }
+        }
+
+        document.getElementById('auth-passcode').addEventListener('keyup', (e) => {
+            if (e.key === 'Enter') submitAuthModal();
+        });
+
+        // Bảo vệ thao tác nạp Excel
+        function requestUploadAuth() {
+            promptAuth(() => {
+                document.getElementById('excel-file-input').click();
+            }, "Xác Thực Nạp File Excel");
+        }
+
+        // Bảo vệ thao tác thêm ghi chú
+        function requestAddNoteAuth() {
+            promptAuth(() => {
+                openAddNoteModalDirect();
+            }, "Xác Thực Thêm Ghi Chú");
+        }
+
+        // Bảo vệ thao tác sửa ghi chú
+        function requestEditNoteAuth(id) {
+            promptAuth(() => {
+                editNoteDirect(id);
+            }, "Xác Thực Sửa Ghi Chú");
+        }
+
+        // Bảo vệ thao tác xóa ghi chú
+        function requestDeleteNoteAuth(id) {
+            promptAuth(() => {
+                deleteNoteDirect(id);
+            }, "Xác Thực Xóa Ghi Chú");
+        }
+
+        // Tính ngày chuẩn theo mốc W42
         function getStartAndEndDateOfWeek(weekNum, year = 2026) {
             const refWeek = 42;
-            const refStartDate = new Date(2026, 9, 11); // Tháng 9 là tháng 10 trong JS Date
-
+            const refStartDate = new Date(2026, 9, 11);
             const diffWeeks = weekNum - refWeek;
             const startDate = new Date(refStartDate);
             startDate.setDate(refStartDate.getDate() + (diffWeeks * 7));
-
             const endDate = new Date(startDate);
             endDate.setDate(startDate.getDate() + 6);
 
@@ -572,11 +657,7 @@
                 const dd = String(d.getDate()).padStart(2, '0');
                 return `${yyyy}-${mm}-${dd}`;
             };
-
-            return {
-                dateStart: formatDate(startDate),
-                dateEnd: formatDate(endDate)
-            };
+            return { dateStart: formatDate(startDate), dateEnd: formatDate(endDate) };
         }
 
         document.addEventListener('DOMContentLoaded', async () => {
@@ -598,7 +679,7 @@
                     if (backupRow && backupRow.payload && backupRow.payload.masterDatabase) {
                         masterDatabase = backupRow.payload.masterDatabase || [];
                         notesDatabase = backupRow.payload.notesDatabase || [];
-                        updateCloudStatus('Đã kết nối Supabase Cloud', 'emerald');
+                        updateCloudStatus('Đã đồng bộ Supabase Cloud', 'emerald');
                     } else {
                         initDefaultData();
                         await syncDatabaseToSupabase();
@@ -613,7 +694,6 @@
                 initDefaultData();
             }
 
-            // Đồng bộ ngày tháng chuẩn cho toàn bộ record
             masterDatabase.forEach(item => {
                 const weekMatch = String(item.period).match(/\d+/);
                 if (weekMatch) {
@@ -655,7 +735,24 @@
                     }
                 }
             ];
-            notesDatabase = [];
+            
+            // Dữ liệu mẫu ghi chú chuẩn theo ảnh
+            notesDatabase = [
+                {
+                    id: 'n_1',
+                    period: 'W42',
+                    date: '2026-10-18',
+                    title: 'Lỗi tìm kiếm trên ZALO OA',
+                    content: 'Ngày 14/10/2026 Zalo oa Cảng Hải Phòng bị lỗi chức năng tìm kiếm nội dung và tên khách hàng dẫn tới việc hỗ trợ khách hàng qua kênh gặp nhiều khó khăn. Sự cố đc nhà cung cấp khắc phục sau 1 ngày'
+                },
+                {
+                    id: 'n_2',
+                    period: 'W43',
+                    date: '2026-10-25',
+                    title: 'Sự cố vận hành Hotline, Zalo oa và CRM',
+                    content: '-23/10/2026: Đường dây số Hotline 1800555522 nhánh 1 gặp sự cố, không tiếp nhận được các cuộc gọi, đường truyền chập chờn tại một số thời điểm... -22/10/2026: Hệ thống nhập ticket CRM không đăng nhập được... -21/10/2026: Cuộc gọi lỡ Cảng HDCV... -19/10/2026: Lỗi hệ thống Hải quan...'
+                }
+            ];
         }
 
         function sortDatabase() {
@@ -682,7 +779,7 @@
                     body: JSON.stringify({ id: 1, payload: payloadData })
                 });
                 if (response.ok) {
-                    updateCloudStatus('Đã đồng bộ Supabase Cloud', 'emerald');
+                    updateCloudStatus('Đã đồng bộ Cloud', 'emerald');
                 } else {
                     updateCloudStatus('Lỗi đồng bộ Cloud', 'rose');
                 }
@@ -695,13 +792,14 @@
         function updateCloudStatus(message, color) {
             const badge = document.getElementById('cloud-status');
             const text = document.getElementById('status-text');
+            if (!badge || !text) return;
             text.innerText = message;
             if (color === 'emerald') {
-                badge.className = "flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold";
+                badge.className = "hidden sm:flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 dark:text-emerald-400 text-xs font-semibold";
             } else if (color === 'amber') {
-                badge.className = "flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-semibold";
+                badge.className = "hidden sm:flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-500 dark:text-amber-400 text-xs font-semibold";
             } else {
-                badge.className = "flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-semibold";
+                badge.className = "hidden sm:flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 dark:text-rose-400 text-xs font-semibold";
             }
         }
 
@@ -752,7 +850,7 @@
             if (filteredData.length > 0) {
                 const first = filteredData[0];
                 const last = filteredData[filteredData.length - 1];
-                const dateRangeStr = `Kỳ báo cáo: Từ ${formatDateVN(first.dateStart)} đến ${formatDateVN(last.dateEnd)}`;
+                const dateRangeStr = `Kỳ: ${formatDateVN(first.dateStart)} - ${formatDateVN(last.dateEnd)}`;
                 document.getElementById('filter-date-badge').innerText = dateRangeStr;
             } else {
                 document.getElementById('filter-date-badge').innerText = "--";
@@ -871,8 +969,8 @@
                             data: filteredData.map(d => d.crm),
                             borderColor: '#3b82f6',
                             backgroundColor: 'rgba(59, 130, 246, 0.75)',
-                            borderWidth: 2.5,
-                            tension: 0.35,
+                            borderWidth: 2,
+                            tension: 0.3,
                             fill: (mode === 'line')
                         },
                         {
@@ -880,8 +978,8 @@
                             data: filteredData.map(d => d.zaloMsg),
                             borderColor: '#8b5cf6',
                             backgroundColor: 'rgba(139, 92, 246, 0.75)',
-                            borderWidth: 2.5,
-                            tension: 0.35,
+                            borderWidth: 2,
+                            tension: 0.3,
                             fill: (mode === 'line')
                         },
                         {
@@ -889,8 +987,8 @@
                             data: filteredData.map(d => d.calls),
                             borderColor: '#f59e0b',
                             backgroundColor: 'rgba(245, 158, 11, 0.75)',
-                            borderWidth: 2.5,
-                            tension: 0.35,
+                            borderWidth: 2,
+                            tension: 0.3,
                             fill: (mode === 'line')
                         }
                     ]
@@ -898,9 +996,7 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { 
-                        legend: { labels: { color: getChartTextColor(), font: { size: 11, weight: 'bold' } } } 
-                    },
+                    plugins: { legend: { labels: { color: getChartTextColor(), font: { size: 11, weight: 'bold' } } } },
                     scales: {
                         x: { stacked: isStacked, ticks: { color: getChartTextColor() }, grid: { color: getChartGridColor() } },
                         y: { stacked: isStacked, ticks: { color: getChartTextColor() }, grid: { color: getChartGridColor() } }
@@ -1021,6 +1117,9 @@
             });
         }
 
+        // =========================================================================
+        // BẢNG MA TRẬN CHI TIẾT: CỘT TRUNG BÌNH (AVG) SÁT CỘT DANH MỤC
+        // =========================================================================
         function renderMatrixTable() {
             const thead = document.getElementById('matrix-thead');
             const tbody = document.getElementById('matrix-tbody');
@@ -1029,27 +1128,34 @@
 
             if (filteredData.length === 0) return;
 
-            let headerHTML = `<tr><th class="px-3 py-2.5 sticky left-0 dark:bg-slate-900 bg-slate-100 z-30">STT</th><th class="px-4 py-2.5 sticky left-10 dark:bg-slate-900 bg-slate-100 z-30">Danh Mục Vấn Đề</th>`;
+            // Thứ tự: STT -> Danh Mục -> Trung Bình (Avg) -> Các tuần W...
+            let headerHTML = `<tr>
+                <th class="px-3 py-2.5 sticky left-0 dark:bg-slate-900 bg-slate-100 z-30 w-12 text-center">STT</th>
+                <th class="px-4 py-2.5 sticky left-12 dark:bg-slate-900 bg-slate-100 z-30 min-w-[240px]">Danh Mục Tiếp Nhận</th>
+                <th class="px-4 py-2.5 text-center bg-blue-600/15 text-blue-600 dark:text-blue-400 font-extrabold border-r dark:border-slate-800 border-slate-200 min-w-[90px]">TB (Avg)</th>`;
+            
             filteredData.forEach(d => {
-                headerHTML += `<th class="px-3 py-2.5 text-center font-bold">${d.period}<br><span class="text-[10px] text-slate-400 font-normal">${d.dateStart ? formatDateVN(d.dateStart) : ''}</span></th>`;
+                headerHTML += `<th class="px-3 py-2.5 text-center font-bold min-w-[70px]">${d.period}<br><span class="text-[10px] text-slate-400 font-normal">${d.dateStart ? formatDateVN(d.dateStart) : ''}</span></th>`;
             });
-            headerHTML += `<th class="px-4 py-2.5 text-center bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold">Trung Bình (Avg)</th></tr>`;
+            headerHTML += `</tr>`;
             thead.innerHTML = headerHTML;
 
             let bodyHTML = '';
             STANDARD_14_ISSUES.forEach((issueName, idx) => {
-                bodyHTML += `<tr class="hover:bg-slate-100 dark:hover:bg-slate-800/40 transition">`;
-                bodyHTML += `<td class="px-3 py-2 sticky left-0 dark:bg-slate-900 bg-slate-50 z-20 text-slate-500 font-semibold">${idx + 1}</td>`;
-                bodyHTML += `<td class="px-4 py-2 sticky left-10 dark:bg-slate-900 bg-slate-50 z-20 font-medium text-slate-700 dark:text-slate-200">${issueName}</td>`;
-                
                 let issueSum = 0;
+                let cellsByWeek = '';
                 filteredData.forEach(d => {
                     let val = (d.issues && d.issues[issueName]) ? d.issues[issueName] : 0;
                     issueSum += val;
-                    bodyHTML += `<td class="px-3 py-2 text-center text-slate-600 dark:text-slate-300">${val.toLocaleString()}</td>`;
+                    cellsByWeek += `<td class="px-3 py-2 text-center text-slate-600 dark:text-slate-300 font-mono">${val.toLocaleString()}</td>`;
                 });
                 let issueAvg = Math.round((issueSum / filteredData.length) * 10) / 10;
-                bodyHTML += `<td class="px-4 py-2 text-center bg-blue-500/5 text-blue-600 dark:text-blue-400 font-black">${issueAvg}</td>`;
+
+                bodyHTML += `<tr class="hover:bg-slate-100 dark:hover:bg-slate-800/40 transition">`;
+                bodyHTML += `<td class="px-3 py-2 sticky left-0 dark:bg-slate-900 bg-slate-50 z-20 text-slate-500 font-semibold text-center">${idx + 1}</td>`;
+                bodyHTML += `<td class="px-4 py-2 sticky left-12 dark:bg-slate-900 bg-slate-50 z-20 font-medium text-slate-700 dark:text-slate-200">${issueName}</td>`;
+                bodyHTML += `<td class="px-4 py-2 text-center bg-blue-600/10 text-blue-600 dark:text-blue-400 font-black font-mono border-r dark:border-slate-800 border-slate-200">${issueAvg}</td>`;
+                bodyHTML += cellsByWeek;
                 bodyHTML += `</tr>`;
             });
 
@@ -1070,7 +1176,10 @@
             const modalSelect = document.getElementById('note-modal-period');
             let optionsHTML = '<option value="all">Tất cả các tuần</option>';
             let modalOptionsHTML = '';
-            masterDatabase.forEach(d => {
+
+            // Sắp xếp các tuần từ mới nhất đến cũ hơn cho dropdown
+            const reversedDb = [...masterDatabase].reverse();
+            reversedDb.forEach(d => {
                 optionsHTML += `<option value="${d.period}">${d.period} (${formatDateVN(d.dateStart)} - ${formatDateVN(d.dateEnd)})</option>`;
                 modalOptionsHTML += `<option value="${d.period}">${d.period} (${formatDateVN(d.dateStart)} - ${formatDateVN(d.dateEnd)})</option>`;
             });
@@ -1078,34 +1187,46 @@
             modalSelect.innerHTML = modalOptionsHTML;
         }
 
+        // =========================================================================
+        // SỔ TAY GHI CHÚ: HIỂN THỊ TUẦN MỚI NHẤT ĐẦU TIÊN & CUỘN KHI >5 DÒNG
+        // =========================================================================
         function renderNotesTable() {
             const tbody = document.getElementById('notes-tbody');
             const filterPeriod = document.getElementById('note-period-filter').value;
-            const notes = filterPeriod === 'all' ? notesDatabase : notesDatabase.filter(n => n.period === filterPeriod);
+            let notes = filterPeriod === 'all' ? [...notesDatabase] : notesDatabase.filter(n => n.period === filterPeriod);
+
+            // SẮP XẾP TUẦN MỚI NHẤT ĐẦU TIÊN (W43 -> W42 -> W41...)
+            notes.sort((a, b) => {
+                const numA = parseInt(String(a.period).replace(/\D/g, '')) || 0;
+                const numB = parseInt(String(b.period).replace(/\D/g, '')) || 0;
+                if (numB !== numA) return numB - numA;
+                // Nếu cùng tuần thì sắp xếp theo ngày tạo mới nhất
+                return String(b.date || '').localeCompare(String(a.date || ''));
+            });
 
             tbody.innerHTML = '';
             if (notes.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-400 text-xs">Chưa có ghi chú nào. Bấm "Thêm Ghi Chú" để tạo ghi chú mới.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-400 text-xs">Chưa có ghi chú nào. Bấm "Thêm Ghi Chú Mới" để tạo mới.</td></tr>`;
                 return;
             }
 
             notes.forEach(note => {
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-100 dark:hover:bg-slate-800/40 transition">
-                        <td class="px-4 py-2.5 font-bold text-amber-500">${note.period}</td>
-                        <td class="px-4 py-2.5 text-slate-500 dark:text-slate-400 text-[11px]">${note.date || ''}</td>
-                        <td class="px-4 py-2.5 font-semibold text-slate-800 dark:text-slate-200">${note.title}</td>
-                        <td class="px-4 py-2.5 text-slate-600 dark:text-slate-300 leading-relaxed">${note.content}</td>
+                        <td class="px-4 py-2.5 font-bold text-amber-500 font-mono text-sm">${note.period}</td>
+                        <td class="px-4 py-2.5 text-slate-500 dark:text-slate-400 text-[11px] font-mono">${note.date || ''}</td>
+                        <td class="px-4 py-2.5 font-bold text-slate-800 dark:text-slate-200">${note.title}</td>
+                        <td class="px-4 py-2.5 text-slate-600 dark:text-slate-300 leading-relaxed text-xs">${note.content}</td>
                         <td class="px-4 py-2.5 text-center space-x-2">
-                            <button onclick="editNote('${note.id}')" class="text-blue-500 hover:text-blue-600 p-1"><i class="fa-solid fa-pen"></i></button>
-                            <button onclick="deleteNote('${note.id}')" class="text-rose-500 hover:text-rose-600 p-1"><i class="fa-solid fa-trash"></i></button>
+                            <button onclick="requestEditNoteAuth('${note.id}')" class="text-blue-500 hover:text-blue-400 p-1" title="Sửa ghi chú"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="requestDeleteNoteAuth('${note.id}')" class="text-rose-500 hover:text-rose-400 p-1" title="Xóa ghi chú"><i class="fa-solid fa-trash"></i></button>
                         </td>
                     </tr>
                 `;
             });
         }
 
-        function openAddNoteModal() {
+        function openAddNoteModalDirect() {
             document.getElementById('note-id').value = '';
             document.getElementById('note-modal-title').innerHTML = '<i class="fa-solid fa-plus text-amber-500"></i><span>Thêm Ghi Chú Hoạt Động</span>';
             document.getElementById('note-modal-title-input').value = '';
@@ -1117,7 +1238,7 @@
             document.getElementById('note-modal').classList.add('hidden');
         }
 
-        function editNote(id) {
+        function editNoteDirect(id) {
             const note = notesDatabase.find(n => n.id === id);
             if (!note) return;
             document.getElementById('note-id').value = note.id;
@@ -1156,26 +1277,22 @@
             await syncDatabaseToSupabase();
             closeNoteModal();
             renderNotesTable();
-            alert('Đã lưu ghi chú thành công!');
         }
 
-        async function deleteNote(id) {
-            if (!confirm('Bạn có chắc chắn muốn xóa ghi chú này?')) return;
+        async function deleteNoteDirect(id) {
+            if (!confirm('Bạn có chắc chắn muốn xóa bản ghi chú này?')) return;
             notesDatabase = notesDatabase.filter(n => n.id !== id);
             await syncDatabaseToSupabase();
             renderNotesTable();
-            alert('Đã xóa ghi chú thành công!');
         }
 
-        // =====================================================================
-        // THUẬT TOÁN NẠP EXCEL THÔNG MINH CHO CẢ 2 ĐỊNH DẠNG: ĐƠN LẺ VÀ ĐA TUẦN
-        // QUY TẮC: GỘP & BẢO TOÀN DỮ LIỆU CŨ, THAY THẾ/UPSERT TUẦN ĐƯỢC CẬP NHẬT
-        // =====================================================================
+        // =========================================================================
+        // THUẬT TOÁN NẠP EXCEL THÔNG MINH (BẢO TOÀN DỮ LIỆU CŨ & GHI ĐÈ TRÙNG)
+        // =========================================================================
         async function handleExcelUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
 
-            // 1. Sao lưu file gốc lên Supabase Storage (nếu có bucket)
             try {
                 const safeName = `CSKH_${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
                 await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET_NAME}/${safeName}`, {
@@ -1191,14 +1308,12 @@
                 console.warn("Storage upload bypass:", err);
             }
 
-            // 2. Phân tích nội dung file Excel
             const reader = new FileReader();
             reader.onload = async function(e) {
                 try {
                     const data = new Uint8Array(e.target.result);
                     const workbook = XLSX.read(data, { type: 'array' });
                     
-                    // Tìm sheet phù hợp nhất (ưu tiên sheet 'TH1', nếu không lấy sheet đầu tiên)
                     let sheetName = workbook.SheetNames.find(s => s.trim().toUpperCase() === "TH1") || workbook.SheetNames[0];
                     const sheet = workbook.Sheets[sheetName];
                     const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
@@ -1206,7 +1321,6 @@
                     let weeks = [];
                     let weekRowIdx = -1;
 
-                    // Quét tìm dòng chứa tên tuần (Wxx hoặc TUẦN)
                     for (let r = 0; r < Math.min(25, rows.length); r++) {
                         if (rows[r]) {
                             let matchCount = 0;
@@ -1223,11 +1337,10 @@
                     }
 
                     if (weekRowIdx === -1) {
-                        alert('Không tìm thấy dòng chứa tiêu đề tuần (W...) trong sheet ' + sheetName);
+                        alert('Không tìm thấy dòng tiêu đề tuần (W...) trong file Excel!');
                         return;
                     }
 
-                    // Trích xuất các tuần có trong file (hỗ trợ 1 cột hoặc nhiều cột liên tiếp)
                     rows[weekRowIdx].forEach((cell, cIdx) => {
                         if (cell && /^W\s*\d+$/i.test(String(cell).trim())) {
                             weeks.push({ index: cIdx, period: String(cell).trim().toUpperCase() });
@@ -1239,7 +1352,6 @@
                         return;
                     }
 
-                    // Khởi tạo đối tượng record cho các tuần vừa bóc tách
                     let newRecordsMap = {};
                     weeks.forEach(w => {
                         const weekMatch = w.period.match(/\d+/);
@@ -1339,12 +1451,7 @@
                         });
                     }
 
-                    // =========================================================================
-                    // NGUYÊN TẮC QUAN TRỌNG: UPSERT BẢO TOÀN DỮ LIỆU
-                    // - Tạo map toàn bộ masterDatabase hiện hữu
-                    // - Ghi đè tuần trùng tên bằng newRecordsMap[period]
-                    // - Giữ nguyên toàn bộ tuần cũ không bị ảnh hưởng (không bao giờ bị xóa mất)
-                    // =========================================================================
+                    // BẢO TOÀN DỮ LIỆU CŨ: Chỉ ghi đè tuần trùng tên
                     let mergedMap = {};
                     masterDatabase.forEach(item => {
                         mergedMap[item.period] = item;
@@ -1361,7 +1468,7 @@
                     setQuickWeekFilter(7);
 
                     const uploadedWeeksStr = weeks.map(w => w.period).join(', ');
-                    alert(`Nạp file thành công!\nCác tuần được xử lý: [${uploadedWeeksStr}]\nToàn bộ tuần trước đó đã được bảo toàn an toàn trên Cloud!`);
+                    alert(`Nạp thành công! Các tuần được xử lý: [${uploadedWeeksStr}]. Dữ liệu cũ đã được bảo toàn an toàn trên Cloud.`);
                 } catch (err) {
                     console.error("Lỗi phân tích Excel:", err);
                     alert('Lỗi nạp Excel: ' + err.message);
@@ -1416,8 +1523,8 @@
             const endW = document.getElementById('delete-end-week').value;
             const passcode = document.getElementById('delete-passcode').value.trim();
 
-            if (passcode !== "6868") {
-                alert('Mật khẩu bảo mật không chính xác!');
+            if (passcode !== MASTER_PIN) {
+                alert('Mã xác thực không chính xác!');
                 return;
             }
 
