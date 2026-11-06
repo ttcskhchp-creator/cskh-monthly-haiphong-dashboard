@@ -1,1655 +1,871 @@
 <!DOCTYPE html>
-<html lang="vi" class="dark">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TT Khai Thác & Dịch Vụ Khách Hàng - Cảng Hải Phòng</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Magic Story Reader by Daddy Dũng</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tesseract.js -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
+    <!-- PDF.js (đọc PDF) & Mammoth (đọc Word .docx) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        darkBg: '#090d16',
-                        darkCard: 'rgba(20, 27, 45, 0.75)',
-                    }
-                }
-            }
-        }
+    // ===== 10 GIAO DIỆN ===== (tên slot giữ theo class cũ: pink=chính, blue=nghe, indigo=kho, purple=từ vựng, orange=đố vui)
+    const HUES = ['pink','blue','indigo','purple','orange'];
+    const T = (id,icon,name,dark,bg,card,ink,...c) => ({id,icon,name,dark,bg,card,ink,c});
+    const THEMES = [
+        T('candy','🍬','Kẹo Hồng',0,'#fdf2f8','#ffffff','#1e293b','#ec4899','#3b82f6','#6366f1','#a855f7','#f97316'),
+        T('ocean','🌊','Đại Dương',0,'#e8f6ff','#ffffff','#0f2a3d','#0891b2','#2563eb','#4f46e5','#0d9488','#0284c7'),
+        T('forest','🌿','Rừng Xanh',0,'#eef8ea','#ffffff','#1b2e1f','#16a34a','#0f766e','#4d7c0f','#a16207','#c2410c'),
+        T('sunset','🌅','Hoàng Hôn',0,'#fff3e6','#fffaf5','#3b1d0f','#ea580c','#dc2626','#c026d3','#db2777','#d97706'),
+        T('lavender','💜','Oải Hương',0,'#f4efff','#ffffff','#2a1f4a','#7c3aed','#6366f1','#9333ea','#c026d3','#db2777'),
+        T('mint','🍃','Bạc Hà',0,'#e8faf3','#ffffff','#12372d','#0d9488','#059669','#0891b2','#16a34a','#b45309'),
+        T('cocoa','☕','Cà Phê Sữa',0,'#f5eadc','#fffaf3','#3e2a1d','#a0522d','#b45309','#7c4a2d','#9a3412','#a16207'),
+        T('night','🌙','Đêm Sao',1,'#0f172a','#1e293b','#e2e8f0','#db2777','#3b82f6','#6366f1','#a855f7','#ea580c'),
+        T('galaxy','🪐','Vũ Trụ',1,'#1a0b2e','#2a1450','#f1e8ff','#d946ef','#8b5cf6','#0891b2','#ec4899','#ea580c'),
+        T('rainbow','🌈','Cầu Vồng',0,'#fffbe6','#ffffff','#1f2937','#ef4444','#2563eb','#16a34a','#9333ea','#f97316')
+    ];
+    function applyTheme(id) {
+        const t = THEMES.find(x => x.id === id) || THEMES[0], s = document.documentElement.style;
+        s.setProperty('--bg', t.bg); s.setProperty('--card', t.card); s.setProperty('--ink', t.ink);
+        HUES.forEach((h, i) => s.setProperty('--' + h, t.c[i]));
+        s.colorScheme = t.dark ? 'dark' : 'light';
+        document.documentElement.dataset.theme = t.id;
+        try { localStorage.setItem('magicTheme', t.id); } catch (e) {}
+    }
+    (() => {
+        const sh = [50,100,200,300,400,500,600,700];
+        let css = ':root{';
+        HUES.forEach(h => {
+            [[50,8],[100,16],[200,28],[300,45],[400,75]].forEach(([n,p]) => css += `--${h}-${n}:color-mix(in srgb,var(--${h}) ${p}%,var(--card));`);
+            css += `--${h}-500:var(--${h});--${h}-600:color-mix(in srgb,var(--${h}) 82%,var(--ink));--${h}-700:color-mix(in srgb,var(--${h}) 60%,var(--ink));`;
+        });
+        [[50,5],[100,9],[200,16],[300,28],[400,45],[500,62],[600,75],[700,85]].forEach(([n,p]) => css += `--slate-${n}:color-mix(in srgb,var(--ink) ${p}%,var(--card));`);
+        const st = document.createElement('style'); st.textContent = css + '}'; document.head.appendChild(st);
+        tailwind.config = { theme: { extend: { colors: { card: 'var(--card)',
+            ...Object.fromEntries([...HUES, 'slate'].map(h => [h, Object.fromEntries(sh.map(n => [n, `var(--${h}-${n})`]))])) } } } };
+        let saved; try { saved = localStorage.getItem('magicTheme'); } catch (e) {}
+        applyTheme(saved);
+    })();
     </script>
-    <!-- Chart.js & SheetJS -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <!-- FontAwesome 6 -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-    
     <style>
-        .glass-panel {
-            backdrop-filter: blur(14px);
-            -webkit-backdrop-filter: blur(14px);
-            transition: all 0.3s ease;
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap');
+        body {
+            font-family: 'Nunito', sans-serif;
+            color: var(--ink);
+            background-color: var(--bg);
+            background-image: radial-gradient(var(--pink-200) 2px, transparent 2px);
+            background-size: 30px 30px;
         }
-        .dark .glass-panel {
-            background: rgba(18, 24, 40, 0.8);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.4);
-        }
-        html:not(.dark) .glass-panel {
-            background: rgba(255, 255, 255, 0.9);
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
-        }
-        .glass-input {
-            transition: all 0.2s;
-        }
-        .dark .glass-input {
-            background: rgba(11, 15, 25, 0.8);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            color: #f1f5f9;
-        }
-        html:not(.dark) .glass-input {
-            background: #ffffff;
-            border: 1px solid #cbd5e1;
-            color: #0f172a;
-        }
-        .glass-input:focus {
-            border-color: #3b82f6;
-            outline: none;
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
-        }
-        ::-webkit-scrollbar { width: 5px; height: 5px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
-        .notes-scroll-container {
-            max-height: 290px;
-            overflow-y: auto;
-        }
+        .btn-bounce { transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.1s; }
+        .btn-bounce:active { transform: scale(0.95); }
+        .spinner { border: 5px solid var(--pink-100); border-top-color: var(--pink-500); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .marquee-container { width: 100%; overflow: hidden; white-space: nowrap; background: var(--card); padding: 5px 0; border-top: 2px dashed var(--pink-200); border-bottom: 2px dashed var(--pink-200); margin-bottom: 1rem; }
+        .marquee-text { display: inline-block; padding-left: 100%; animation: marquee 15s linear infinite; font-weight: 800; color: var(--pink-500); }
+        @keyframes marquee { 0% { transform: translate(0, 0); } 100% { transform: translate(-100%, 0); } }
+        .blur-active { filter: blur(8px); pointer-events: none; user-select: none; transition: filter 0.5s ease; }
+        #storyText { white-space: pre-wrap; tab-size: 4; }
+        #dropZone.drag { border-color: var(--pink-500); background: var(--pink-50); }
+        label.bg-green-100, label.bg-red-100 { color: #1f2937; }
     </style>
 </head>
-<body class="bg-slate-50 dark:bg-darkBg text-slate-800 dark:text-slate-100 min-h-screen font-sans selection:bg-blue-500 selection:text-white transition-colors duration-300">
+<body class="min-h-screen p-3 md:p-8 flex flex-col items-center">
 
-    <!-- Header Chuẩn Thương Hiệu -->
-    <header class="glass-panel sticky top-0 z-50 px-4 lg:px-6 py-2.5 border-b dark:border-slate-800 border-slate-200">
-        <div class="flex items-center justify-between flex-wrap gap-3">
-            
-            <!-- Logo & Title Thống Nhất Theo Ảnh Mẫu[cite: 3] -->
-            <div class="flex items-center space-x-3">
-                <div class="p-2 sm:p-2.5 bg-gradient-to-tr from-blue-600/30 to-indigo-600/30 border-2 border-blue-500/50 rounded-2xl text-blue-400 shadow-md flex items-center justify-center">
-                    <i class="fa-solid fa-anchor text-xl text-blue-400 animate-pulse"></i>
-                </div>
-                <div>
-                    <div class="flex items-center space-x-2">
-                        <h1 class="text-sm sm:text-base md:text-lg font-black tracking-tight uppercase text-slate-900 dark:text-white">
-                            TT KHAI THÁC & DỊCH VỤ KHÁCH HÀNG
-                        </h1>
-                        <span class="px-2 py-0.5 text-[10px] sm:text-xs rounded-full bg-blue-500/20 text-blue-500 dark:text-blue-300 border border-blue-500/30 font-semibold whitespace-nowrap">
-                            Cảng Hải Phòng
-                        </span>
-                    </div>
-                    <div class="flex items-center space-x-1.5 text-[10px] sm:text-[11px] font-bold tracking-wider text-blue-500 dark:text-blue-400">
-                        <span>OPERATIONS & CUSTOMER SERVICE CENTER</span>
-                        <span class="text-slate-400">•</span>
-                        <a href="https://haiphongport.com.vn" target="_blank" class="text-slate-500 dark:text-slate-400 hover:text-blue-400 transition flex items-center gap-1 font-normal">
-                            haiphongport.com.vn <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
-                        </a>
-                    </div>
-                </div>
-            </div>
+    <!-- Chọn giao diện -->
+    <div class="w-full max-w-6xl flex justify-end relative z-40">
+        <button id="themeBtn" type="button" class="bg-card text-pink-600 border-2 border-pink-300 px-4 py-2 rounded-full font-black shadow btn-bounce">🎨 Giao diện</button>
+        <div id="themePanel" class="hidden absolute right-0 top-full mt-2 w-[min(92vw,36rem)] bg-card border-4 border-pink-300 rounded-2xl shadow-xl p-3 grid grid-cols-2 sm:grid-cols-5 gap-2"></div>
+    </div>
 
-            <!-- Thao tác Nhanh & Theme/Menu toggle -->
-            <div class="flex items-center flex-wrap gap-2">
-                <!-- Supabase Cloud Status[cite: 1] -->
-                <div id="cloud-status" class="hidden sm:flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 dark:text-emerald-400 text-xs font-semibold">
-                    <i class="fa-solid fa-cloud-bolt text-emerald-500 animate-pulse"></i>
-                    <span id="status-text">Đang kết nối Cloud...</span>
-                </div>
-
-                <!-- Nút Nạp File Excel -->
-                <button onclick="openUploadModal()" class="px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold rounded-xl shadow-md shadow-blue-500/20 transition flex items-center space-x-1.5">
-                    <i class="fa-solid fa-file-excel fa-bounce" style="--fa-bounce-height: 3px;"></i>
-                    <span>Nạp Excel (Đơn / Đa tuần)</span>
-                </button>
-
-                <!-- Xuất Excel Backup[cite: 1] -->
-                <button onclick="exportDatabase()" class="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl transition flex items-center space-x-1.5">
-                    <i class="fa-solid fa-cloud-arrow-down text-blue-500 dark:text-blue-400"></i>
-                    <span class="hidden md:inline">Xuất Backup</span>
-                </button>
-
-                <!-- Nút chuyển Sáng/Tối[cite: 1] -->
-                <button onclick="toggleDarkMode()" class="p-2 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-amber-500 dark:text-amber-300 text-xs transition" title="Chuyển chế độ Sáng/Tối">
-                    <i class="fa-solid fa-moon dark:hidden"></i>
-                    <i class="fa-solid fa-sun hidden dark:inline fa-spin" style="--fa-animation-duration: 15s;"></i>
-                </button>
-
-                <!-- Nút thu gọn / mở rộng menu chính[cite: 1] -->
-                <button onclick="toggleControlsBar()" class="p-2 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs transition" title="Thu gọn / Mở rộng bộ lọc">
-                    <i id="collapse-chevron" class="fa-solid fa-chevron-up"></i>
-                </button>
-            </div>
-        </div>
-
-        <!-- Bộ Lọc Tuần Thu Gọn Tiết Kiệm Không Gian[cite: 1] -->
-        <div id="controls-bar" class="mt-2.5 pt-2.5 border-t dark:border-slate-800 border-slate-200 flex flex-wrap items-center justify-between gap-2.5 text-xs transition-all duration-300">
-            <div class="flex flex-wrap items-center gap-2">
-                <span class="font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                    <i class="fa-solid fa-calendar-week text-blue-500"></i> Kỳ báo cáo:
-                </span>
-                <div class="flex items-center space-x-1">
-                    <span class="text-slate-400">Từ</span>
-                    <select id="filter-start-week" onchange="applyWeekFilter()" class="glass-input rounded-lg px-2 py-1 font-semibold text-xs"></select>
-                    <span class="text-slate-400">đến</span>
-                    <select id="filter-end-week" onchange="applyWeekFilter()" class="glass-input rounded-lg px-2 py-1 font-semibold text-xs"></select>
-                </div>
-                <div id="filter-date-badge" class="px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-300 font-medium text-xs">
-                    --
-                </div>
-            </div>
-
-            <!-- Nút chọn nhanh (Mặc định Tuần gần nhất)[cite: 1] -->
-            <div class="flex items-center space-x-1.5">
-                <button onclick="setQuickWeekFilter(1)" class="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white transition font-bold shadow-sm flex items-center gap-1">
-                    <i class="fa-solid fa-bolt text-amber-300"></i> Tuần gần nhất
-                </button>
-                <button onclick="setQuickWeekFilter(4)" class="px-2.5 py-1 rounded-lg bg-slate-200 dark:bg-slate-800 hover:bg-blue-600 hover:text-white transition font-semibold">4 tuần</button>
-                <button onclick="setQuickWeekFilter(7)" class="px-2.5 py-1 rounded-lg bg-slate-200 dark:bg-slate-800 hover:bg-blue-600 hover:text-white transition font-semibold">7 tuần</button>
-                <button onclick="setQuickWeekFilter('all')" class="px-2.5 py-1 rounded-lg bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 transition font-semibold">Tất cả</button>
-                <button onclick="openDeleteModal()" class="px-2.5 py-1 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-600 dark:text-rose-400 rounded-lg transition font-bold flex items-center gap-1">
-                    <i class="fa-solid fa-trash-can fa-shake" style="--fa-animation-duration: 3s;"></i> Xóa tuần
-                </button>
-            </div>
+    <!-- Header -->
+    <header class="text-center mt-4 w-full max-w-6xl">
+        <h1 class="text-4xl md:text-6xl font-black text-pink-500 drop-shadow-sm mb-2">
+            🌟 Magic Reader 🌟
+        </h1>
+        <div class="marquee-container rounded-xl shadow-sm">
+            <span class="marquee-text text-base md:text-lg" id="greetingMarquee">Loading magic words... ✨</span>
         </div>
     </header>
 
-    <!-- Main Container -->
-    <main class="p-3 sm:p-5 max-w-[1750px] mx-auto space-y-4">
+    <!-- Toast Notification -->
+    <div id="toastMessage" class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 rounded-full font-bold text-base md:text-lg shadow-xl transition-all duration-300 opacity-0 pointer-events-none text-center min-w-[250px]">
+    </div>
 
-        <!-- 4 KPI Cards Grid[cite: 1] -->
-        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-            <!-- CRM -->
-            <div class="glass-panel rounded-2xl p-3.5 sm:p-4 relative overflow-hidden">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                            <i class="fa-solid fa-headset text-blue-500 fa-beat"></i> Tổng Yêu Cầu CRM
-                        </p>
-                        <h3 id="kpi-crm" class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1">--</h3>
-                    </div>
-                    <div class="p-2.5 bg-blue-500/15 border border-blue-500/25 rounded-xl text-blue-500">
-                        <i class="fa-solid fa-chart-line text-lg animate-pulse"></i>
-                    </div>
-                </div>
-                <div class="mt-2.5 flex items-center justify-between text-xs font-semibold text-blue-600 dark:text-blue-300 pt-2 border-t border-slate-200 dark:border-slate-800">
-                    <span id="kpi-crm-avg">TB: --/tuần</span>
-                    <span class="text-[11px] bg-blue-500/10 px-2 py-0.5 rounded-full">14 nhóm mục</span>
+    <!-- Main Content -->
+    <main class="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-6 pb-10">
+        
+        <!-- Cột Trái: Ảnh & Quét & Lưu trữ -->
+        <div class="space-y-6">
+            <div class="bg-card p-5 md:p-8 rounded-[2rem] shadow-lg border-4 border-pink-300 flex flex-col">
+                <h2 class="text-xl md:text-2xl font-black text-pink-600 mb-4 flex items-center">
+                    <span class="text-3xl mr-2">📸</span> 1. Chọn truyện
+                </h2>
+                <input type="file" id="fileInput" multiple accept="image/*,.pdf,.txt,.md,.docx,.doc,.html,.htm" class="sr-only">
+                <label id="dropZone" for="fileInput" class="flex items-center justify-center bg-slate-50 rounded-2xl border-2 border-dashed border-slate-300 overflow-hidden min-h-[250px] mb-3 relative cursor-pointer transition-colors">
+                    <p id="placeholderText" class="text-slate-400 text-lg font-bold text-center px-4">
+                        Chạm để chọn <b>ảnh, PDF, Word, TXT</b>...<br>
+                        <span class="text-sm font-semibold">hoặc kéo thả file vào đây (chọn được nhiều trang)</span>
+                    </p>
+                    <div id="previewBox" class="w-full flex items-center justify-center p-2"></div>
+                </label>
+                <div id="fileInfo" class="hidden text-sm font-bold text-slate-500 mb-2 truncate"></div>
+                <div id="fileChips" class="flex flex-wrap gap-2 mb-4"></div>
+                <button id="extractBtn" class="w-full py-3.5 bg-pink-500 active:bg-pink-600 text-white text-xl font-black rounded-2xl shadow-md btn-bounce flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed">
+                    <span>🪄 Đọc chữ từ file</span>
+                </button>
+                <div id="loadingStatus" class="hidden mt-4 flex-col items-center justify-center text-pink-600">
+                    <div class="spinner mb-2"></div>
+                    <p id="statusText" class="font-bold text-lg text-center">Đang nhìn chữ... Bé đợi xíu!</p>
                 </div>
             </div>
 
-            <!-- Zalo Msg -->
-            <div class="glass-panel rounded-2xl p-3.5 sm:p-4 relative overflow-hidden">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                            <i class="fa-solid fa-comments text-indigo-500 fa-bounce" style="--fa-bounce-height: 3px;"></i> Tin Nhắn Zalo CSKH
-                        </p>
-                        <h3 id="kpi-zalo" class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1">--</h3>
-                    </div>
-                    <div class="p-2.5 bg-indigo-500/15 border border-indigo-500/25 rounded-xl text-indigo-500">
-                        <i class="fa-brands fa-rocketchat text-lg animate-pulse"></i>
-                    </div>
-                </div>
-                <div class="mt-2.5 flex items-center justify-between text-xs font-semibold pt-2 border-t border-slate-200 dark:border-slate-800">
-                    <span id="kpi-zalo-avg">TB: -- tin/tuần</span>
-                    <span id="kpi-zalo-rate" class="text-emerald-500 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full">Tỷ lệ PH: --%</span>
-                </div>
-            </div>
-
-            <!-- Call Center -->
-            <div class="glass-panel rounded-2xl p-3.5 sm:p-4 relative overflow-hidden">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                            <i class="fa-solid fa-phone-volume text-amber-500 fa-shake"></i> Cuộc Gọi Tổng Đài
-                        </p>
-                        <h3 id="kpi-calls" class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1">--</h3>
-                    </div>
-                    <div class="p-2.5 bg-amber-500/15 border border-amber-500/25 rounded-xl text-amber-500">
-                        <i class="fa-solid fa-square-phone text-lg"></i>
-                    </div>
-                </div>
-                <div class="mt-2.5 flex items-center justify-between text-xs font-semibold pt-2 border-t border-slate-200 dark:border-slate-800">
-                    <span id="kpi-talk-avg">TG thoại: --s</span>
-                    <span id="kpi-missed" class="text-rose-500 font-bold bg-rose-500/10 px-2 py-0.5 rounded-full">Cuộc lỡ: --</span>
-                </div>
-            </div>
-
-            <!-- Survey -->
-            <div class="glass-panel rounded-2xl p-3.5 sm:p-4 relative overflow-hidden">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-xs font-semibold text-purple-600 dark:text-purple-300 flex items-center gap-1.5">
-                            <i class="fa-solid fa-star text-amber-400"></i> Khảo Sát (Web / App)
-                        </p>
-                        <h3 id="kpi-survey-ratio" class="text-lg sm:text-xl font-black text-slate-900 dark:text-white mt-1">0 lượt / 0 lượt</h3>
-                    </div>
-                    <div class="p-2.5 bg-purple-500/15 border border-purple-500/25 rounded-xl text-purple-500">
-                        <i class="fa-solid fa-award text-lg animate-pulse"></i>
-                    </div>
-                </div>
-                <div class="mt-2.5 flex items-center justify-between text-xs font-semibold pt-2 border-t border-slate-200 dark:border-slate-800">
-                    <span id="kpi-survey-web">Web: 0/50</span>
-                    <span id="kpi-survey-app">App: 0/50</span>
-                </div>
-            </div>
-        </section>
-
-        <!-- Charts Section 1: Trend line & Top Issues[cite: 1] -->
-        <section class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <div class="glass-panel rounded-2xl p-4 lg:col-span-2 flex flex-col justify-between">
-                <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
-                    <div>
-                        <h2 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
-                            <i class="fa-solid fa-chart-line text-blue-500"></i>
-                            <span>Xu Hướng Tiếp Nhận CSKH (CRM, Zalo, Tổng Đài)</span>
-                        </h2>
-                        <p class="text-[11px] text-slate-400">Theo dõi số lượng theo chuỗi tuần</p>
-                    </div>
-                    <select id="chart1-mode" onchange="renderTrendChart()" class="glass-input text-xs rounded-xl px-2.5 py-1 font-semibold">
-                        <option value="line" selected>Dạng Đường (Line)</option>
-                        <option value="bar">Dạng Cột (Bar)</option>
-                        <option value="stacked">Dạng Cột Chồng</option>
-                    </select>
-                </div>
-                <div class="relative h-[250px] w-full">
-                    <canvas id="trendChart"></canvas>
-                </div>
-            </div>
-
-            <!-- Donut Top Issues[cite: 1] -->
-            <div class="glass-panel rounded-2xl p-4 flex flex-col justify-between">
-                <div class="flex items-center justify-between mb-2">
-                    <div>
-                        <h2 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
-                            <i class="fa-solid fa-chart-pie text-emerald-500"></i>
-                            <span>Phân Bổ Vấn Đề</span>
-                        </h2>
-                        <p class="text-[11px] text-slate-400">Tỷ lệ theo bộ lọc</p>
-                    </div>
-                    <select id="donut-filter" onchange="renderDonutChart()" class="glass-input text-xs rounded-xl px-2 py-1 font-semibold">
-                        <option value="3">Top 3</option>
-                        <option value="5" selected>Top 5</option>
-                        <option value="7">Top 7</option>
-                        <option value="all">Tất cả</option>
-                    </select>
-                </div>
-                <div class="relative h-[180px] w-full flex items-center justify-center">
-                    <canvas id="issueDonutChart"></canvas>
-                </div>
-                <div id="donut-legend" class="mt-2 grid grid-cols-2 gap-1 text-[11px] max-h-[60px] overflow-y-auto"></div>
-            </div>
-        </section>
-
-        <!-- Charts Section 2: So sánh Tân Vũ - HDCV + Thẻ Zalo OA[cite: 1] -->
-        <section class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <div class="glass-panel rounded-2xl p-4 lg:col-span-2 flex flex-col justify-between">
-                <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
-                    <div>
-                        <h2 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
-                            <i class="fa-solid fa-building-flag text-amber-500"></i>
-                            <span>So Sánh Cuộc Gọi Chi Nhánh (Tân Vũ & HDCV)</span>
-                        </h2>
-                        <p class="text-[11px] text-slate-400">Hiệu suất cuộc gọi tổng đài giữa 2 cảng</p>
-                    </div>
-                    <select id="branch-view-mode" onchange="renderBranchChart()" class="glass-input text-xs rounded-xl px-2.5 py-1 font-semibold">
-                        <option value="bar" selected>Cột Song Song</option>
-                        <option value="stacked">Cột Chồng</option>
-                        <option value="line">Dạng Đường</option>
-                    </select>
-                </div>
-                <div class="relative h-[230px] w-full">
-                    <canvas id="branchChart"></canvas>
-                </div>
-            </div>
-
-            <!-- Thẻ Chỉ Số Kênh Zalo OA[cite: 1] -->
-            <div class="glass-panel rounded-2xl p-4 flex flex-col justify-between space-y-2.5 relative overflow-hidden">
-                <div class="flex items-center justify-between border-b dark:border-slate-800 border-slate-200 pb-2">
-                    <div class="flex items-center space-x-2">
-                        <div class="p-1.5 bg-blue-500/20 text-blue-500 rounded-lg">
-                            <i class="fa-brands fa-whatsapp text-lg"></i>
-                        </div>
-                        <div>
-                            <h2 class="text-sm font-bold text-slate-800 dark:text-indigo-300">Kênh Zalo OA</h2>
-                            <p class="text-[10px] text-slate-400">Hiệu suất vận hành OA</p>
-                        </div>
-                    </div>
-                    <span class="text-[10px] bg-indigo-500/10 text-indigo-500 border border-indigo-500/20 px-2 py-0.5 rounded-full font-bold">Official Account</span>
-                </div>
-
-                <div class="grid grid-cols-2 gap-2 text-xs">
-                    <div class="col-span-2 bg-gradient-to-r from-blue-600/15 to-indigo-600/15 p-2.5 rounded-xl border border-indigo-500/20 flex items-center justify-between">
-                        <div>
-                            <p class="text-[11px] font-semibold text-slate-500 dark:text-indigo-200">Tổng Người Quan Tâm</p>
-                            <h4 id="zalo-total-followers" class="text-xl font-black text-slate-900 dark:text-white mt-0.5">--</h4>
-                        </div>
-                        <div class="p-2 bg-blue-500/20 rounded-xl text-blue-500">
-                            <i class="fa-solid fa-users text-base"></i>
-                        </div>
-                    </div>
-
-                    <div class="dark:bg-slate-900/60 bg-slate-100 p-2 rounded-xl border dark:border-slate-800 border-slate-200">
-                        <p class="text-[10px] text-slate-400 font-medium">Quan Tâm Mới</p>
-                        <h4 id="zalo-new-followers" class="text-sm font-bold text-emerald-500 mt-0.5">--</h4>
-                    </div>
-
-                    <div class="dark:bg-slate-900/60 bg-slate-100 p-2 rounded-xl border dark:border-slate-800 border-slate-200">
-                        <p class="text-[10px] text-slate-400 font-medium">Tổng Gửi Tin Nhắn</p>
-                        <h4 id="zalo-total-sent" class="text-sm font-bold text-indigo-500 mt-0.5">--</h4>
-                    </div>
-
-                    <div class="dark:bg-slate-900/60 bg-slate-100 p-2 rounded-xl border dark:border-slate-800 border-slate-200">
-                        <p class="text-[10px] text-slate-400 font-medium">Hài Lòng CSAT</p>
-                        <h4 id="zalo-csat" class="text-sm font-bold text-amber-500 mt-0.5">--%</h4>
-                    </div>
-
-                    <div class="dark:bg-slate-900/60 bg-slate-100 p-2 rounded-xl border dark:border-slate-800 border-slate-200">
-                        <p class="text-[10px] text-slate-400 font-medium">Tỷ Lệ Đánh Giá</p>
-                        <h4 id="zalo-rating-rate" class="text-sm font-bold text-cyan-500 mt-0.5">--%</h4>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Bảng Ma Trận Chi Tiết: Cột Trung Bình (Avg) Nằm Sát Cột Danh Mục[cite: 1] -->
-        <section class="glass-panel rounded-2xl p-4 space-y-3">
-            <div class="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                    <h2 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
-                        <i class="fa-solid fa-table-cells text-blue-500"></i>
-                        <span>Bảng Ma Trận Chi Tiết Các Vấn Đề Tiếp Nhận</span>
+            <!-- Khung Quản lý Lưu trữ (Supabase) -->
+            <div class="bg-indigo-50 p-5 md:p-8 rounded-[2rem] shadow-lg border-4 border-indigo-300 flex flex-col">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-black text-indigo-600 flex items-center">
+                        <span class="text-2xl mr-2">☁️</span> Kho Truyện
                     </h2>
-                    <p class="text-[11px] text-slate-400">Cột Trung Bình (Avg) đặt sát cột danh mục để tiện theo dõi</p>
+                    <button onclick="saveToCloud()" class="bg-indigo-500 text-white px-4 py-2 rounded-xl font-bold btn-bounce shadow-sm hover:bg-indigo-600">
+                        💾 Lưu Bài Này
+                    </button>
                 </div>
-                <div class="relative w-full sm:w-64">
-                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-xs text-slate-400"></i>
-                    <input type="text" id="table-search" oninput="filterTableData()" placeholder="Tìm danh mục vấn đề..." class="glass-input text-xs rounded-xl pl-9 pr-3 py-1.5 w-full">
+                <div id="storyList" class="space-y-2 max-h-[250px] overflow-y-auto pr-2">
+                    <p class="text-indigo-400 font-bold text-sm italic text-center py-4">Đang tải danh sách...</p>
                 </div>
             </div>
+        </div>
 
-            <div class="overflow-x-auto rounded-xl border dark:border-slate-800 border-slate-200 max-h-[460px]">
-                <table id="matrix-table" class="w-full text-left text-xs border-collapse">
-                    <thead id="matrix-thead" class="dark:bg-slate-900/90 bg-slate-100 uppercase tracking-wider sticky top-0 z-30 border-b dark:border-slate-800 border-slate-200">
-                    </thead>
-                    <tbody id="matrix-tbody" class="divide-y dark:divide-slate-800/60 divide-slate-200 dark:bg-slate-900/30 bg-white">
-                    </tbody>
-                </table>
-            </div>
-        </section>
-
-        <!-- Sổ Tay Ghi Chú & Nhật Ký Vận Hành (Đã sửa triệt để nút Sửa & Xóa)[cite: 2] -->
-        <section class="glass-panel rounded-2xl p-4 space-y-3">
-            <div class="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                    <h2 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
-                        <i class="fa-solid fa-book-bookmark text-amber-500"></i>
-                        <span>Sổ Tay Ghi Chú & Nhật Ký Hoạt Động Vận Hành</span>
-                    </h2>
-                    <p class="text-[11px] text-slate-400">Lưu trữ các sự cố, kế hoạch và ghi chú vận hành theo từng tuần</p>
+        <!-- Cột Phải: Chữ & Âm thanh -->
+        <div class="bg-card p-5 md:p-8 rounded-[2rem] shadow-lg border-4 border-blue-300 flex flex-col">
+            <div class="flex justify-between items-start mb-2">
+                <h2 class="text-xl md:text-2xl font-black text-blue-600 flex items-center">
+                    <span class="text-3xl mr-2">📝</span> 2. Luyện nghe
+                </h2>
+                <!-- Nút xuất file offline -->
+                <div class="flex gap-2">
+                    <button onclick="exportToWord()" class="bg-blue-100 text-blue-700 p-2 rounded-xl shadow-sm btn-bounce hover:bg-blue-200" title="Tải file Word để in">🖨️ Word</button>
+                    <button onclick="exportToMP3()" class="bg-green-100 text-green-700 p-2 rounded-xl shadow-sm btn-bounce hover:bg-green-200" title="Tải âm thanh MP3">🎵 MP3</button>
                 </div>
-                <div class="flex items-center space-x-2">
-                    <select id="note-period-filter" onchange="renderNotesTable()" class="glass-input text-xs rounded-xl px-2.5 py-1.5 font-semibold">
-                        <option value="all">Tất cả các tuần</option>
-                    </select>
-                    <button onclick="requestAddNoteAuth()" class="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl transition flex items-center space-x-1.5 shadow-md shadow-amber-500/20">
-                        <i class="fa-solid fa-plus"></i>
-                        <span>Thêm Ghi Chú Mới</span>
+            </div>
+            
+            <p class="text-slate-500 text-sm md:text-base font-bold mb-2">Mẹo: Đặt con trỏ vào chữ bất kỳ rồi bấm <b>"Từ con trỏ"</b> để nghe!</p>
+            
+            <textarea id="storyText" class="flex-grow w-full p-4 rounded-2xl border-2 border-blue-200 focus:border-blue-400 outline-none text-lg md:text-xl text-slate-700 leading-relaxed resize-none min-h-[180px] shadow-inner mb-4 bg-blue-50 font-semibold" placeholder="Chữ sẽ hiện ở đây..."></textarea>
+            
+            <!-- Controls -->
+            <div class="space-y-3">
+                <div class="flex items-center gap-3 bg-blue-50 p-3 rounded-xl border border-blue-100">
+                    <span class="text-xl" title="Đọc chậm">🐢</span>
+                    <input type="range" id="speedSlider" min="0.5" max="1.3" step="0.1" value="0.8" class="flex-grow h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer accent-blue-500">
+                    <span class="text-xl" title="Đọc nhanh">🐇</span>
+                </div>
+
+                <label class="flex items-center gap-2 text-sm md:text-base font-bold text-blue-700 cursor-pointer select-none">
+                    <input type="checkbox" id="keepLayout" checked class="w-5 h-5 accent-blue-500"> Giữ xuống dòng &amp; thụt đầu dòng như bản gốc
+                </label>
+                <button id="cleanBtn" class="w-full py-3 bg-yellow-400 active:bg-yellow-500 text-yellow-900 text-lg font-bold rounded-xl shadow-sm btn-bounce flex items-center justify-center">
+                    <span class="mr-2 text-xl">🧹</span> Làm sạch chữ & Tra từ điển
+                </button>
+
+                <div class="grid grid-cols-3 gap-2">
+                    <button id="playBtn" class="py-3 bg-green-500 active:bg-green-600 text-white text-base md:text-lg font-black rounded-xl shadow-sm btn-bounce flex items-center justify-center whitespace-nowrap">
+                        ▶️ Đọc To
+                    </button>
+                    <button id="playCursorBtn" class="py-3 bg-cyan-500 active:bg-cyan-600 text-white text-base md:text-lg font-bold rounded-xl shadow-sm btn-bounce flex items-center justify-center whitespace-nowrap">
+                        👆 Từ con trỏ
+                    </button>
+                    <button id="stopBtn" class="py-3 bg-red-400 active:bg-red-500 text-white text-base md:text-lg font-bold rounded-xl shadow-sm btn-bounce flex items-center justify-center whitespace-nowrap">
+                        ⏹️ Dừng
                     </button>
                 </div>
             </div>
 
-            <div class="notes-scroll-container rounded-xl border dark:border-slate-800 border-slate-200">
-                <table class="w-full text-left text-xs">
-                    <thead class="dark:bg-slate-900/95 bg-slate-100 text-amber-500 uppercase tracking-wider sticky top-0 z-20 border-b dark:border-slate-800 border-slate-200">
-                        <tr>
-                            <th class="px-4 py-2.5 w-24">Tuần / Kỳ</th>
-                            <th class="px-4 py-2.5 w-28">Ngày tạo</th>
-                            <th class="px-4 py-2.5 w-60">Tiêu đề ghi chú</th>
-                            <th class="px-4 py-2.5 min-w-[280px]">Nội dung chi tiết</th>
-                            <th class="px-4 py-2.5 w-24 text-center">Thao tác</th>
-                        </tr>
-                    </thead>
-                    <tbody id="notes-tbody" class="divide-y dark:divide-slate-800/60 divide-slate-200 dark:bg-slate-900/30 bg-white">
-                    </tbody>
-                </table>
+            <!-- Khung từ vựng khó -->
+            <div class="mt-5 p-4 bg-purple-50 border-2 border-purple-200 rounded-2xl relative transition-all duration-500" id="vocabContainer">
+                <h3 class="font-black text-purple-600 mb-3 flex items-center"><span class="mr-2">📚</span> Từ vựng cho bé:</h3>
+                <div id="vocabList" class="flex flex-wrap gap-2 text-sm md:text-base font-bold text-purple-700 transition-all duration-500">
+                    <span class="italic font-normal text-purple-400">Bấm "Làm sạch chữ" để máy tìm từ khó nhé!</span>
+                </div>
             </div>
-        </section>
+
+            <!-- Khung Đố Vui (Quiz) -->
+            <div class="mt-5 p-4 bg-orange-50 border-2 border-orange-200 rounded-2xl" id="quizSection">
+                <h3 class="font-black text-orange-600 mb-3 flex items-center"><span class="mr-2">🎮</span> Đố vui ôn tập:</h3>
+                <div id="quizContainer" class="text-slate-700 font-bold">
+                    <span class="italic font-normal text-orange-400">Quét chữ xong bé sẽ được chơi trò chơi ở đây!</span>
+                </div>
+            </div>
+        </div>
     </main>
 
-    <!-- MODAL 1: NẠP FILE EXCEL AN TOÀN TRỰC TIẾP -->
-    <div id="upload-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm hidden p-4">
-        <div class="glass-panel rounded-2xl p-5 w-full max-w-md border border-blue-500/30 space-y-4 shadow-2xl dark:bg-slate-900 bg-white">
-            <div class="flex items-center justify-between border-b dark:border-slate-800 border-slate-200 pb-3">
-                <div class="flex items-center space-x-3 text-blue-500">
-                    <div class="p-2.5 bg-blue-500/15 rounded-xl border border-blue-500/20">
-                        <i class="fa-solid fa-file-excel text-xl"></i>
-                    </div>
-                    <div>
-                        <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100">Nạp Dữ Liệu Excel</h3>
-                        <p class="text-xs text-slate-400">Hỗ trợ file tuần đơn lẻ hoặc nhiều tuần</p>
-                    </div>
-                </div>
-                <button onclick="closeUploadModal()" class="text-slate-400 hover:text-slate-200"><i class="fa-solid fa-xmark text-lg"></i></button>
-            </div>
+    <!-- Footer Author -->
+    <footer class="w-full text-center py-6 mt-auto">
+        <p class="text-pink-600 font-black text-lg bg-card inline-block px-6 py-2 rounded-full shadow border-2 border-pink-200">
+            💖 Phát triển và vận hành bởi <span class="text-blue-600 uppercase">Daddy Dũng Đẹp Zai</span> 💖
+        </p>
+    </footer>
 
-            <div class="space-y-3">
-                <div>
-                    <label class="block text-xs font-semibold mb-1 text-slate-700 dark:text-slate-200">1. Chọn tệp Excel (.xlsx, .xls):</label>
-                    <input type="file" id="modal-excel-file" accept=".xlsx, .xls, .csv" class="glass-input text-xs rounded-xl p-2 w-full file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-500 cursor-pointer">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold mb-1 text-slate-700 dark:text-slate-200">2. Mật khẩu bảo mật quản trị:</label>
-                    <input type="password" id="upload-passcode" class="glass-input text-sm rounded-xl px-3 py-2 w-full text-center tracking-widest font-mono" placeholder="••••" maxlength="10">
-                    <p id="upload-error-msg" class="text-[11px] text-rose-500 mt-1.5 hidden text-center font-medium">Vui lòng kiểm tra lại tệp và mã xác thực!</p>
-                </div>
-            </div>
-
-            <div class="flex items-center justify-end space-x-2 pt-2 border-t dark:border-slate-800 border-slate-200">
-                <button onclick="closeUploadModal()" class="px-3.5 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 font-semibold text-xs transition">Hủy</button>
-                <button onclick="executeUploadFromModal()" id="upload-submit-btn" class="px-4 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs rounded-xl shadow transition flex items-center gap-1.5">
-                    <i class="fa-solid fa-cloud-arrow-up"></i>
-                    <span>Xác Nhận Nạp & Đồng Bộ</span>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL 2: XÁC THỰC BẢO VỆ CHO THÊM / SỬA / XÓA GHI CHÚ -->
-    <div id="auth-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm hidden p-4">
-        <div class="glass-panel rounded-2xl p-5 w-full max-w-sm border border-amber-500/30 space-y-4 shadow-2xl dark:bg-slate-900 bg-white">
-            <div class="flex items-center space-x-3 text-amber-500">
-                <div class="p-2.5 bg-amber-500/15 rounded-xl border border-amber-500/20">
-                    <i class="fa-solid fa-lock text-xl"></i>
-                </div>
-                <div>
-                    <h3 id="auth-modal-title" class="text-sm font-bold text-slate-800 dark:text-slate-100">Xác Thực Quản Trị</h3>
-                    <p class="text-xs text-slate-400">Nhập mã xác thực để tiếp tục</p>
-                </div>
-            </div>
-            <div>
-                <input type="password" id="auth-passcode" class="glass-input text-sm rounded-xl px-3 py-2 w-full text-center tracking-widest font-mono" placeholder="••••" maxlength="10">
-                <p id="auth-error-msg" class="text-[11px] text-rose-500 mt-1.5 hidden text-center font-medium">Mã xác thực không chính xác!</p>
-            </div>
-            <div class="flex items-center justify-end space-x-2 pt-1">
-                <button onclick="closeAuthModal()" class="px-3.5 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 font-semibold text-xs transition">Hủy</button>
-                <button onclick="submitAuthModal()" class="px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-xl shadow transition">Xác Nhận</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL 3: THÊM / SỬA GHI CHÚ -->
-    <div id="note-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm hidden p-4">
-        <div class="glass-panel rounded-2xl p-5 w-full max-w-lg border border-amber-500/30 space-y-4 shadow-2xl dark:bg-slate-900 bg-white">
-            <div class="flex items-center justify-between">
-                <h3 id="note-modal-title" class="text-sm font-bold flex items-center gap-2 text-slate-800 dark:text-slate-100">
-                    <i class="fa-solid fa-pen-nib text-amber-500"></i> Ghi Chú Hoạt Động
-                </h3>
-                <button onclick="closeNoteModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><i class="fa-solid fa-xmark text-lg"></i></button>
-            </div>
-            <input type="hidden" id="note-id">
-            <div class="space-y-3">
-                <div>
-                    <label class="block text-xs font-semibold mb-1">Chọn Tuần / Kỳ liên quan:</label>
-                    <select id="note-modal-period" class="glass-input text-xs rounded-xl px-3 py-2 w-full font-semibold"></select>
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold mb-1">Tiêu đề ghi chú:</label>
-                    <input type="text" id="note-modal-title-input" class="glass-input text-xs rounded-xl px-3 py-2 w-full" placeholder="Nhập tiêu đề tóm tắt...">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold mb-1">Nội dung chi tiết:</label>
-                    <textarea id="note-modal-content" rows="4" class="glass-input text-xs rounded-xl p-3 w-full" placeholder="Nhập nội dung ghi chú vận hành..."></textarea>
-                </div>
-            </div>
-            <div class="flex items-center justify-end space-x-2 pt-2">
-                <button onclick="closeNoteModal()" class="px-3.5 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 font-semibold text-xs transition">Hủy</button>
-                <button onclick="saveNoteRecord()" class="px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-xl shadow transition">Lưu Ghi Chú</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL 4: XÓA KHOẢNG TUẦN -->
-    <div id="delete-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm hidden p-4">
-        <div class="glass-panel rounded-2xl p-5 w-full max-w-md border border-rose-500/30 space-y-4 shadow-2xl dark:bg-slate-900 bg-white">
-            <div class="flex items-center space-x-3 text-rose-500">
-                <div class="p-2.5 bg-rose-500/15 rounded-xl border border-rose-500/20">
-                    <i class="fa-solid fa-shield-halved text-xl"></i>
-                </div>
-                <div>
-                    <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100">Xác Nhận Xóa Dữ Liệu</h3>
-                    <p class="text-xs text-slate-400">Chọn khoảng tuần cần xóa và nhập mã xác thực</p>
-                </div>
-            </div>
-            
-            <div class="space-y-3">
-                <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <label class="block text-xs font-semibold mb-1">Từ tuần:</label>
-                        <select id="delete-start-week" class="glass-input text-xs rounded-xl px-3 py-2 w-full"></select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold mb-1">Đến tuần:</label>
-                        <select id="delete-end-week" class="glass-input text-xs rounded-xl px-3 py-2 w-full"></select>
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold mb-1">Mã xác thực quản trị:</label>
-                    <input type="password" id="delete-passcode" class="glass-input text-xs rounded-xl px-3 py-2 w-full text-center tracking-widest font-mono" placeholder="••••">
-                </div>
-            </div>
-
-            <div class="flex items-center justify-end space-x-2 pt-2">
-                <button onclick="closeDeleteModal()" class="px-3.5 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 font-semibold text-xs transition">Hủy</button>
-                <button onclick="executeDeleteRecord()" class="px-4 py-1.5 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl shadow transition">Xác Nhận Xóa</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- JavaScript Logic Core -->
     <script>
-        const SUPABASE_URL = "https://xmecpfeujkvidwmqprzd.supabase.co";
-        const SUPABASE_KEY = "sb_publishable_wK5FXrtBK7qPdmJ5fS1aag_gJ3Gdv3G";
-        const SUPABASE_TABLE_URL = `${SUPABASE_URL}/rest/v1/cskh_monthly_records`;
-        const BUCKET_NAME = "cskh-excel-files";
-        const MASTER_PIN = "6868"; // Mã bảo mật ẩn
+        // ================== CÁC BIẾN TOÀN CỤC ==================
+        const storyText = document.getElementById('storyText');
+        const vocabContainer = document.getElementById('vocabContainer');
+        const vocabList = document.getElementById('vocabList');
+        const quizContainer = document.getElementById('quizContainer');
+        const toastMessage = document.getElementById('toastMessage');
+        const cleanBtn = document.getElementById('cleanBtn');
+        const speedSlider = document.getElementById('speedSlider');
+        let currentImageFile = null;
+        let toastTimeout;
+        let globalVocabData = []; 
+        let childName = "";
+        let childAge = "";
 
-        const STANDARD_14_ISSUES = [
-            "Thông tin liên hệ, Mã số thuế",
-            "Thao tác sử dụng Eport/Smartgate",
-            "Duyệt lệnh Eport",
-            "Thông tin khai thác và tình trạng hàng hoá",
-            "Gia hạn lệnh lấy hàng",
-            "Các vấn đề về thủ tục Hải quan",
-            "Kiểm tra tình trạng thanh toán",
-            "Quy trình và thủ tục tại Cảng",
-            "Huỷ/điều chỉnh và các vđ hoá đơn",
-            "Dịch vụ Cảng biển",
-            "Biểu phí và các chính sách thanh toán",
-            "Dịch vụ chăm sóc khách hàng",
-            "Cơ sở hạ tầng và trang thiết bị",
-            "Hư hỏng hoặc mất mát hàng hóa"
-        ];
+        // ================== SUPABASE DATABASE ==================
+        const SUPABASE_URL = 'https://xmecpfeujkvidwmqprzd.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_wK5FXrtBK7qPdmJ5fS1aag_gJ3Gdv3G';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let masterDatabase = [];
-        let notesDatabase = [];
-        let filteredData = [];
-        let trendChartInstance = null;
-        let donutChartInstance = null;
-        let branchChartInstance = null;
-        let pendingAction = null;
-
-        // Quản lý Dark/Light Theme
-        function initTheme() {
-            const savedTheme = localStorage.getItem('theme');
-            if (savedTheme === 'light') {
-                document.documentElement.classList.remove('dark');
-            } else {
-                document.documentElement.classList.add('dark');
-            }
-        }
-
-        function toggleDarkMode() {
-            const isDark = document.documentElement.classList.toggle('dark');
-            localStorage.setItem('theme', isDark ? 'dark' : 'light');
-            renderDashboard();
-        }
-
-        // Quản lý Thu Gọn Menu
-        function toggleControlsBar() {
-            const bar = document.getElementById('controls-bar');
-            const icon = document.getElementById('collapse-chevron');
-            if (bar.classList.contains('hidden')) {
-                bar.classList.remove('hidden');
-                icon.className = "fa-solid fa-chevron-up";
-            } else {
-                bar.classList.add('hidden');
-                icon.className = "fa-solid fa-chevron-down";
-            }
-        }
-
-        // Modal Nạp Excel
-        function openUploadModal() {
-            document.getElementById('modal-excel-file').value = '';
-            document.getElementById('upload-passcode').value = '';
-            document.getElementById('upload-error-msg').classList.add('hidden');
-            document.getElementById('upload-modal').classList.remove('hidden');
-        }
-
-        function closeUploadModal() {
-            document.getElementById('upload-modal').classList.add('hidden');
-        }
-
-        async function executeUploadFromModal() {
-            const fileInput = document.getElementById('modal-excel-file');
-            const passcode = document.getElementById('upload-passcode').value.trim();
-            const errorMsg = document.getElementById('upload-error-msg');
-
-            if (!fileInput.files || fileInput.files.length === 0) {
-                errorMsg.innerText = "Vui lòng chọn tệp Excel trước khi tiếp tục!";
-                errorMsg.classList.remove('hidden');
-                return;
-            }
-
-            if (passcode !== MASTER_PIN) {
-                errorMsg.innerText = "Mã xác thực quản trị không chính xác!";
-                errorMsg.classList.remove('hidden');
-                document.getElementById('upload-passcode').value = '';
-                document.getElementById('upload-passcode').focus();
-                return;
-            }
-
-            errorMsg.classList.add('hidden');
-            const file = fileInput.files[0];
-            const submitBtn = document.getElementById('upload-submit-btn');
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang xử lý...`;
-
+        async function fetchStories() {
             try {
-                await processExcelFile(file);
-                closeUploadModal();
-            } catch (err) {
-                errorMsg.innerText = "Lỗi xử lý: " + err.message;
-                errorMsg.classList.remove('hidden');
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> Xác Nhận Nạp & Đồng Bộ`;
-            }
-        }
-
-        // =========================================================================
-        // XỬ LÝ XÁC THỰC BẢO MẬT: ĐÃ SỬA LỖI PENDING ACTION BỊ NULL
-        // =========================================================================
-        function promptAuth(actionCallback, titleText = "Xác Thực Quản Trị") {
-            pendingAction = actionCallback;
-            document.getElementById('auth-modal-title').innerText = titleText;
-            document.getElementById('auth-passcode').value = '';
-            document.getElementById('auth-error-msg').classList.add('hidden');
-            document.getElementById('auth-modal').classList.remove('hidden');
-            setTimeout(() => document.getElementById('auth-passcode').focus(), 150);
-        }
-
-        function closeAuthModal() {
-            document.getElementById('auth-modal').classList.add('hidden');
-            pendingAction = null;
-        }
-
-        function submitAuthModal() {
-            const pin = document.getElementById('auth-passcode').value.trim();
-            if (pin === MASTER_PIN) {
-                const actionToRun = pendingAction; // LƯU HÀM TRƯỚC KHI ĐÓNG MODAL
-                document.getElementById('auth-modal').classList.add('hidden');
-                pendingAction = null;
-                if (typeof actionToRun === 'function') {
-                    actionToRun(); // THỰC THI CHÍNH XÁC THAO TÁC SỬA / XÓA
+                let { data: stories, error } = await supabase.from('saved_stories').select('*').order('created_at', { ascending: false });
+                const listEl = document.getElementById('storyList');
+                
+                if (error) throw error;
+                if (!stories || stories.length === 0) {
+                    listEl.innerHTML = '<p class="text-indigo-400 font-bold text-sm italic text-center">Chưa có bài nào được lưu.</p>';
+                    return;
                 }
-            } else {
-                document.getElementById('auth-error-msg').classList.remove('hidden');
-                document.getElementById('auth-passcode').value = '';
-                document.getElementById('auth-passcode').focus();
-            }
-        }
-
-        document.getElementById('auth-passcode').addEventListener('keyup', (e) => {
-            if (e.key === 'Enter') submitAuthModal();
-        });
-        document.getElementById('upload-passcode').addEventListener('keyup', (e) => {
-            if (e.key === 'Enter') executeUploadFromModal();
-        });
-
-        function requestAddNoteAuth() {
-            promptAuth(() => {
-                openAddNoteModalDirect();
-            }, "Xác Thực Thêm Ghi Chú");
-        }
-
-        function requestEditNoteAuth(id) {
-            promptAuth(() => {
-                editNoteDirect(id);
-            }, "Xác Thực Sửa Ghi Chú");
-        }
-
-        function requestDeleteNoteAuth(id) {
-            promptAuth(() => {
-                deleteNoteDirect(id);
-            }, "Xác Thực Xóa Ghi Chú");
-        }
-
-        // Tính ngày chuẩn tuần
-        function getStartAndEndDateOfWeek(weekNum, year = 2026) {
-            const refWeek = 42;
-            const refStartDate = new Date(2026, 9, 11);
-            const diffWeeks = weekNum - refWeek;
-            const startDate = new Date(refStartDate);
-            startDate.setDate(refStartDate.getDate() + (diffWeeks * 7));
-            const endDate = new Date(startDate);
-            endDate.setDate(startDate.getDate() + 6);
-
-            const formatDate = (d) => {
-                const yyyy = d.getFullYear();
-                const mm = String(d.getMonth() + 1).padStart(2, '0');
-                const dd = String(d.getDate()).padStart(2, '0');
-                return `${yyyy}-${mm}-${dd}`;
-            };
-            return { dateStart: formatDate(startDate), dateEnd: formatDate(endDate) };
-        }
-
-        document.addEventListener('DOMContentLoaded', async () => {
-            initTheme();
-            await fetchSupabaseData();
-        });
-
-        async function fetchSupabaseData() {
-            try {
-                const response = await fetch(`${SUPABASE_TABLE_URL}?select=*`, {
-                    headers: { 
-                        "apikey": SUPABASE_KEY, 
-                        "Authorization": `Bearer ${SUPABASE_KEY}` 
-                    }
-                });
-                if (response.ok) {
-                    const rows = await response.json();
-                    const backupRow = rows.find(r => r.id === 1 || (r.payload && r.payload.masterDatabase));
-                    if (backupRow && backupRow.payload && backupRow.payload.masterDatabase) {
-                        masterDatabase = backupRow.payload.masterDatabase || [];
-                        notesDatabase = backupRow.payload.notesDatabase || [];
-                        updateCloudStatus('Đã đồng bộ Cloud', 'emerald');
-                    } else {
-                        initDefaultData();
-                        await syncDatabaseToSupabase();
-                    }
-                } else {
-                    updateCloudStatus('Ngoại tuyến (Offline Mode)', 'amber');
-                    initDefaultData();
-                }
-            } catch (err) {
-                console.error("Supabase error:", err);
-                updateCloudStatus('Ngoại tuyến (Offline Mode)', 'rose');
-                initDefaultData();
-            }
-
-            // Đảm bảo mọi bản ghi chú đều có ID hợp lệ
-            if (Array.isArray(notesDatabase)) {
-                notesDatabase.forEach((note, idx) => {
-                    if (!note.id) note.id = 'note_' + (Date.now() + idx);
-                });
-            }
-
-            masterDatabase.forEach(item => {
-                const weekMatch = String(item.period).match(/\d+/);
-                if (weekMatch) {
-                    const wNum = parseInt(weekMatch[0]);
-                    const dates = getStartAndEndDateOfWeek(wNum, 2026);
-                    if (!item.dateStart) item.dateStart = dates.dateStart;
-                    if (!item.dateEnd) item.dateEnd = dates.dateEnd;
-                }
-            });
-
-            sortDatabase();
-            initWeekFilters();
-
-            // MẶC ĐỊNH HIỂN THỊ TUẦN GẦN NHẤT
-            setQuickWeekFilter(1);
-        }
-
-        function initDefaultData() {
-            const w41Dates = getStartAndEndDateOfWeek(41, 2026);
-            const w42Dates = getStartAndEndDateOfWeek(42, 2026);
-
-            masterDatabase = [
-                {
-                    period: "W41", dateStart: w41Dates.dateStart, dateEnd: w41Dates.dateEnd, crm: 901, zaloMsg: 2573, zaloRate: 99.73, calls: 84, missed: 0, pickup: 100.0, waitTime: 4.39, talkAvg: 75.66,
-                    zaloOA: { totalFollowers: 3318, newFollowers: 23, totalSent: 2573, csat: 99, ratingRate: 37 },
-                    survey: { webCount: 1, webScore: 50, appCount: 0, appScore: 0 },
-                    issues: {"Thông tin liên hệ, Mã số thuế": 69, "Thao tác sử dụng Eport/Smartgate": 48, "Duyệt lệnh Eport": 633, "Thông tin khai thác và tình trạng hàng hoá": 25, "Gia hạn lệnh lấy hàng": 13, "Các vấn đề về thủ tục Hải quan": 9, "Kiểm tra tình trạng thanh toán": 16, "Quy trình và thủ tục tại Cảng": 25, "Huỷ/điều chỉnh và các vđ hoá đơn": 30, "Dịch vụ Cảng biển": 16, "Biểu phí và các chính sách thanh toán": 4, "Dịch vụ chăm sóc khách hàng": 13, "Cơ sở hạ tầng và trang thiết bị": 0, "Hư hỏng hoặc mất mát hàng hóa": 0},
-                    branches: {
-                        "CẢNG TÂN VŨ": { calls: 63, missed: 0, pickup: 100, wait: 5.02, talk: 74.93, crm: 720 },
-                        "CẢNG HDCV": { calls: 21, missed: 0, pickup: 100, wait: 3.75, talk: 31.42, crm: 181 }
-                    }
-                },
-                {
-                    period: "W42", dateStart: w42Dates.dateStart, dateEnd: w42Dates.dateEnd, crm: 950, zaloMsg: 2600, zaloRate: 99.80, calls: 90, missed: 0, pickup: 100.0, waitTime: 4.20, talkAvg: 76.10,
-                    zaloOA: { totalFollowers: 3330, newFollowers: 15, totalSent: 2600, csat: 99, ratingRate: 38 },
-                    survey: { webCount: 2, webScore: 48, appCount: 0, appScore: 0 },
-                    issues: {"Thông tin liên hệ, Mã số thuế": 70, "Thao tác sử dụng Eport/Smartgate": 50, "Duyệt lệnh Eport": 650, "Thông tin khai thác và tình trạng hàng hoá": 30, "Gia hạn lệnh lấy hàng": 15, "Các vấn đề về thủ tục Hải quan": 10, "Kiểm tra tình trạng thanh toán": 20, "Quy trình và thủ tục tại Cảng": 30, "Huỷ/điều chỉnh và các vđ hoá đơn": 32, "Dịch vụ Cảng biển": 18, "Biểu phí và các chính sách thanh toán": 5, "Dịch vụ chăm sóc khách hàng": 15, "Cơ sở hạ tầng và trang thiết bị": 0, "Hư hỏng hoặc mất mát hàng hóa": 0},
-                    branches: {
-                        "CẢNG TÂN VŨ": { calls: 68, missed: 0, pickup: 100, wait: 4.80, talk: 75.20, crm: 760 },
-                        "CẢNG HDCV": { calls: 22, missed: 0, pickup: 100, wait: 3.50, talk: 32.00, crm: 190 }
-                    }
-                }
-            ];
-            
-            notesDatabase = [
-                {
-                    id: 'n_1',
-                    period: 'W42',
-                    date: '2026-10-18',
-                    title: 'Lỗi tìm kiếm trên ZALO OA',
-                    content: 'Ngày 14/10/2026 Zalo oa Cảng Hải Phòng bị lỗi chức năng tìm kiếm nội dung và tên khách hàng dẫn tới việc hỗ trợ khách hàng qua kênh gặp nhiều khó khăn. Sự cố đc nhà cung cấp khắc phục sau 1 ngày'
-                },
-                {
-                    id: 'n_2',
-                    period: 'W43',
-                    date: '2026-10-25',
-                    title: 'Sự cố vận hành Hotline, Zalo oa và CRM',
-                    content: '-23/10/2026: Đường dây số Hotline 1800555522 nhánh 1 gặp sự cố... -22/10/2026: Hệ thống nhập ticket CRM chậm... -21/10/2026: Cuộc gọi lỡ Cảng HDCV... -19/10/2026: Lỗi hệ thống Hải quan...'
-                }
-            ];
-        }
-
-        function sortDatabase() {
-            masterDatabase.sort((a, b) => {
-                const numA = parseInt(String(a.period).replace(/\D/g, '')) || 0;
-                const numB = parseInt(String(b.period).replace(/\D/g, '')) || 0;
-                if (numA !== numB) return numA - numB;
-                return String(a.period).localeCompare(String(b.period));
-            });
-        }
-
-        async function syncDatabaseToSupabase() {
-            try {
-                sortDatabase();
-                const payloadData = { masterDatabase, notesDatabase };
-                const response = await fetch(SUPABASE_TABLE_URL, {
-                    method: 'POST',
-                    headers: {
-                        "apikey": SUPABASE_KEY,
-                        "Authorization": `Bearer ${SUPABASE_KEY}`,
-                        "Content-Type": "application/json",
-                        "Prefer": "resolution=merge-duplicates"
-                    },
-                    body: JSON.stringify({ id: 1, payload: payloadData })
-                });
-                if (response.ok) {
-                    updateCloudStatus('Đã đồng bộ Cloud', 'emerald');
-                } else {
-                    updateCloudStatus('Lỗi đồng bộ Cloud', 'rose');
-                }
-            } catch (err) {
-                console.error("Sync error:", err);
-                updateCloudStatus('Lỗi đồng bộ Cloud', 'rose');
-            }
-        }
-
-        function updateCloudStatus(message, color) {
-            const badge = document.getElementById('cloud-status');
-            const text = document.getElementById('status-text');
-            if (!badge || !text) return;
-            text.innerText = message;
-            if (color === 'emerald') {
-                badge.className = "hidden sm:flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 dark:text-emerald-400 text-xs font-semibold";
-            } else if (color === 'amber') {
-                badge.className = "hidden sm:flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-500 dark:text-amber-400 text-xs font-semibold";
-            } else {
-                badge.className = "hidden sm:flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 dark:text-rose-400 text-xs font-semibold";
-            }
-        }
-
-        function initWeekFilters() {
-            const startSelect = document.getElementById('filter-start-week');
-            const endSelect = document.getElementById('filter-end-week');
-            const delStart = document.getElementById('delete-start-week');
-            const delEnd = document.getElementById('delete-end-week');
-
-            startSelect.innerHTML = '';
-            endSelect.innerHTML = '';
-            delStart.innerHTML = '';
-            delEnd.innerHTML = '';
-
-            masterDatabase.forEach((d, idx) => {
-                const opt1 = document.createElement('option'); opt1.value = idx; opt1.innerText = d.period; startSelect.appendChild(opt1);
-                const opt2 = document.createElement('option'); opt2.value = idx; opt2.innerText = d.period; endSelect.appendChild(opt2);
-                const opt3 = document.createElement('option'); opt3.value = d.period; opt3.innerText = d.period; delStart.appendChild(opt3);
-                const opt4 = document.createElement('option'); opt4.value = d.period; opt4.innerText = d.period; delEnd.appendChild(opt4);
-            });
-            if (masterDatabase.length > 0) {
-                endSelect.value = masterDatabase.length - 1;
-                delEnd.value = masterDatabase[masterDatabase.length - 1].period;
-            }
-        }
-
-        function setQuickWeekFilter(count) {
-            const total = masterDatabase.length;
-            if (total === 0) return;
-
-            if (count === 'all' || count >= total) {
-                document.getElementById('filter-start-week').value = 0;
-                document.getElementById('filter-end-week').value = total - 1;
-            } else {
-                document.getElementById('filter-start-week').value = Math.max(0, total - count);
-                document.getElementById('filter-end-week').value = total - 1;
-            }
-            applyWeekFilter();
-        }
-
-        function applyWeekFilter() {
-            const startIdx = parseInt(document.getElementById('filter-start-week').value) || 0;
-            const endIdx = parseInt(document.getElementById('filter-end-week').value) || (masterDatabase.length - 1);
-
-            let s = Math.min(startIdx, endIdx);
-            let e = Math.max(startIdx, endIdx);
-
-            filteredData = masterDatabase.slice(s, e + 1);
-
-            if (filteredData.length > 0) {
-                const first = filteredData[0];
-                const last = filteredData[filteredData.length - 1];
-                let dateRangeStr = "";
-                if (first.period === last.period) {
-                    dateRangeStr = `Tuần ${first.period}: ${formatDateVN(first.dateStart)} - ${formatDateVN(first.dateEnd)}`;
-                } else {
-                    dateRangeStr = `Kỳ: ${first.period} (${formatDateVN(first.dateStart)}) đến ${last.period} (${formatDateVN(last.dateEnd)})`;
-                }
-                document.getElementById('filter-date-badge').innerText = dateRangeStr;
-            } else {
-                document.getElementById('filter-date-badge').innerText = "--";
-            }
-
-            renderDashboard();
-        }
-
-        function formatDateVN(dateStr) {
-            if (!dateStr) return '';
-            try {
-                const parts = dateStr.split('-');
-                if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
-                return dateStr;
-            } catch (e) { return dateStr; }
-        }
-
-        function renderDashboard() {
-            updateKPIs();
-            renderTrendChart();
-            renderDonutChart();
-            renderBranchChart();
-            renderZaloOACard();
-            renderMatrixTable();
-            populateNotePeriodDropdown();
-            renderNotesTable();
-        }
-
-        function updateKPIs() {
-            if (filteredData.length === 0) return;
-            const count = filteredData.length;
-
-            const totalCrm = filteredData.reduce((acc, cur) => acc + (cur.crm || 0), 0);
-            const avgCrm = Math.round(totalCrm / count);
-
-            const totalZalo = filteredData.reduce((acc, cur) => acc + (cur.zaloMsg || 0), 0);
-            const avgZalo = Math.round(totalZalo / count);
-            const avgZaloRate = (filteredData.reduce((acc, cur) => acc + (cur.zaloRate || 0), 0) / count).toFixed(2);
-
-            const totalCalls = filteredData.reduce((acc, cur) => acc + (cur.calls || 0), 0);
-            const avgTalk = Math.round(filteredData.reduce((acc, cur) => acc + (cur.talkAvg || 75), 0) / count);
-            const totalMissed = filteredData.reduce((acc, cur) => acc + (cur.missed || 0), 0);
-
-            let totalWebCount = 0, totalAppCount = 0, webScoreWeighted = 0, appScoreWeighted = 0;
-            filteredData.forEach(d => {
-                if (d.survey) {
-                    const wc = d.survey.webCount || 0;
-                    const ac = d.survey.appCount || 0;
-                    totalWebCount += wc;
-                    totalAppCount += ac;
-                    webScoreWeighted += (d.survey.webScore || 0) * wc;
-                    appScoreWeighted += (d.survey.appScore || 0) * ac;
-                }
-            });
-            const avgWebScore = totalWebCount > 0 ? Math.round(webScoreWeighted / totalWebCount) : 0;
-            const avgAppScore = totalAppCount > 0 ? Math.round(appScoreWeighted / totalAppCount) : 0;
-
-            document.getElementById('kpi-crm').innerText = totalCrm.toLocaleString();
-            document.getElementById('kpi-crm-avg').innerText = count === 1 ? `Tuần này` : `TB: ${avgCrm.toLocaleString()}/tuần`;
-
-            document.getElementById('kpi-zalo').innerText = totalZalo.toLocaleString();
-            document.getElementById('kpi-zalo-avg').innerText = count === 1 ? `Tuần này` : `TB: ${avgZalo.toLocaleString()} tin/tuần`;
-            document.getElementById('kpi-zalo-rate').innerText = `Tỷ lệ PH: ${avgZaloRate}%`;
-
-            document.getElementById('kpi-calls').innerText = totalCalls.toLocaleString();
-            document.getElementById('kpi-talk-avg').innerText = `TG thoại: ${avgTalk}s`;
-            document.getElementById('kpi-missed').innerText = `Cuộc lỡ: ${totalMissed}`;
-
-            document.getElementById('kpi-survey-ratio').innerText = `${totalWebCount} lượt Web / ${totalAppCount} lượt App`;
-            document.getElementById('kpi-survey-web').innerText = `Web: ${avgWebScore}/50`;
-            document.getElementById('kpi-survey-app').innerText = `App: ${avgAppScore}/50`;
-        }
-
-        function renderZaloOACard() {
-            if (filteredData.length === 0) return;
-            const count = filteredData.length;
-            const latestRecord = filteredData[filteredData.length - 1];
-            
-            const totalFollowers = latestRecord.zaloOA ? (latestRecord.zaloOA.totalFollowers || 3318) : 3318;
-            const totalNewFollowers = filteredData.reduce((acc, cur) => acc + (cur.zaloOA ? cur.zaloOA.newFollowers || 0 : 0), 0);
-            const totalSent = filteredData.reduce((acc, cur) => acc + (cur.zaloMsg || 0), 0);
-            const avgCsat = Math.round(filteredData.reduce((acc, cur) => acc + (cur.zaloOA ? cur.zaloOA.csat || 99 : 99), 0) / count);
-            const avgRatingRate = (filteredData.reduce((acc, cur) => acc + (cur.zaloOA ? cur.zaloOA.ratingRate || 37 : 37), 0) / count).toFixed(1);
-
-            document.getElementById('zalo-total-followers').innerText = totalFollowers.toLocaleString();
-            document.getElementById('zalo-new-followers').innerText = totalNewFollowers.toLocaleString();
-            document.getElementById('zalo-total-sent').innerText = totalSent.toLocaleString();
-            document.getElementById('zalo-csat').innerText = `${avgCsat}%`;
-            document.getElementById('zalo-rating-rate').innerText = `${avgRatingRate}%`;
-        }
-
-        function getChartTextColor() {
-            return document.documentElement.classList.contains('dark') ? '#94a3b8' : '#64748b';
-        }
-
-        function getChartGridColor() {
-            return document.documentElement.classList.contains('dark') ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)';
-        }
-
-        function renderTrendChart() {
-            const ctx1 = document.getElementById('trendChart').getContext('2d');
-            const mode = document.getElementById('chart1-mode').value;
-
-            if (trendChartInstance) trendChartInstance.destroy();
-
-            const chartType = (mode === 'line') ? 'line' : 'bar';
-            const isStacked = (mode === 'stacked');
-
-            trendChartInstance = new Chart(ctx1, {
-                type: chartType,
-                data: {
-                    labels: filteredData.map(d => d.period),
-                    datasets: [
-                        {
-                            label: 'Yêu Cầu CRM',
-                            data: filteredData.map(d => d.crm),
-                            borderColor: '#3b82f6',
-                            backgroundColor: 'rgba(59, 130, 246, 0.75)',
-                            borderWidth: 2,
-                            tension: 0.3,
-                            fill: (mode === 'line')
-                        },
-                        {
-                            label: 'Tin Nhắn Zalo',
-                            data: filteredData.map(d => d.zaloMsg),
-                            borderColor: '#8b5cf6',
-                            backgroundColor: 'rgba(139, 92, 246, 0.75)',
-                            borderWidth: 2,
-                            tension: 0.3,
-                            fill: (mode === 'line')
-                        },
-                        {
-                            label: 'Cuộc Gọi Đến',
-                            data: filteredData.map(d => d.calls),
-                            borderColor: '#f59e0b',
-                            backgroundColor: 'rgba(245, 158, 11, 0.75)',
-                            borderWidth: 2,
-                            tension: 0.3,
-                            fill: (mode === 'line')
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { labels: { color: getChartTextColor(), font: { size: 11, weight: 'bold' } } } },
-                    scales: {
-                        x: { stacked: isStacked, ticks: { color: getChartTextColor() }, grid: { color: getChartGridColor() } },
-                        y: { stacked: isStacked, ticks: { color: getChartTextColor() }, grid: { color: getChartGridColor() } }
-                    }
-                }
-            });
-        }
-
-        function renderDonutChart() {
-            const ctx2 = document.getElementById('issueDonutChart').getContext('2d');
-            if (donutChartInstance) donutChartInstance.destroy();
-
-            const filterVal = document.getElementById('donut-filter').value;
-            let issueTotals = {};
-            filteredData.forEach(item => {
-                if (item.issues) {
-                    for (const [k, v] of Object.entries(item.issues)) {
-                        issueTotals[k] = (issueTotals[k] || 0) + v;
-                    }
-                }
-            });
-
-            let sortedIssues = Object.entries(issueTotals).sort((a, b) => b[1] - a[1]);
-            if (filterVal !== 'all') {
-                sortedIssues = sortedIssues.slice(0, parseInt(filterVal));
-            }
-
-            donutChartInstance = new Chart(ctx2, {
-                type: 'doughnut',
-                data: {
-                    labels: sortedIssues.map(i => i[0]),
-                    datasets: [{
-                        data: sortedIssues.map(i => i[1]),
-                        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4', '#f97316', '#64748b']
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    cutout: '65%'
-                }
-            });
-
-            const legendEl = document.getElementById('donut-legend');
-            legendEl.innerHTML = '';
-            const colors = donutChartInstance.data.datasets[0].backgroundColor;
-            sortedIssues.forEach((item, idx) => {
-                const color = colors[idx % colors.length];
-                legendEl.innerHTML += `
-                    <div class="flex items-center space-x-1.5 truncate">
-                        <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background-color: ${color}"></span>
-                        <span class="truncate font-medium text-slate-600 dark:text-slate-300" title="${item[0]}">${item[0]}: <strong>${item[1]}</strong></span>
+                
+                listEl.innerHTML = stories.map(story => `
+                    <div class="bg-card p-3 rounded-xl border border-indigo-100 flex justify-between items-center shadow-sm">
+                        <div class="cursor-pointer truncate flex-1 pr-2" onclick="loadStory('${story.id}')">
+                            <span class="text-indigo-700 font-bold">📄 ${story.title || 'Truyện không tên'}</span>
+                            <span class="text-xs text-slate-400 block">${new Date(story.created_at).toLocaleDateString('vi-VN')}</span>
+                        </div>
+                        <button onclick="deleteStory('${story.id}')" class="text-red-500 hover:bg-red-100 p-2 rounded-lg font-black">❌</button>
                     </div>
-                `;
-            });
-        }
-
-        function getBranchCalls(d, branchNames) {
-            if (!d.branches) return 0;
-            for (const name of branchNames) {
-                if (d.branches[name] && typeof d.branches[name].calls !== 'undefined') {
-                    return Number(d.branches[name].calls) || 0;
-                }
-            }
-            for (const [k, v] of Object.entries(d.branches)) {
-                const uK = k.toUpperCase();
-                for (const name of branchNames) {
-                    if (uK.includes(name.toUpperCase())) {
-                        return Number(v.calls) || 0;
-                    }
-                }
-            }
-            return 0;
-        }
-
-        function renderBranchChart() {
-            const ctx3 = document.getElementById('branchChart').getContext('2d');
-            const viewMode = document.getElementById('branch-view-mode').value;
-
-            if (branchChartInstance) branchChartInstance.destroy();
-
-            const chartType = (viewMode === 'line') ? 'line' : 'bar';
-            const isStacked = (viewMode === 'stacked');
-
-            branchChartInstance = new Chart(ctx3, {
-                type: chartType,
-                data: {
-                    labels: filteredData.map(d => d.period),
-                    datasets: [
-                        {
-                            label: 'Cảng Tân Vũ (Cuộc gọi)',
-                            data: filteredData.map(d => getBranchCalls(d, ["CẢNG TÂN VŨ", "TÂN VŨ"])),
-                            backgroundColor: '#3b82f6',
-                            borderColor: '#3b82f6',
-                            borderWidth: 2,
-                            tension: 0.3
-                        },
-                        {
-                            label: 'Cảng HDCV (Cuộc gọi)',
-                            data: filteredData.map(d => getBranchCalls(d, ["CẢNG HDCV", "HDCV", "HOÀNG DIỆU", "CHÙA VẼ"])),
-                            backgroundColor: '#f97316',
-                            borderColor: '#f97316',
-                            borderWidth: 2,
-                            tension: 0.3
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { labels: { color: getChartTextColor(), font: { size: 11, weight: 'bold' } } } },
-                    scales: {
-                        x: { stacked: isStacked, ticks: { color: getChartTextColor() }, grid: { color: getChartGridColor() } },
-                        y: { stacked: isStacked, ticks: { color: getChartTextColor() }, grid: { color: getChartGridColor() } }
-                    }
-                }
-            });
-        }
-
-        // BẢNG MA TRẬN CHI TIẾT
-        function renderMatrixTable() {
-            const thead = document.getElementById('matrix-thead');
-            const tbody = document.getElementById('matrix-tbody');
-            thead.innerHTML = '';
-            tbody.innerHTML = '';
-
-            if (filteredData.length === 0) return;
-
-            let headerHTML = `<tr>
-                <th class="px-3 py-2.5 sticky left-0 dark:bg-slate-900 bg-slate-100 z-30 w-12 text-center">STT</th>
-                <th class="px-4 py-2.5 sticky left-12 dark:bg-slate-900 bg-slate-100 z-30 min-w-[240px]">Danh Mục Tiếp Nhận</th>
-                <th class="px-4 py-2.5 text-center bg-blue-600/15 text-blue-600 dark:text-blue-400 font-extrabold border-r dark:border-slate-800 border-slate-200 min-w-[90px]">TB (Avg)</th>`;
-            
-            filteredData.forEach(d => {
-                headerHTML += `<th class="px-3 py-2.5 text-center font-bold min-w-[70px]">${d.period}<br><span class="text-[10px] text-slate-400 font-normal">${d.dateStart ? formatDateVN(d.dateStart) : ''}</span></th>`;
-            });
-            headerHTML += `</tr>`;
-            thead.innerHTML = headerHTML;
-
-            let bodyHTML = '';
-            STANDARD_14_ISSUES.forEach((issueName, idx) => {
-                let issueSum = 0;
-                let cellsByWeek = '';
-                filteredData.forEach(d => {
-                    let val = (d.issues && d.issues[issueName]) ? d.issues[issueName] : 0;
-                    issueSum += val;
-                    cellsByWeek += `<td class="px-3 py-2 text-center text-slate-600 dark:text-slate-300 font-mono">${val.toLocaleString()}</td>`;
-                });
-                let issueAvg = Math.round((issueSum / filteredData.length) * 10) / 10;
-
-                bodyHTML += `<tr class="hover:bg-slate-100 dark:hover:bg-slate-800/40 transition">`;
-                bodyHTML += `<td class="px-3 py-2 sticky left-0 dark:bg-slate-900 bg-slate-50 z-20 text-slate-500 font-semibold text-center">${idx + 1}</td>`;
-                bodyHTML += `<td class="px-4 py-2 sticky left-12 dark:bg-slate-900 bg-slate-50 z-20 font-medium text-slate-700 dark:text-slate-200">${issueName}</td>`;
-                bodyHTML += `<td class="px-4 py-2 text-center bg-blue-600/10 text-blue-600 dark:text-blue-400 font-black font-mono border-r dark:border-slate-800 border-slate-200">${issueAvg}</td>`;
-                bodyHTML += cellsByWeek;
-                bodyHTML += `</tr>`;
-            });
-
-            tbody.innerHTML = bodyHTML;
-        }
-
-        function filterTableData() {
-            const query = document.getElementById('table-search').value.toLowerCase();
-            const rows = document.querySelectorAll('#matrix-tbody tr');
-            rows.forEach(row => {
-                const text = row.innerText.toLowerCase();
-                row.style.display = text.includes(query) ? '' : 'none';
-            });
-        }
-
-        function populateNotePeriodDropdown() {
-            const selectFilter = document.getElementById('note-period-filter');
-            const modalSelect = document.getElementById('note-modal-period');
-            let optionsHTML = '<option value="all">Tất cả các tuần</option>';
-            let modalOptionsHTML = '';
-
-            const reversedDb = [...masterDatabase].reverse();
-            reversedDb.forEach(d => {
-                optionsHTML += `<option value="${d.period}">${d.period} (${formatDateVN(d.dateStart)} - ${formatDateVN(d.dateEnd)})</option>`;
-                modalOptionsHTML += `<option value="${d.period}">${d.period} (${formatDateVN(d.dateStart)} - ${formatDateVN(d.dateEnd)})</option>`;
-            });
-            selectFilter.innerHTML = optionsHTML;
-            modalSelect.innerHTML = modalOptionsHTML;
-        }
-
-        // =========================================================================
-        // SỔ TAY GHI CHÚ: TỰ ĐỘNG BẢO ĐẢM ID VÀ THAO TÁC SỬA / XÓA HOẠT ĐỘNG 100%[cite: 2]
-        // =========================================================================
-        function renderNotesTable() {
-            const tbody = document.getElementById('notes-tbody');
-            const filterPeriod = document.getElementById('note-period-filter').value;
-            let notes = filterPeriod === 'all' ? [...notesDatabase] : notesDatabase.filter(n => n.period === filterPeriod);
-
-            notes.sort((a, b) => {
-                const numA = parseInt(String(a.period).replace(/\D/g, '')) || 0;
-                const numB = parseInt(String(b.period).replace(/\D/g, '')) || 0;
-                if (numB !== numA) return numB - numA;
-                return String(b.date || '').localeCompare(String(a.date || ''));
-            });
-
-            tbody.innerHTML = '';
-            if (notes.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-400 text-xs">Chưa có ghi chú nào. Bấm "Thêm Ghi Chú Mới" để tạo mới.</td></tr>`;
-                return;
-            }
-
-            notes.forEach(note => {
-                // Đảm bảo note luôn có id
-                const safeId = String(note.id || '');
-                tbody.innerHTML += `
-                    <tr class="hover:bg-slate-100 dark:hover:bg-slate-800/40 transition">
-                        <td class="px-4 py-2.5 font-bold text-amber-500 font-mono text-sm">${note.period}</td>
-                        <td class="px-4 py-2.5 text-slate-500 dark:text-slate-400 text-[11px] font-mono">${note.date || ''}</td>
-                        <td class="px-4 py-2.5 font-bold text-slate-800 dark:text-slate-200">${note.title}</td>
-                        <td class="px-4 py-2.5 text-slate-600 dark:text-slate-300 leading-relaxed text-xs">${note.content}</td>
-                        <td class="px-4 py-2.5 text-center space-x-2">
-                            <button onclick="requestEditNoteAuth('${safeId}')" class="text-blue-500 hover:text-blue-400 p-1.5 hover:bg-blue-500/10 rounded-lg transition" title="Sửa ghi chú"><i class="fa-solid fa-pen"></i></button>
-                            <button onclick="requestDeleteNoteAuth('${safeId}')" class="text-rose-500 hover:text-rose-400 p-1.5 hover:bg-rose-500/10 rounded-lg transition" title="Xóa ghi chú"><i class="fa-solid fa-trash"></i></button>
-                        </td>
-                    </tr>
-                `;
-            });
-        }
-
-        function openAddNoteModalDirect() {
-            document.getElementById('note-id').value = '';
-            document.getElementById('note-modal-title').innerHTML = '<i class="fa-solid fa-plus text-amber-500"></i><span>Thêm Ghi Chú Hoạt Động</span>';
-            document.getElementById('note-modal-title-input').value = '';
-            document.getElementById('note-modal-content').value = '';
-            document.getElementById('note-modal').classList.remove('hidden');
-        }
-
-        function closeNoteModal() {
-            document.getElementById('note-modal').classList.add('hidden');
-        }
-
-        function editNoteDirect(id) {
-            // So sánh String an toàn
-            const note = notesDatabase.find(n => String(n.id) === String(id));
-            if (!note) {
-                alert('Không tìm thấy ghi chú tương ứng!');
-                return;
-            }
-            document.getElementById('note-id').value = note.id;
-            document.getElementById('note-modal-title').innerHTML = '<i class="fa-solid fa-pen text-amber-500"></i><span>Sửa Ghi Chú Hoạt Động</span>';
-            document.getElementById('note-modal-period').value = note.period;
-            document.getElementById('note-modal-title-input').value = note.title;
-            document.getElementById('note-modal-content').value = note.content;
-            document.getElementById('note-modal').classList.remove('hidden');
-        }
-
-        async function saveNoteRecord() {
-            const id = document.getElementById('note-id').value;
-            const period = document.getElementById('note-modal-period').value;
-            const title = document.getElementById('note-modal-title-input').value.trim();
-            const content = document.getElementById('note-modal-content').value.trim();
-
-            if (!title || !content) return alert('Vui lòng nhập đầy đủ tiêu đề và nội dung ghi chú!');
-
-            if (id) {
-                const idx = notesDatabase.findIndex(n => String(n.id) === String(id));
-                if (idx >= 0) {
-                    notesDatabase[idx].period = period;
-                    notesDatabase[idx].title = title;
-                    notesDatabase[idx].content = content;
-                }
-            } else {
-                notesDatabase.push({
-                    id: 'note_' + Date.now(),
-                    period,
-                    title,
-                    content,
-                    date: new Date().toISOString().split('T')[0]
-                });
-            }
-
-            await syncDatabaseToSupabase();
-            closeNoteModal();
-            renderNotesTable();
-            alert('Đã lưu ghi chú thành công!');
-        }
-
-        async function deleteNoteDirect(id) {
-            if (!confirm('Bạn có chắc chắn muốn xóa bản ghi chú này?')) return;
-            // Lọc an toàn bằng String
-            notesDatabase = notesDatabase.filter(n => String(n.id) !== String(id));
-            await syncDatabaseToSupabase();
-            renderNotesTable();
-            alert('Đã xóa ghi chú thành công!');
-        }
-
-        // HÀM ĐỌC EXCEL - BẢO TOÀN DỮ LIỆU & TỰ ĐỘNG CHUYỂN VỀ TUẦN GẦN NHẤT SAU KHI NẠP[cite: 1]
-        async function processExcelFile(file) {
-            try {
-                const safeName = `CSKH_${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
-                await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET_NAME}/${safeName}`, {
-                    method: "POST",
-                    headers: {
-                        "apikey": SUPABASE_KEY,
-                        "Authorization": `Bearer ${SUPABASE_KEY}`,
-                        "Content-Type": file.type || "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                    },
-                    body: file
-                });
+                `).join('');
             } catch (err) {
-                console.warn("Storage upload bypass:", err);
+                console.error(err);
+                document.getElementById('storyList').innerHTML = '<p class="text-red-400 font-bold text-sm italic">Lỗi kết nối máy chủ dữ liệu.</p>';
             }
-
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = async function(e) {
-                    try {
-                        const data = new Uint8Array(e.target.result);
-                        const workbook = XLSX.read(data, { type: 'array' });
-                        
-                        let sheetName = workbook.SheetNames.find(s => s.trim().toUpperCase() === "TH1") || workbook.SheetNames[0];
-                        const sheet = workbook.Sheets[sheetName];
-                        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-
-                        let weeks = [];
-                        let weekRowIdx = -1;
-
-                        for (let r = 0; r < Math.min(25, rows.length); r++) {
-                            if (rows[r]) {
-                                let matchCount = 0;
-                                rows[r].forEach((cell) => {
-                                    if (cell && /^W\s*\d+$/i.test(String(cell).trim())) {
-                                        matchCount++;
-                                    }
-                                });
-                                if (matchCount >= 1) {
-                                    weekRowIdx = r;
-                                    break;
-                                }
-                            }
-                        }
-
-                        if (weekRowIdx === -1) {
-                            throw new Error('Không tìm thấy dòng tiêu đề tuần (W...) trong file Excel!');
-                        }
-
-                        rows[weekRowIdx].forEach((cell, cIdx) => {
-                            if (cell && /^W\s*\d+$/i.test(String(cell).trim())) {
-                                weeks.push({ index: cIdx, period: String(cell).trim().toUpperCase() });
-                            }
-                        });
-
-                        if (weeks.length === 0) {
-                            throw new Error('Không tìm thấy mã tuần hợp lệ!');
-                        }
-
-                        let newRecordsMap = {};
-                        weeks.forEach(w => {
-                            const weekMatch = w.period.match(/\d+/);
-                            const wNum = weekMatch ? parseInt(weekMatch[0]) : 42;
-                            const dateRange = getStartAndEndDateOfWeek(wNum, 2026);
-
-                            newRecordsMap[w.period] = {
-                                period: w.period,
-                                dateStart: dateRange.dateStart,
-                                dateEnd: dateRange.dateEnd,
-                                crm: 0, zaloMsg: 0, zaloRate: 99.0, calls: 0, missed: 0, pickup: 100.0, waitTime: 4.5, talkAvg: 75.0,
-                                zaloOA: { totalFollowers: 3320, newFollowers: 10, totalSent: 2000, csat: 99, ratingRate: 35 },
-                                survey: { webCount: 0, webScore: 0, appCount: 0, appScore: 0 },
-                                issues: {},
-                                branches: {
-                                    "CẢNG TÂN VŨ": { calls: 0, missed: 0, pickup: 100, wait: 0, talk: 0, crm: 0 },
-                                    "CẢNG HDCV": { calls: 0, missed: 0, pickup: 100, wait: 0, talk: 0, crm: 0 }
-                                }
-                            };
-                        });
-
-                        let currentSection = "";
-                        const normalizeText = (value) => String(value ?? "")
-                            .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-                            .replace(/đ/g, "d").replace(/Đ/g, "D")
-                            .replace(/\s+/g, " ").trim().toUpperCase();
-
-                        const toNumber = (value) => {
-                            if (typeof value === "number") return Number.isFinite(value) ? value : 0;
-                            if (!value) return 0;
-                            const cleaned = String(value).trim().replace(/\s/g, "").replace(",", ".");
-                            const parsed = Number(cleaned);
-                            return Number.isFinite(parsed) ? parsed : 0;
-                        };
-
-                        for (let r = 0; r < rows.length; r++) {
-                            const row = rows[r] || [];
-                            const colA = String(row[0] ?? "").trim();
-                            const colB = String(row[1] ?? "").trim();
-                            const a = normalizeText(colA);
-                            const b = normalizeText(colB);
-
-                            if (a.includes("KHOI KPI") || a.includes("TONG HOP CHUNG")) currentSection = "KPI";
-                            else if (a.includes("KHOI PHAN LOAI") || a.includes("VAN DE PHAN ANH") || b.includes("VAN DE PHAN ANH")) currentSection = "ISSUES";
-                            else if (a.includes("ZALO OA") || b.includes("CHI SO ZALO OA")) currentSection = "ZALOOA";
-                            else if (a.includes("KHAO SAT") || a.includes("KHOI CHI SO KHAO SAT")) currentSection = "SURVEY";
-                            else if (a.includes("HIEU QUA TONG DAI") || (a.includes("DON VI") && b.includes("CHI SO"))) currentSection = "BRANCHES";
-
-                            let branchKey = null;
-                            if (currentSection === "BRANCHES") {
-                                if (a.includes("TAN VU")) branchKey = "CẢNG TÂN VŨ";
-                                else if (a.includes("HDCV") || a.includes("HOANG DIEU") || a.includes("CHUA VE")) branchKey = "CẢNG HDCV";
-                            }
-
-                            weeks.forEach(w => {
-                                const rec = newRecordsMap[w.period];
-                                if (!rec) return;
-                                const val = toNumber(row[w.index]);
-
-                                if (currentSection === "KPI" && r < 25) {
-                                    if (b.includes("SO YEU CAU (CRM)") || b.includes("CRM")) rec.crm = val;
-                                    else if (b.includes("TIN NHAN ZALO")) rec.zaloMsg = val;
-                                    else if (b.includes("TY LE PHAN HOI ZALO")) rec.zaloRate = val;
-                                    else if (b === "CUOC GOI DEN" || b.includes("CUOC GOI DEN")) rec.calls = val;
-                                    else if (b.includes("SO CUOC LO")) rec.missed = val;
-                                    else if (b.includes("TY LE NHAC MAY")) rec.pickup = val;
-                                    else if (b.includes("THOI GIAN CHO TB")) rec.waitTime = val;
-                                    else if (b.includes("THOI GIAN THOAI TB")) rec.talkAvg = val;
-                                } else if (currentSection === "ISSUES") {
-                                    if (colB && b !== "VAN DE PHAN ANH" && /^\d+$/.test(String(row[0] ?? "").trim())) {
-                                        rec.issues[colB] = val;
-                                    }
-                                } else if (currentSection === "ZALOOA") {
-                                    if (b.includes("NGUOI QUAN TAM MOI")) rec.zaloOA.newFollowers = val;
-                                    else if (b === "NGUOI QUAN TAM") rec.zaloOA.totalFollowers = val;
-                                    else if (b.includes("LUOT GUI TIN NHAN")) rec.zaloOA.totalSent = val;
-                                    else if (b.includes("HAI LONG CSAT")) rec.zaloOA.csat = val <= 1 ? Math.round(val * 100) : Math.round(val);
-                                    else if (b.includes("TY LE DANH GIA") || b.includes("TY PHAN HOI DANH GIA")) rec.zaloOA.ratingRate = val <= 1 ? Math.round(val * 100) : Math.round(val);
-                                } else if (currentSection === "SURVEY") {
-                                    if (a === "WEBSITE") {
-                                        if (b === "LUOT") rec.survey.webCount = val;
-                                        else if (b === "DIEM") rec.survey.webScore = Number(String(row[w.index] ?? "0").split("/")[0]) || 0;
-                                    } else if (a === "APP") {
-                                        if (b === "LUOT") rec.survey.appCount = val;
-                                        else if (b === "DIEM") rec.survey.appScore = Number(String(row[w.index] ?? "0").split("/")[0]) || 0;
-                                    }
-                                } else if (currentSection === "BRANCHES" && branchKey) {
-                                    const branch = rec.branches[branchKey] || (rec.branches[branchKey] = {
-                                        calls: 0, missed: 0, pickup: 100, wait: 0, talk: 0, crm: 0
-                                    });
-                                    if (b.includes("CUOC GOI DEN")) branch.calls = val;
-                                    else if (b.includes("SO CUOC LO")) branch.missed = val;
-                                    else if (b.includes("TY LE NHAC MAY")) branch.pickup = val;
-                                    else if (b.includes("THOI GIAN CHO")) branch.wait = val;
-                                    else if (b.includes("THOI GIAN THOAI")) branch.talk = val;
-                                }
-                            });
-                        }
-
-                        // GỘP BẢO TOÀN DỮ LIỆU[cite: 1]
-                        let mergedMap = {};
-                        masterDatabase.forEach(item => {
-                            mergedMap[item.period] = item;
-                        });
-
-                        Object.keys(newRecordsMap).forEach(pKey => {
-                            mergedMap[pKey] = newRecordsMap[pKey];
-                        });
-
-                        masterDatabase = Object.values(mergedMap);
-                        sortDatabase();
-                        await syncDatabaseToSupabase();
-                        initWeekFilters();
-
-                        // SAU KHI NẠP: MẶC ĐỊNH HIỂN THỊ NGAY TUẦN MỚI NHẤT
-                        setQuickWeekFilter(1);
-
-                        const uploadedWeeksStr = weeks.map(w => w.period).join(', ');
-                        alert(`Nạp thành công! Các tuần được xử lý: [${uploadedWeeksStr}]. Dữ liệu cũ đã được bảo toàn an toàn trên Cloud.`);
-                        resolve();
-                    } catch (err) {
-                        reject(err);
-                    }
-                };
-                reader.onerror = () => reject(new Error("Không thể đọc tệp Excel!"));
-                reader.readAsArrayBuffer(file);
-            });
         }
 
-        function exportDatabase() {
-            const wb = XLSX.utils.book_new();
+        async function saveToCloud() {
+            let text = storyText.value.trim();
+            if (!text) return showToast('Khung chữ trống, chưa có gì để lưu!', 'warning');
             
-            let summaryData = masterDatabase.map(d => ({
-                "Kỳ / Tuần": d.period,
-                "Từ ngày": d.dateStart,
-                "Đến ngày": d.dateEnd,
-                "Số Yêu Cầu CRM": d.crm,
-                "Lượt Zalo": d.zaloMsg,
-                "Tỷ lệ Zalo (%)": d.zaloRate,
-                "Cuộc Gọi Đến": d.calls,
-                "Số Cuộc Lỡ": d.missed,
-                "Tỷ lệ Nhấc Máy (%)": d.pickup,
-                "TG Chờ TB (s)": d.waitTime,
-                "TG Thoại TB (s)": d.talkAvg
-            }));
-            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(summaryData), "TongHop_KPI");
+            showToast('Đang lưu vào kho...', 'success');
+            let title = text.substring(0, 30).replace(/\n/g, ' ') + '...';
+            
+            try {
+                const { data, error } = await supabase.from('saved_stories').insert([{ title: title, content: text }]);
+                if (error) throw error;
+                showToast('Đã lưu truyện thành công! ☁️', 'success');
+                fetchStories();
+            } catch (err) {
+                showToast('Lưu thất bại! (Kiểm tra lại cấu hình bảng)', 'error');
+            }
+        }
 
-            let issuesData = masterDatabase.map(d => {
-                let row = { "Kỳ / Tuần": d.period };
-                STANDARD_14_ISSUES.forEach(issue => {
-                    row[issue] = (d.issues && d.issues[issue]) ? d.issues[issue] : 0;
-                });
-                return row;
+        async function loadStory(id) {
+            try {
+                let { data, error } = await supabase.from('saved_stories').select('content').eq('id', id).single();
+                if (error) throw error;
+                storyText.value = data.content;
+                showToast('Đã tải truyện cũ! Bấm "Làm sạch chữ" để tra từ nhé.', 'success');
+            } catch (err) {
+                showToast('Không tải được truyện.', 'error');
+            }
+        }
+
+        async function deleteStory(id) {
+            if(!confirm('Bé có chắc muốn xóa bài này không?')) return;
+            try {
+                await supabase.from('saved_stories').delete().eq('id', id);
+                showToast('Đã xóa thành công! 🗑️', 'success');
+                fetchStories();
+            } catch (err) {
+                showToast('Lỗi khi xóa.', 'error');
+            }
+        }
+
+        // Tải danh sách khi khởi chạy
+        setTimeout(fetchStories, 1000);
+
+        // ================== XUẤT OFFLINE (WORD & MP3) ==================
+        function exportToWord() {
+            const text = storyText.value.trim();
+            if (!text) return showToast('Chưa có truyện để xuất file Word!', 'warning');
+            
+            // Tạo chuỗi HTML mô phỏng định dạng Word có màu sắc
+            const wordHtml = `
+            <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+            <head><meta charset='utf-8'><title>Magic Story</title></head>
+            <body style="font-family: 'Comic Sans MS', sans-serif; background-color: #fdf2f8; padding: 40px; border: 5px solid #fbcfe8; border-radius: 20px;">
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <h1 style="color: #ec4899; font-size: 28pt; margin: 0;">🌟 MAGIC STORY READER 🌟</h1>
+                    <p style="color: #3b82f6; font-size: 14pt; font-weight: bold;">Phát triển bởi Daddy Dũng Đẹp Zai</p>
+                </div>
+                <div style="background-color: #ffffff; padding: 20px; border-radius: 15px; border: 2px dashed #bfdbfe;">
+                    <div>${wordBody(text)}</div>
+                </div>
+                <div style="margin-top: 30px; text-align: center; font-size: 14pt; color: #8b5cf6;">
+                    <i>Bé nhớ chăm chỉ luyện đọc mỗi ngày nhé! ❤️</i>
+                </div>
+            </body>
+            </html>`;
+
+            const blob = new Blob(['\ufeff', wordHtml], { type: 'application/msword' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Truyen_Cua_Be_${new Date().getTime()}.doc`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            showToast('Đã tải xuống file Word A4! 🖨️', 'success');
+        }
+
+        function exportToMP3() {
+            const text = storyText.value.trim();
+            if (!text) return showToast('Chưa có truyện để xuất MP3!', 'warning');
+            
+            // Vì Google TTS trả về các đoạn ngắn, tải file MP3 ghép nối phức tạp.
+            // Giải pháp: Gửi đoạn text đầu tiên (tối đa 200 ký tự) ra cửa sổ mới để download.
+            let chunk = text.substring(0, 200); 
+            let url = `https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=en&q=${encodeURIComponent(chunk)}`;
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.target = "_blank"; // Mở tab mới để trình duyệt tự tải hoặc phát
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            
+            showToast('Đã mở link tải Âm thanh MP3! 🎵', 'success');
+        }
+
+
+        // ================== HIỆU ỨNG GIAO DIỆN & MARQUEE ==================
+        const greetings = [
+            "Hello little angel! Have a magical day! ✨",
+            "Keep up the great work! You are amazing! 🚀",
+            "You are a shining star! Keep shining! ⭐",
+            "Learning English is so much fun! 🎈",
+            "Let's read a wonderful story together! 📚",
+            "Smile! Today is a beautiful day to learn! 🌞"
+        ];
+        
+        function setMarquee() {
+            const dayOfWeek = new Date().getDay(); 
+            // Random thêm một câu chúc
+            const randomMsg = greetings[Math.floor(Math.random() * greetings.length)];
+            const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+            document.getElementById('greetingMarquee').innerText = `Happy ${days[dayOfWeek]}! ${randomMsg}`;
+        }
+        setMarquee();
+
+        function showToast(msg, type = 'success') {
+            clearTimeout(toastTimeout);
+            toastMessage.textContent = msg;
+            toastMessage.className = `fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 rounded-full font-bold text-base shadow-xl transition-all duration-300 text-center min-w-[250px] pointer-events-none`;
+            
+            if (type === 'error') toastMessage.classList.add('bg-red-500', 'text-white');
+            else if (type === 'warning') toastMessage.classList.add('bg-yellow-400', 'text-yellow-900');
+            else toastMessage.classList.add('bg-green-500', 'text-white');
+            
+            toastMessage.style.opacity = '1';
+            toastMessage.style.transform = 'translate(-50%, 10px)'; 
+            
+            toastTimeout = setTimeout(() => {
+                toastMessage.style.opacity = '0';
+                toastMessage.style.transform = 'translate(-50%, 0)';
+            }, 3000);
+        }
+
+        // ================== CHỌN FILE, XEM TRƯỚC & ĐỌC CHỮ ==================
+        const $ = id => document.getElementById(id);
+        const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        const ICON = { img: '🖼️', pdf: '📕', docx: '📘', txt: '📄', html: '📄' };
+        const MAX_PDF_PAGES = 30;
+        let files = [], active = 0, pvToken = 0, pvUrl = null;
+        const cache = new Map();
+        const memo = (f, key, fn) => { let m = cache.get(f); if (!m) cache.set(f, m = {}); return m[key] || (m[key] = fn()); };
+
+        function kind(f) {
+            const n = f.name.toLowerCase();
+            if (f.type.startsWith('image/') || /\.(jpe?g|png|gif|webp|bmp|avif|tiff?)$/.test(n)) return 'img';
+            if (f.type === 'application/pdf' || n.endsWith('.pdf')) return 'pdf';
+            if (n.endsWith('.docx')) return 'docx';
+            if (/\.(txt|md|text)$/.test(n) || f.type === 'text/plain') return 'txt';
+            if (/\.(html?|doc)$/.test(n)) return 'html';
+            return null;
+        }
+        const loadPdf = f => memo(f, 'pdf', async () => pdfjsLib.getDocument({ data: new Uint8Array(await f.arrayBuffer()) }).promise);
+        const readText = (f, k) => memo(f, 'txt', async () => {
+            if (k === 'txt') return f.text();
+            if (k === 'docx') return (await mammoth.extractRawText({ arrayBuffer: await f.arrayBuffer() })).value;
+            const raw = await f.text();
+            if (!/<\s*(html|body|p|div)\b/i.test(raw)) throw new Error('File .doc cũ chưa đọc được. Bé lưu lại thành .docx hoặc PDF nhé!');
+            const d = new DOMParser().parseFromString(raw, 'text/html');
+            d.querySelectorAll('br').forEach(b => b.replaceWith('\n'));
+            d.querySelectorAll('p,div,h1,h2,h3,li,tr').forEach(e => e.append('\n'));
+            return d.body.textContent.replace(/\u00a0/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
+        });
+        async function renderPdfPage(pdf, n, scale) {
+            const p = await pdf.getPage(n), vp = p.getViewport({ scale }), c = document.createElement('canvas');
+            c.width = vp.width; c.height = vp.height;
+            await p.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
+            return c;
+        }
+
+        // ----- Dựng lại bố cục (xuống dòng + thụt đầu dòng) từ toạ độ từng dòng chữ -----
+        const median = a => { const s = [...a].sort((x, y) => x - y); return s[Math.floor(s.length / 2)] || 0; };
+        function layoutText(L) {
+            L = L.filter(l => l.t);
+            if (!L.length) return '';
+            const left = Math.min(...L.map(l => l.x));
+            const cw = median(L.map(l => l.w / l.t.length)) || 8;
+            const pitch = median(L.slice(1).map((l, i) => l.top - L[i].top).filter(d => d > 0));
+            return L.map((l, i) => {
+                const n = Math.round((l.x - left) / cw);
+                const gap = i && pitch && (l.top - L[i - 1].top) > pitch * 1.6 ? '\n' : '';
+                return gap + (n >= 2 ? ' '.repeat(Math.min(n, 16)) : '') + l.t;
+            }).join('\n');
+        }
+        function ocrLayout(d) {
+            const ls = d.lines || (d.blocks || []).flatMap(b => b.paragraphs.flatMap(p => p.lines));
+            return ls && ls.length
+                ? layoutText(ls.map(l => ({ t: l.text.replace(/\s+/g, ' ').trim(), x: l.bbox.x0, top: l.bbox.y0, w: l.bbox.x1 - l.bbox.x0 })))
+                : (d.text || '');
+        }
+        async function pdfPageText(page) {
+            const tc = await page.getTextContent();
+            const its = tc.items.filter(i => i.str !== '').map(i => ({ s: i.str, x: i.transform[4], y: i.transform[5], w: i.width, h: i.height || Math.abs(i.transform[3]) || 10 }));
+            its.sort((a, b) => b.y - a.y || a.x - b.x);
+            const lines = [];
+            its.forEach(it => {
+                const l = lines[lines.length - 1];
+                if (l && Math.abs(l.y - it.y) < it.h * 0.5) l.items.push(it); else lines.push({ y: it.y, items: [it] });
             });
-            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(issuesData), "14_VanDe_PhanAnh");
-            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(notesDatabase), "GhiChu_HoatDong");
-
-            XLSX.writeFile(wb, `CSKH_HaiPhong_Full_Backup_${Date.now()}.xlsx`);
+            return layoutText(lines.map(l => {
+                l.items.sort((a, b) => a.x - b.x);
+                let t = '', end = null;
+                l.items.forEach(it => {
+                    if (end !== null && it.x - end > it.h * 0.25 && !/\s$/.test(t) && !/^\s/.test(it.s)) t += ' ';
+                    t += it.s; end = it.x + it.w;
+                });
+                const first = l.items.find(i => i.s.trim()) || l.items[0];
+                return { t: t.replace(/\s+/g, ' ').trim(), x: first.x, top: -l.y - first.h, w: end - first.x };
+            }));
         }
 
-        function openDeleteModal() {
-            document.getElementById('delete-passcode').value = '';
-            document.getElementById('delete-modal').classList.remove('hidden');
+        // ----- Danh sách file & khung xem trước -----
+        function addFiles(list) {
+            const ok = [], bad = [];
+            [...list].forEach(f => kind(f) ? ok.push(f) : bad.push(f.name));
+            if (bad.length) showToast('Chưa hỗ trợ: ' + bad.join(', '), 'warning');
+            if (!ok.length) return;
+            active = files.length; files.push(...ok); renderFiles();
+        }
+        function pickFile(i) { active = i; renderFiles(); }
+        function removeFile(i) { files.splice(i, 1); active = Math.max(0, Math.min(active, files.length - 1)); renderFiles(); }
+        function renderFiles() {
+            $('fileChips').innerHTML = files.map((f, i) => `<span class="inline-flex items-center rounded-full border-2 ${i === active ? 'border-pink-500 bg-pink-100' : 'border-pink-200 bg-card'} text-sm font-bold text-pink-700 overflow-hidden max-w-full">
+                <button type="button" onclick="pickFile(${i})" class="px-3 py-1 truncate max-w-[200px]">${ICON[kind(f)]} ${esc(f.name)}</button>
+                <button type="button" onclick="removeFile(${i})" class="px-2 py-1 hover:bg-pink-200" title="Bỏ file này">✕</button></span>`).join('');
+            showPreview(files[active]);
+        }
+        async function showPreview(f) {
+            const tok = ++pvToken, box = $('previewBox'), info = $('fileInfo');
+            if (pvUrl) { URL.revokeObjectURL(pvUrl); pvUrl = null; }
+            box.innerHTML = '';
+            $('placeholderText').classList.toggle('hidden', !!f);
+            info.classList.toggle('hidden', !f);
+            if (!f) return;
+            info.textContent = '⏳ Đang mở file...';
+            const k = kind(f); let el, extra = '';
+            try {
+                if (k === 'img') {
+                    el = new Image(); pvUrl = URL.createObjectURL(f);
+                    await new Promise((ok, no) => { el.onload = ok; el.onerror = () => no(new Error('Trình duyệt chưa xem được ảnh này (HEIC?). Bé thử ảnh JPG/PNG nhé!')); el.src = pvUrl; });
+                    el.className = 'max-w-full max-h-[350px] object-contain rounded-xl';
+                } else if (k === 'pdf') {
+                    const pdf = await loadPdf(f);
+                    el = await renderPdfPage(pdf, 1, 1.3); extra = ` · ${pdf.numPages} trang`;
+                    el.className = 'max-w-full max-h-[350px] object-contain rounded-xl';
+                } else {
+                    const t = await readText(f, k);
+                    el = document.createElement('pre');
+                    el.className = 'w-full max-h-[350px] overflow-auto whitespace-pre-wrap text-left text-sm text-slate-700 p-2';
+                    el.textContent = t.slice(0, 1500) + (t.length > 1500 ? '\n...' : '');
+                }
+                if (tok !== pvToken) return;
+                box.append(el);
+                info.textContent = `${f.name} · ${Math.max(1, Math.round(f.size / 1024))} KB${extra}`;
+            } catch (e) {
+                if (tok !== pvToken) return;
+                box.innerHTML = `<p class="text-red-500 font-bold text-center px-4">${esc(e.message || 'Không xem trước được file này')}</p>`;
+                info.textContent = f.name;
+            }
+        }
+        const dz = $('dropZone');
+        ['dragenter', 'dragover'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.add('drag'); }));
+        ['dragleave', 'drop'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.remove('drag'); }));
+        dz.addEventListener('drop', e => addFiles(e.dataTransfer.files));
+        window.addEventListener('dragover', e => e.preventDefault());
+        window.addEventListener('drop', e => e.preventDefault());
+        $('fileInput').addEventListener('change', e => { addFiles([...e.target.files]); e.target.value = ''; });
+
+        // ----- Đọc chữ (ảnh/PDF scan → OCR; PDF có chữ, Word, TXT → đọc thẳng) -----
+        $('extractBtn').addEventListener('click', async () => {
+            if (!files.length) return showToast('Chạm vào khung để chọn file nha!', 'warning');
+            const btn = $('extractBtn'), load = $('loadingStatus'), st = $('statusText');
+            load.classList.replace('hidden', 'flex'); btn.disabled = true;
+            let worker = null, usedOcr = false; const parts = [];
+            const ocr = async (src, label) => {
+                usedOcr = true;
+                worker = worker || await Tesseract.createWorker('eng', 1, { logger: m => { if (m.status === 'recognizing text') st.textContent = `${label}: ${Math.round(m.progress * 100)}% 🚀`; } });
+                return ocrLayout((await worker.recognize(src)).data);
+            };
+            try {
+                for (let i = 0; i < files.length; i++) {
+                    const f = files[i], k = kind(f), tag = `File ${i + 1}/${files.length}`;
+                    st.textContent = `${tag}: đang đọc...`;
+                    if (k === 'img') parts.push(await ocr(f, tag));
+                    else if (k === 'pdf') {
+                        const pdf = await loadPdf(f), n = Math.min(pdf.numPages, MAX_PDF_PAGES);
+                        for (let p = 1; p <= n; p++) {
+                            const lb = `${tag} · trang ${p}/${n}`; st.textContent = lb + '...';
+                            let t = await pdfPageText(await pdf.getPage(p));
+                            if (t.replace(/\s/g, '').length < 15) t = await ocr(await renderPdfPage(pdf, p, 2), lb);
+                            parts.push(t);
+                        }
+                        if (pdf.numPages > n) showToast(`Chỉ đọc ${n} trang đầu của PDF.`, 'warning');
+                    } else parts.push(await readText(f, k));
+                }
+                const text = parts.filter(t => t && t.trim()).join('\n\n');
+                if (!text) throw new Error('Không tìm thấy chữ nào trong file!');
+                storyText.value = text;
+                if (usedOcr) { showToast('Đọc chữ xong rồi! 🎉', 'success'); cleanBtn.click(); }
+                else { showToast('Đã nạp chữ từ file! 🎉', 'success'); extractVocabulary(text); }
+            } catch (e) {
+                console.error(e); showToast(e.message || 'Lỗi đọc file, thử file khác nhé!', 'error');
+            } finally {
+                if (worker) await worker.terminate().catch(() => {});
+                btn.disabled = false; load.classList.replace('flex', 'hidden');
+            }
+        });
+
+        // ----- Làm sạch chữ (giữ xuống dòng & thụt đầu dòng nếu bật) -----
+        cleanBtn.addEventListener('click', () => {
+            let text = storyText.value;
+            if (!text.trim()) return showToast('Khung chữ trống trơn!', 'warning');
+            const keep = $('keepLayout').checked;
+            text = text.replace(/\r/g, '').replace(/\t/g, '    ').replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/[–—]/g, '-');
+            text = text.replace(/[^a-zA-Z0-9.,!?'";:()\- \n]/g, ' ');
+            if (!keep) text = text.replace(/\n[ \t]*\n/g, ' \u0001 ').replace(/\n/g, ' ').replace(/ ?\u0001 ?/g, '\n\n');
+            const out = [];
+            text.split('\n').forEach(line => {
+                const ind = keep ? line.match(/^ */)[0] : '';
+                const words = line.replace(/\b[A-Za-z]*\d+[A-Za-z]*\b/g, ' ').split(' ')
+                    .filter(w => w && (!/[a-zA-Z]/.test(w) || /[aeiouyAEIOUY]/.test(w)));
+                if (words.length) out.push(ind + words.join(' ').replace(/ +([.,!?:;])/g, '$1'));
+                else if (!line.trim() && out.length && out[out.length - 1] !== '') out.push('');
+            });
+            text = out.join('\n').replace(/^\n+|\s+$/g, '').toLowerCase();
+            text = text.replace(/(^\s*[a-z]|[.!?]\s*[a-z])/g, c => c.toUpperCase()).replace(/\b(i)\b/g, 'I');
+            storyText.value = text;
+            showToast(keep ? 'Đã sửa lỗi & giữ nguyên bố cục! ✨' : 'Chữ đã gộp & sửa lỗi viết hoa! ✨', 'success');
+            vocabList.classList.remove('blur-active');
+            extractVocabulary(text);
+        });
+
+        // ----- Xuất Word giữ xuống dòng & thụt đầu dòng -----
+        function wordBody(t) {
+            const st = 'margin:0;font-size:18pt;line-height:1.8;font-weight:bold;color:#1e3a8a;';
+            return t.split('\n').map(l => `<p style="${st}">${esc(l).replace(/^ +/, m => '&nbsp;'.repeat(m.length)) || '&nbsp;'}</p>`).join('');
         }
 
-        function closeDeleteModal() {
-            document.getElementById('delete-modal').classList.add('hidden');
+        // ================== ĐỔI GIAO DIỆN ==================
+        const themePanel = $('themePanel');
+        function renderThemes() {
+            const cur = document.documentElement.dataset.theme;
+            themePanel.innerHTML = THEMES.map(t => `<button type="button" data-t="${t.id}" class="text-left rounded-xl p-2 border-2 btn-bounce ${t.id === cur ? 'border-pink-500 bg-pink-100' : 'border-pink-200 hover:bg-pink-50'}">
+                <span class="flex h-5 rounded-md overflow-hidden mb-1 border border-slate-300">${[t.bg, t.card, ...t.c].map(c => `<i class="flex-1" style="background:${c}"></i>`).join('')}</span>
+                <span class="text-xs font-black text-pink-700">${t.icon} ${t.name}</span></button>`).join('');
         }
+        $('themeBtn').addEventListener('click', () => { renderThemes(); themePanel.classList.toggle('hidden'); });
+        themePanel.addEventListener('click', e => {
+            const b = e.target.closest('[data-t]'); if (!b) return;
+            applyTheme(b.dataset.t); renderThemes();
+            showToast('Đã đổi giao diện! ' + THEMES.find(t => t.id === b.dataset.t).icon, 'success');
+        });
+        document.addEventListener('click', e => { if (!e.target.closest('#themePanel,#themeBtn')) themePanel.classList.add('hidden'); });
 
-        async function executeDeleteRecord() {
-            const startW = document.getElementById('delete-start-week').value;
-            const endW = document.getElementById('delete-end-week').value;
-            const passcode = document.getElementById('delete-passcode').value.trim();
-
-            if (passcode !== MASTER_PIN) {
-                alert('Mã xác thực không chính xác!');
+        // ================== TỪ VỰNG & GAME ==================
+        async function extractVocabulary(text) {
+            const stopWords = ['the', 'and', 'to', 'of', 'in', 'is', 'that', 'it', 'on', 'you', 'this', 'for', 'but', 'with', 'are', 'have', 'be', 'at', 'or', 'as', 'was', 'so', 'if', 'out', 'not', 'he', 'she', 'we', 'they', 'his', 'her', 'my', 'your', 'what', 'when', 'why', 'how', 'can'];
+            
+            let words = text.toLowerCase().match(/\b[a-z]{3,}\b/g) || [];
+            let complexWords = words.filter(w => !stopWords.includes(w));
+            
+            let wordCounts = {};
+            complexWords.forEach(w => wordCounts[w] = (wordCounts[w] || 0) + 1);
+            
+            let uniqueWords = Object.keys(wordCounts).filter(w => w.length >= 4);
+            uniqueWords.sort((a, b) => b.length - a.length); 
+            
+            let topWords = uniqueWords.slice(0, 15);
+            
+            if (topWords.length === 0) {
+                vocabList.innerHTML = '<span class="italic font-normal text-purple-400">Chưa tìm thấy từ khó!</span>';
+                quizContainer.innerHTML = '<span class="italic font-normal text-orange-400">Truyện ngắn quá, bé kiếm truyện dài hơn xíu để đố vui nha!</span>';
                 return;
             }
+            
+            vocabList.innerHTML = '<span class="italic font-normal text-purple-500 animate-pulse">Đang tra từ điển... ⏳</span>';
+            
+            let resultHTML = '';
+            globalVocabData = []; 
 
-            const startIdx = masterDatabase.findIndex(d => d.period === startW);
-            const endIdx = masterDatabase.findIndex(d => d.period === endW);
+            for (let word of topWords) {
+                try {
+                    let res = await fetch(`https://api.mymemory.translated.net/get?q=${word}&langpair=en|vi`);
+                    let data = await res.json();
+                    let meaning = data.responseData.translatedText.toLowerCase();
+                    globalVocabData.push({ word: word, meaning: meaning });
 
-            if (startIdx < 0 || endIdx < 0) {
-                alert('Khoảng tuần không hợp lệ!');
+                    resultHTML += `<div class="group px-3 py-2 bg-card border-2 border-purple-300 rounded-xl shadow-sm cursor-pointer hover:bg-purple-100 transition-all flex flex-col items-center justify-center text-center hover:scale-105" onclick="playWordAudio('${word}')">
+                        <span class="text-purple-700 font-black text-lg">${word} 🔊</span>
+                        <span class="text-sm text-slate-500 font-bold border-t border-purple-100 w-full mt-1 pt-1 capitalize">${meaning}</span>
+                    </div>`;
+                } catch (e) {}
+            }
+            
+            vocabList.innerHTML = resultHTML;
+            setupQuizForm();
+        }
+
+        // BƯỚC NHẬP TÊN TRƯỚC KHI CHƠI
+        function setupQuizForm() {
+            if(globalVocabData.length < 2) return;
+            
+            quizContainer.innerHTML = `
+                <div class="bg-card p-4 rounded-xl border border-orange-200 text-center shadow-sm">
+                    <p class="text-orange-600 text-lg font-black mb-3">Nhập thông tin của bé để bắt đầu Đố Vui nhé!</p>
+                    <input type="text" id="inputName" placeholder="Tên bé là gì?" class="w-full mb-3 p-3 border-2 border-orange-300 rounded-xl font-bold text-orange-700 outline-none focus:border-orange-500" value="${childName}">
+                    <input type="number" id="inputAge" placeholder="Bé mấy tuổi rồi?" class="w-full mb-3 p-3 border-2 border-orange-300 rounded-xl font-bold text-orange-700 outline-none focus:border-orange-500" value="${childAge}">
+                    <button onclick="startQuizEngine()" class="w-full py-3 bg-orange-500 text-white font-black text-xl rounded-xl shadow btn-bounce hover:bg-orange-600">🎮 Vào Chơi Thôi!</button>
+                </div>
+            `;
+        }
+
+        window.startQuizEngine = function() {
+            let n = document.getElementById('inputName').value.trim();
+            let a = document.getElementById('inputAge').value.trim();
+            
+            if(!n || !a) {
+                showToast('Bé nhớ nhập tên và tuổi nha!', 'warning');
                 return;
             }
-
-            let s = Math.min(startIdx, endIdx);
-            let e = Math.max(startIdx, endIdx);
-            const periodsToDelete = masterDatabase.slice(s, e + 1).map(d => d.period);
-
-            masterDatabase = masterDatabase.filter(d => !periodsToDelete.includes(d.period));
-
-            await syncDatabaseToSupabase();
-            initWeekFilters();
-
-            // Mặc định về tuần gần nhất sau khi xóa
-            setQuickWeekFilter(1);
-            closeDeleteModal();
-            alert(`Đã xóa các tuần từ ${startW} đến ${endW} thành công!`);
+            
+            childName = n;
+            childAge = a;
+            
+            // LÀM MỜ TỪ VỰNG 
+            vocabList.classList.add('blur-active');
+            showToast(`Chào bé ${childName} (${childAge} tuổi). Cố lên nha!`, 'success');
+            
+            generateQuiz();
         }
+
+        window.generateQuiz = function() {
+            let shuffledVocab = [...globalVocabData].sort(() => Math.random() - 0.5);
+            let questions = shuffledVocab.slice(0, 3); 
+            let allMeanings = globalVocabData.map(v => v.meaning);
+            let allEnglishWords = globalVocabData.map(v => v.word);
+            
+            const dummyMeanings = ["quả táo", "ngôi nhà", "bầu trời", "hạnh phúc", "mặt trời", "con chó"];
+            const dummyEnglishWords = ["apple", "house", "sky", "happy", "sun", "dog"];
+            
+            let quizHTML = `<p class="text-orange-700 text-lg mb-4 text-center">Tài khoản chơi: <b>${childName}</b> (${childAge} tuổi) 🌟</p>`;
+            
+            questions.forEach((q, index) => {
+                let isEngToVie = Math.random() > 0.5; 
+                let options = [];
+                let correctAnswer = "";
+                
+                if (isEngToVie) {
+                    correctAnswer = q.meaning;
+                    options.push(correctAnswer);
+                    while(options.length < 3) {
+                        let randomWrong = allMeanings.concat(dummyMeanings)[Math.floor(Math.random() * (allMeanings.length + dummyMeanings.length))];
+                        if(!options.includes(randomWrong)) options.push(randomWrong);
+                    }
+                    quizHTML += `<div class="mb-5 quiz-question" data-answer="${correctAnswer}" id="qDiv${index}">
+                        <p class="mb-2 text-lg">Câu ${index + 1}: Nghĩa của từ <b>"${q.word}"</b> là gì?</p>`;
+                } else {
+                    correctAnswer = q.word;
+                    options.push(correctAnswer);
+                    while(options.length < 3) {
+                        let randomWrong = allEnglishWords.concat(dummyEnglishWords)[Math.floor(Math.random() * (allEnglishWords.length + dummyEnglishWords.length))];
+                        if(!options.includes(randomWrong)) options.push(randomWrong);
+                    }
+                    quizHTML += `<div class="mb-5 quiz-question" data-answer="${correctAnswer}" id="qDiv${index}">
+                        <p class="mb-2 text-lg">Câu ${index + 1}: Từ nào có nghĩa là <b>"${q.meaning}"</b>?</p>`;
+                }
+                
+                options.sort(() => Math.random() - 0.5);
+                
+                quizHTML += `<div class="flex flex-col gap-2">
+                        ${options.map(opt => `
+                            <label class="bg-card px-4 py-2 rounded-lg border-2 border-orange-200 cursor-pointer hover:bg-orange-100 transition-colors">
+                                <input type="radio" name="q${index}" value="${opt}" class="mr-2 accent-orange-500 w-4 h-4"> 
+                                <span class="capitalize">${opt}</span>
+                            </label>`).join('')}
+                    </div>
+                </div>`;
+            });
+            
+            quizHTML += `<div class="flex gap-3 mt-2">
+                <button id="submitQuizBtn" class="flex-1 py-3 bg-orange-500 text-white text-base md:text-lg font-black rounded-xl active:bg-orange-600 shadow-sm transition-all" onclick="checkQuiz()">✅ Chấm Điểm</button>
+                <button id="replayQuizBtn" class="flex-1 py-3 bg-sky-500 text-white text-base md:text-lg font-black rounded-xl active:bg-sky-600 shadow-sm transition-all" onclick="generateQuiz()">🔄 Chơi Lại</button>
+            </div>`;
+            
+            quizHTML += `<div id="quizResult" class="mt-4 p-4 bg-green-100 border-2 border-green-400 rounded-xl text-center text-xl font-black text-green-800 hidden"></div>`;
+            
+            quizContainer.innerHTML = quizHTML;
+        };
+
+        window.checkQuiz = function() {
+            let score = 0;
+            let questions = document.querySelectorAll('.quiz-question');
+            let total = questions.length;
+            
+            questions.forEach((q, index) => {
+                let correctAnswer = q.getAttribute('data-answer');
+                let selected = document.querySelector(`input[name="q${index}"]:checked`);
+                let labels = q.querySelectorAll('label');
+
+                labels.forEach(l => {
+                    l.classList.remove('bg-green-100', 'border-green-400', 'bg-red-100', 'border-red-400');
+                    l.classList.add('bg-card');
+                });
+
+                if(selected) {
+                    let parentLabel = selected.parentElement;
+                    if(selected.value === correctAnswer) {
+                        score++;
+                        parentLabel.classList.remove('bg-card');
+                        parentLabel.classList.add('bg-green-100', 'border-green-400');
+                    } else {
+                        parentLabel.classList.remove('bg-card');
+                        parentLabel.classList.add('bg-red-100', 'border-red-400');
+                        let correctInput = q.querySelector(`input[value="${correctAnswer}"]`);
+                        if(correctInput) {
+                            correctInput.parentElement.classList.remove('bg-card');
+                            correctInput.parentElement.classList.add('bg-green-100', 'border-green-400');
+                        }
+                    }
+                }
+            });
+            
+            // Xóa blur từ vựng để bé đối chiếu lại
+            vocabList.classList.remove('blur-active');
+            
+            // CÂU CHÚC TÙY CHỈNH THEO ĐIỂM
+            let resultMessage = "";
+            if (score === total) {
+                resultMessage = `🎉 Wowww! ${childName} quá xuất sắc! 100 điểm cho bé! 🏆`;
+            } else if (score > total / 2) {
+                resultMessage = `👍 Rất tốt! Bé ${childName} làm đúng ${score}/${total} câu rồi. Cố gắng thêm chút nữa nhé!`;
+            } else {
+                resultMessage = `💪 Không sao đâu ${childName}, bé xem lại từ vựng bên trên rồi chơi lại nha!`;
+            }
+
+            let resultDiv = document.getElementById('quizResult');
+            resultDiv.innerHTML = resultMessage;
+            resultDiv.classList.remove('hidden');
+            resultDiv.classList.add('animate-bounce');
+            setTimeout(() => resultDiv.classList.remove('animate-bounce'), 1000);
+        };
+
+        // ================== AUDIO ==================
+        let mainAudio = new Audio();
+        let audioPlaylist = [];
+        let currentPlaylistIndex = 0;
+        let isPlaying = false;
+
+        function playWordAudio(word) {
+            let wordAudio = new Audio(`https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=en&q=${encodeURIComponent(word)}`);
+            wordAudio.play().catch(e => showToast('Vui lòng bật âm lượng!', 'warning'));
+        }
+
+        function speakText(textToSpeak) {
+            stopAudio(); 
+            if(!textToSpeak) return;
+            audioPlaylist = textToSpeak.match(/[^.!?\n]+[.!?\n]*/g) || [textToSpeak];
+            audioPlaylist = audioPlaylist.map(chunk => chunk.trim()).filter(chunk => chunk.length > 0);
+            currentPlaylistIndex = 0;
+            isPlaying = true;
+            document.getElementById('playBtn').innerHTML = '🔊 Đang đọc...';
+            playNextAudioChunk();
+        }
+
+        function playNextAudioChunk() {
+            if (currentPlaylistIndex >= audioPlaylist.length) return resetAudioUI();
+            let chunk = audioPlaylist[currentPlaylistIndex];
+            mainAudio.src = `https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=en&q=${encodeURIComponent(chunk)}`;
+            mainAudio.playbackRate = parseFloat(speedSlider.value);
+            mainAudio.onended = () => { currentPlaylistIndex++; playNextAudioChunk(); };
+            mainAudio.onerror = () => { currentPlaylistIndex++; playNextAudioChunk(); };
+            mainAudio.play().catch(() => { resetAudioUI(); showToast("Bé thử chạm lại nhé!", "error"); });
+        }
+
+        function stopAudio() {
+            mainAudio.pause();
+            mainAudio.currentTime = 0;
+            isPlaying = false;
+        }
+
+        function resetAudioUI() {
+            isPlaying = false;
+            document.getElementById('playBtn').innerHTML = '▶️ Đọc To';
+        }
+
+        document.getElementById('playBtn').addEventListener('click', () => {
+            if(isPlaying) return;
+            const text = storyText.value.trim();
+            if (!text) return showToast('Chưa có chữ để đọc!', 'warning');
+            speakText(text);
+        });
+
+        document.getElementById('playCursorBtn').addEventListener('click', () => {
+            if(isPlaying) stopAudio();
+            let text = storyText.value;
+            if (!text.trim()) return showToast('Chưa có chữ để đọc!', 'warning');
+            let pos = storyText.selectionStart;
+            while(pos > 0 && /\S/.test(text[pos - 1])) pos--;
+            let textToRead = text.substring(pos).trim();
+            if (!textToRead) return showToast('Đang ở cuối đoạn!', 'warning');
+            showToast('Đang đọc từ con trỏ... 🔊', 'success');
+            speakText(textToRead);
+        });
+
+        document.getElementById('stopBtn').addEventListener('click', () => {
+            stopAudio();
+            resetAudioUI();
+            showToast('Đã dừng! ⏹️', 'success');
+        });
+
     </script>
 </body>
 </html>
