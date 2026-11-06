@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <!-- Bắt buộc: Giúp Chrome Mobile không gửi Referrer tránh bị máy chủ âm thanh chặn 403 -->
     <meta name="referrer" content="no-referrer">
     <title>Magic Story Reader by Daddy Dũng</title>
     <!-- Tailwind CSS -->
@@ -61,7 +60,7 @@
 </head>
 <body class="p-2 md:p-6 flex flex-col items-center">
 
-    <!-- Thẻ Audio chuẩn Web Music Player nhúng cố định trong DOM -->
+    <!-- Audio Player ẩn phục vụ phát tiếng -->
     <audio id="magicPlayer" playsinline webkit-playsinline preload="auto" class="hidden"></audio>
 
     <div class="w-full max-w-7xl flex justify-end relative z-40 mb-2">
@@ -260,15 +259,14 @@
         async function deleteStory(id) { if(confirm('Xóa bài này nhé?')) { try { await db.from('saved_stories').delete().eq('id', id); fetchStories(); } catch (err) {} } }
         setTimeout(fetchStories, 1000);
 
-        // ================== AUDIO ENGINE CHUẨN WEB MUSIC PLAYER ==================
+        // ================== AUDIO ENGINE CHUẨN (KHÔNG CHẶN AUTOPLAY, KHÔNG LẶP) ==================
         const audioPlayer = document.getElementById('magicPlayer');
-        let playSessionId = 0;       // Mã phiên để chặn tuyệt đối việc phát lặp câu
+        let playSessionId = 0;
         let storyPlaylist = [];
         let storyPlaylistIdx = 0;
         let isStoryPlaying = false;
         let isAudioUnlocked = false;
 
-        // Mở khóa âm thanh cho trình duyệt di động từ lần chạm đầu tiên
         function unlockAudioEngine() {
             if (isAudioUnlocked) return;
             audioPlayer.src = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
@@ -305,7 +303,7 @@
         }
 
         function stopAudio() {
-            playSessionId++; // Hủy mọi phiên đọc đang chạy dở
+            playSessionId++;
             isStoryPlaying = false;
             storyPlaylist = [];
             storyPlaylistIdx = 0;
@@ -322,12 +320,11 @@
             if (btn) btn.innerHTML = '<span class="mr-1">▶️</span>Đọc To';
         }
 
-        // --- 1. PHÁT TỪ VỰNG DUY NHẤT (CÓ HIỆU ỨNG THỊ GIÁC, TUYỆT ĐỐI KHÔNG ĐỌC CẢ BÀI) ---
+        // --- 1. PHÁT TỪ VỰNG (HIỆU ỨNG THỊ GIÁC, KHÔNG ĐỌC CẢ BÀI) ---
         window.playWordAudio = function(word, el) {
-            stopAudio(); // Ngắt bất kỳ âm thanh nào đang phát
+            stopAudio();
             const currentSession = ++playSessionId;
 
-            // Hiệu ứng viền phát sáng và icon rung lắc
             if (el) {
                 document.querySelectorAll('.vocab-card').forEach(c => {
                     c.classList.remove('ring-4', 'ring-purple-400', 'scale-105', 'bg-purple-100');
@@ -349,14 +346,12 @@
             const cleanWord = String(word || '').trim();
             if (!cleanWord) return;
 
-            // Phát trực tiếp qua Google TTS MP3 Stream
             const url = `https://translate.google.com/translate_tts?client=tw-ob&ie=UTF-8&tl=en&q=${encodeURIComponent(cleanWord)}`;
             audioPlayer.src = url;
             audioPlayer.playbackRate = 0.9;
             audioPlayer.preservesPitch = true;
             audioPlayer.onended = null;
             audioPlayer.onerror = () => {
-                // Fallback nếu mạng ngắt kết nối
                 if ('speechSynthesis' in window && currentSession === playSessionId) {
                     const u = new SpeechSynthesisUtterance(cleanWord);
                     u.lang = 'en-US';
@@ -376,7 +371,7 @@
             }
         };
 
-        // --- 2. PHÁT BÀI ĐỌC / TỪ CON TRỎ (KHÔNG LẶP LẠI) ---
+        // --- 2. PHÁT BÀI ĐỌC (KHÔNG LẶP LẠI) ---
         function speakText(text) {
             stopAudio();
             const rawText = String(text || '').trim();
@@ -422,7 +417,6 @@
 
             audioPlayer.onended = advanceNext;
             audioPlayer.onerror = () => {
-                // Thử cứu hộ bằng Web Speech API đúng 1 lần cho câu này rồi tự động chuyển câu tiếp
                 if ('speechSynthesis' in window && session === playSessionId && !hasAdvanced) {
                     const u = new SpeechSynthesisUtterance(sentence);
                     u.lang = 'en-US';
@@ -454,11 +448,10 @@
             if (!isStoryPlaying) speakText(storyText.value.trim()); 
         });
         
-        // Sửa lỗi lặp 2 lần khi ấn từ con trỏ: Debounce và cắt câu chính xác
         let lastCursorClickTime = 0;
         document.getElementById('playCursorBtn').addEventListener('click', () => {
             const now = Date.now();
-            if (now - lastCursorClickTime < 400) return; // Chống chạm đúp
+            if (now - lastCursorClickTime < 400) return;
             lastCursorClickTime = now;
 
             const text = storyText.value;
@@ -580,7 +573,8 @@
             if (f.type.startsWith('image/') || /\.(jpe?g|png)$/.test(n)) return 'img';
             if (f.type === 'application/pdf' || n.endsWith('.pdf')) return 'pdf';
             if (n.endsWith('.docx')) return 'docx';
-            if /\.(txt|md)$/.test(n) return 'txt';
+            // ĐÃ SỬA CÚ PHÁP ĐÚNG DÒNG DƯỚI ĐÂY:
+            if (/\.(txt|md)$/.test(n)) return 'txt';
             return null;
         }
 
@@ -704,7 +698,6 @@
                         sentence: sm ? sm[0].trim() : '' 
                     });
 
-                    // Gắn class vocab-card và truyền 'this' để kích hoạt hiệu ứng chạm
                     html += `
                         <div class="vocab-card group px-3 py-2 bg-white border-2 border-purple-300 rounded-xl shadow-sm cursor-pointer hover:bg-purple-100 transition-all flex flex-col items-center justify-center text-center select-none active:scale-95" onclick="playWordAudio('${word}', this)">
                             <span class="text-purple-700 font-black text-xs md:text-sm flex items-center gap-1">${word} <span class="speaker-icon">🔊</span></span>
