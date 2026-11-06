@@ -228,12 +228,12 @@
         // ================== SUPABASE DATABASE ==================
         const SUPABASE_URL = 'https://xmecpfeujkvidwmqprzd.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_wK5FXrtBK7qPdmJ5fS1aag_gJ3Gdv3G';
-        let supabase = null;
-        try { supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch (e) { console.warn('Supabase lỗi:', e); }
+        let db = null;
+        try { db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch (e) { console.warn('Supabase lỗi:', e); }
 
         async function fetchStories() {
             try {
-                let { data: stories, error } = await supabase.from('saved_stories').select('*').order('created_at', { ascending: false });
+                let { data: stories, error } = await db.from('saved_stories').select('*').order('created_at', { ascending: false });
                 const listEl = document.getElementById('storyList');
                 
                 if (error) throw error;
@@ -265,7 +265,7 @@
             let title = text.substring(0, 30).replace(/\n/g, ' ') + '...';
             
             try {
-                const { data, error } = await supabase.from('saved_stories').insert([{ title: title, content: text }]);
+                const { data, error } = await db.from('saved_stories').insert([{ title: title, content: text }]);
                 if (error) throw error;
                 showToast('Đã lưu truyện thành công! ☁️', 'success');
                 fetchStories();
@@ -276,7 +276,7 @@
 
         async function loadStory(id) {
             try {
-                let { data, error } = await supabase.from('saved_stories').select('content').eq('id', id).single();
+                let { data, error } = await db.from('saved_stories').select('content').eq('id', id).single();
                 if (error) throw error;
                 storyText.value = data.content;
                 showToast('Đã tải truyện cũ! Bấm "Làm sạch chữ" để tra từ nhé.', 'success');
@@ -288,7 +288,7 @@
         async function deleteStory(id) {
             if(!confirm('Bé có chắc muốn xóa bài này không?')) return;
             try {
-                await supabase.from('saved_stories').delete().eq('id', id);
+                await db.from('saved_stories').delete().eq('id', id);
                 showToast('Đã xóa thành công! 🗑️', 'success');
                 fetchStories();
             } catch (err) {
