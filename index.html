@@ -394,7 +394,7 @@
         <span id="me">🦄</span>
     </div>
 
-    <!-- KHỐI JAVASCRIPT HỢP NHẤT TOÀN DIỆN (ĐÃ FIX TOÀN BỘ LỖI REFERENCE ERROR $) -->
+    <!-- KHỐI JAVASCRIPT HỢP NHẤT TOÀN DIỆN (ĐÃ FIX TRIỆT ĐỂ LỖI GAME NGHE ĐOÁN TỪ) -->
     <script>
         // 1. KHAI BÁO TOÀN CỤC $ NGAY DÒNG ĐẦU TIÊN
         const $ = id => document.getElementById(id);
@@ -766,7 +766,6 @@
             const now = Date.now();
             let activeQ = null;
 
-            // Đọc từ LocalStorage trước để giao diện có ngay
             let localQ = localStorage.getItem('magicCurrentQuest');
             if (localQ) {
                 try {
@@ -789,7 +788,6 @@
                 } catch(e) {}
             }
 
-            // Nếu chưa có quest nào hợp lệ -> Tạo mới ngay
             if (!activeQ) {
                 const picked = await pickEligibleStoryFromCloud();
                 const kid = cachedKids.find(k => k.id === currentKidId) || cachedKids[0];
@@ -1004,7 +1002,7 @@
 
                 const kid = cachedKids.find(k => k.id === currentKidId) || cachedKids[0];
                 const newTotalScore = (kid.score || 0) + sessionTracker.scoreEarned + 30;
-                const newDone = (kid.weekly_done || 0) + 1;
+                const newDone = ((kid && kid.weekly_done) || 0) + 1;
 
                 if (db) {
                     await db.from('magic_kids').update({
@@ -1286,6 +1284,11 @@
             wordAudio.play().catch(e => {
                 showToast('Bé kiểm tra âm lượng hoặc tắt chế độ im lặng nhé!', 'warning');
             });
+        };
+
+        // Gắn vào window để tất cả sự kiện inline onclick đều gọi được 100%
+        window.spk = function(word) {
+            window.playWordAudio(word);
         };
 
         function speakText(text) {
@@ -1858,7 +1861,7 @@
             const kid = cachedKids.find(k => k.id === currentKidId) || cachedKids[0];
             let resDiv = document.getElementById('quizResult');
             resDiv.innerHTML = `
-                <span class="text-2xl">${kid.icon}</span>
+                <span class="text-2xl">${(kid && kid.icon) || '👶'}</span>
                 <span class="text-xs font-black text-green-800">+${score} điểm vào tiến độ lượt này!</span>
                 <button onclick="generateQuiz()" class="mt-1 text-[10px] bg-orange-400 text-white px-2 py-0.5 rounded-full font-bold">Chơi tiếp</button>
             `;
@@ -2095,18 +2098,19 @@
             talk(getMissingStepsAdvice());
         });
 
-        // 20. PHÒNG GAME VUI NHỘN
+        // 20. PHÒNG GAME VUI NHỘN (ĐÃ SỬA GAME NGHE ĐOÁN TỪ & BỘ ĐẾM HOÀN CHỈNH)
         const G = { score: 0, k: '' }; let GT;
         const V = () => globalVocabData.filter(v => v.word);
         const shuf = a => [...a].sort(() => Math.random() - .5);
-        const spk = w => playWordAudio(w);
         const area = () => $('gameArea');
         const ctr = () => [innerWidth / 2, innerHeight / 2];
 
+        // Sửa hàm award: Dù được 0 điểm thì lượt chơi vẫn luôn được tính vào bộ đếm
         function award(n) {
-            if (!n) return;
             sessionTracker.gamesPlayed++;
-            sessionTracker.scoreEarned += n;
+            if (n > 0) {
+                sessionTracker.scoreEarned += n;
+            }
             updateSessionUI();
         }
 
@@ -2132,20 +2136,83 @@
             if (ok) { G.score += 10; burst(...ctr(), WIN, 10); } else { burst(...ctr(), OOPS, 6); talk(pick(['Ối! Hụt rồi 🙈', 'Gần đúng… bé thử lại nhé!'])); }
         }
 
+        // SỬA LỖI GAME NGHE ĐOÁN TỪ (gListen)
         function gListen() {
-            const qs = shuf(V()).slice(0, 6); let i = 0;
+            const list = V();
+            if (list.length < 4) return showToast('Cần ít nhất 4 từ vựng để chơi!', 'warning');
+            const qs = shuf(list).slice(0, 6); 
+            let i = 0;
+
             const nx = () => {
                 if (i >= qs.length) return fin();
-                const v = qs[i], mean = i % 2, pool = V(), ans = mean ? v.meaning : v.word;
-                const o = shuf([...new Set([ans, ...shuf(pool.filter(x => x !== v)).slice(0, 3).map(x => mean ? x.meaning : x.word)])]);
-                area().innerHTML = `<div class="text-[10px] text-sky-500">Câu ${i + 1}/${qs.length} • ${G.score}đ</div><div class="text-center mb-2"><button class="text-4xl btn-bounce" onclick="spk('${v.word}')">🔊</button><div class="text-[10px]">Nghe và chọn ${mean ? 'nghĩa' : 'từ'} đúng</div></div><div class="grid grid-cols-2 gap-1.5">${o.map(x => `<button class="o py-1.5 bg-slate-50 border-2 border-sky-200 rounded-lg capitalize">${x}</button>`).join('')}</div>`;
-                spk(v.word); const bs = [...area().querySelectorAll('.o')];
-                bs.forEach((b, j) => b.onclick = () => {
-                    const ok = o[j] === ans; judge(bs, ok); b.classList.add(ok ? 'bg-green-200' : 'bg-red-200');
-                    if (!ok) bs[o.indexOf(ans)].classList.add('bg-green-200');
-                    i++; setTimeout(nx, 1200);
+                const v = qs[i];
+                const pool = list.filter(x => x.word !== v.word);
+                
+                // Luôn tạo đúng 4 đáp án nghĩa tiếng Việt, không bị trùng lặp
+                const wrongOptions = shuf(pool).slice(0, 3).map(x => x.meaning);
+                const o = shuf([v.meaning, ...wrongOptions]);
+
+                area().innerHTML = `
+                    <div class="flex justify-between items-center text-[10px] text-sky-600 mb-1">
+                        <span>Câu ${i + 1}/${qs.length}</span>
+                        <span>Điểm: <b class="text-orange-600 font-black">${G.score}đ</b></span>
+                    </div>
+                    <div class="text-center mb-2">
+                        <button type="button" id="btnListenSpeaker" class="text-5xl btn-bounce py-1 px-3 bg-amber-100 border-2 border-amber-300 rounded-2xl shadow-sm hover:scale-105 active:scale-95 transition-transform">🔊</button>
+                        <div class="text-[11px] text-slate-500 font-bold mt-1">Chạm vào loa để nghe và chọn nghĩa đúng nhé!</div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        ${o.map((opt, idx) => `
+                            <button type="button" class="btn-listen-opt py-2 px-1 bg-white hover:bg-sky-50 border-2 border-sky-200 rounded-xl font-black text-xs text-slate-700 capitalize shadow-sm transition-colors" data-val="${encodeURIComponent(opt)}">
+                                ${opt}
+                            </button>
+                        `).join('')}
+                    </div>
+                `;
+
+                // Gắn listener phát âm vào nút loa
+                const speakerBtn = document.getElementById('btnListenSpeaker');
+                if (speakerBtn) {
+                    speakerBtn.onclick = () => window.playWordAudio(v.word);
+                }
+
+                // Phát âm câu đầu tiên ngay lập tức
+                window.playWordAudio(v.word);
+
+                // Gắn sự kiện chọn đáp án
+                const optionBtns = area().querySelectorAll('.btn-listen-opt');
+                optionBtns.forEach(btn => {
+                    btn.onclick = () => {
+                        const chosen = decodeURIComponent(btn.dataset.val);
+                        const isCorrect = (chosen === v.meaning);
+
+                        optionBtns.forEach(b => b.disabled = true);
+                        if (isCorrect) {
+                            btn.classList.remove('bg-white', 'border-sky-200');
+                            btn.classList.add('bg-green-200', 'border-green-400', 'text-green-800');
+                            G.score += 10;
+                            burst(...ctr(), WIN, 12);
+                            talk('Chính xác rồi! Bé nghe siêu quá! 👏🌟');
+                        } else {
+                            btn.classList.remove('bg-white', 'border-sky-200');
+                            btn.classList.add('bg-red-200', 'border-red-400', 'text-red-800');
+                            // Hiện đáp án đúng
+                            optionBtns.forEach(b => {
+                                if (decodeURIComponent(b.dataset.val) === v.meaning) {
+                                    b.classList.add('bg-green-200', 'border-green-400', 'text-green-800');
+                                }
+                            });
+                            burst(...ctr(), OOPS, 6);
+                            talk('Tiếc quá! Hãy nhìn ô màu xanh để nhớ nghĩa nha bé! 🙈');
+                        }
+
+                        i++;
+                        setTimeout(nx, 1300);
+                    };
                 });
-            }; nx();
+            };
+
+            nx();
         }
 
         function gSpeed() {
@@ -2165,7 +2232,7 @@
             const OPEN = 'bg-white text-sky-700 border-2 border-sky-300';
             area().querySelectorAll('.cd').forEach((b, i) => b.onclick = () => {
                 const c = cs[i]; if (lock || b.dataset.o) return; b.dataset.o = 1; b.textContent = c.t; b.className = b.className.replace('bg-sky-300', OPEN);
-                if (c.en) spk(c.t); sel.push([b, c]); if (sel.length < 2) return;
+                if (c.en) window.playWordAudio(c.t); sel.push([b, c]); if (sel.length < 2) return;
                 moves++; $('mv').textContent = 'Lượt: ' + moves; const [[b1, c1], [b2, c2]] = sel; sel = [];
                 if (c1.k === c2.k) {
                     done++; [b1, b2].forEach(x => x.className = x.className.replace('bg-white', 'bg-green-200')); burst(...ctr(), FUN, 6);
@@ -2179,11 +2246,11 @@
             const nx = () => {
                 if (i >= vs.length) return fin(); const v = vs[i], L = shuf(v.word.split('').map(c => ({ c }))); pk = [];
                 const r = () => {
-                    area().innerHTML = `<div class="text-[10px] text-sky-500">Câu ${i + 1}/${vs.length} • ${G.score}đ</div><div class="text-center my-1">Nghĩa: <b class="text-purple-600 capitalize">${v.meaning}</b> <button onclick="spk('${v.word}')">🔊</button></div><div class="flex justify-center gap-1 mb-2 min-h-[2.2rem]">${v.word.split('').map((_, k) => `<span class="w-7 h-8 border-b-4 border-sky-300 text-center text-lg uppercase">${pk[k] ? pk[k].c : ''}</span>`).join('')}</div><div class="flex flex-wrap justify-center gap-1">${L.map(l => `<button class="lt w-8 h-8 rounded-lg bg-yellow-300 text-yellow-900 font-black uppercase ${pk.includes(l) ? 'opacity-30' : ''}">${l.c}</button>`).join('')}<button id="un" class="px-2 rounded-lg bg-red-200">⌫</button></div>`;
+                    area().innerHTML = `<div class="text-[10px] text-sky-500">Câu ${i + 1}/${vs.length} • ${G.score}đ</div><div class="text-center my-1">Nghĩa: <b class="text-purple-600 capitalize">${v.meaning}</b> <button onclick="window.playWordAudio('${v.word}')">🔊</button></div><div class="flex justify-center gap-1 mb-2 min-h-[2.2rem]">${v.word.split('').map((_, k) => `<span class="w-7 h-8 border-b-4 border-sky-300 text-center text-lg uppercase">${pk[k] ? pk[k].c : ''}</span>`).join('')}</div><div class="flex flex-wrap justify-center gap-1">${L.map(l => `<button class="lt w-8 h-8 rounded-lg bg-yellow-300 text-yellow-900 font-black uppercase ${pk.includes(l) ? 'opacity-30' : ''}">${l.c}</button>`).join('')}<button id="un" class="px-2 rounded-lg bg-red-200">⌫</button></div>`;
                     area().querySelectorAll('.lt').forEach((b, j) => b.onclick = () => {
                         const l = L[j]; if (pk.includes(l)) return; pk.push(l); r();
                         if (pk.length === v.word.length) {
-                            if (pk.map(x => x.c).join('') === v.word) { G.score += 10; spk(v.word); burst(...ctr(), FUN, 10); i++; setTimeout(nx, 1100); }
+                            if (pk.map(x => x.c).join('') === v.word) { G.score += 10; window.playWordAudio(v.word); burst(...ctr(), FUN, 10); i++; setTimeout(nx, 1100); }
                             else { wig(area()); talk('Chữ nhảy loạn xạ rồi! 🤪'); setTimeout(() => { pk = []; r(); }, 700); }
                         }
                     });
@@ -2196,7 +2263,7 @@
             const vs = shuf(V()).slice(0, 5), SR = window.SpeechRecognition || window.webkitSpeechRecognition; let i = 0;
             const nx = () => {
                 if (i >= vs.length) return fin(); const v = vs[i];
-                area().innerHTML = `<div class="text-center"><div class="text-[10px] text-sky-500">Câu ${i + 1}/${vs.length} • ${G.score}đ</div><div class="text-2xl font-black text-purple-700">${v.word}</div><div class="text-[11px] capitalize text-slate-500 mb-2">${v.meaning}</div><button onclick="spk('${v.word}')" class="px-3 py-1.5 bg-cyan-500 text-white rounded-lg">🔊 Nghe mẫu</button> ${SR ? '<button id="mic" class="px-3 py-1.5 bg-pink-500 text-white rounded-lg">🎤 Bé đọc</button>' : ''} <button id="sk" class="px-2 py-1.5 bg-slate-200 rounded-lg">⏭️</button><div id="sr" class="mt-2 min-h-[1.5rem]"></div></div>`;
+                area().innerHTML = `<div class="text-center"><div class="text-[10px] text-sky-500">Câu ${i + 1}/${vs.length} • ${G.score}đ</div><div class="text-2xl font-black text-purple-700">${v.word}</div><div class="text-[11px] capitalize text-slate-500 mb-2">${v.meaning}</div><button onclick="window.playWordAudio('${v.word}')" class="px-3 py-1.5 bg-cyan-500 text-white rounded-lg">🔊 Nghe mẫu</button> ${SR ? '<button id="mic" class="px-3 py-1.5 bg-pink-500 text-white rounded-lg">🎤 Bé đọc</button>' : ''} <button id="sk" class="px-2 py-1.5 bg-slate-200 rounded-lg">⏭️</button><div id="sr" class="mt-2 min-h-[1.5rem]"></div></div>`;
                 const go = p => { G.score += p; i++; setTimeout(nx, 1300); };
                 $('sk').onclick = () => go(0);
                 if (SR) $('mic').onclick = () => {
