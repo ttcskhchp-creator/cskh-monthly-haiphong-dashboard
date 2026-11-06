@@ -14,7 +14,6 @@
     <!-- Supabase JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-    // ===== GIAO DIỆN THEMES =====
     const HUES = ['pink','blue','indigo','purple','orange', 'teal'];
     const T = (id,icon,name,dark,bg,card,ink,...c) => ({id,icon,name,dark,bg,card,ink,c});
     const THEMES = [
@@ -31,18 +30,15 @@
         try { localStorage.setItem('magicTheme', t.id); } catch (e) {}
     }
     (() => {
-        const sh = [50,100,200,300,400,500,600,700];
-        let css = ':root{';
+        const sh = [50,100,200,300,400,500,600,700]; let css = ':root{';
         HUES.forEach(h => {
             [[50,8],[100,16],[200,28],[300,45],[400,75]].forEach(([n,p]) => css += `--${h}-${n}:color-mix(in srgb,var(--${h}) ${p}%,var(--card));`);
             css += `--${h}-500:var(--${h});--${h}-600:color-mix(in srgb,var(--${h}) 82%,var(--ink));--${h}-700:color-mix(in srgb,var(--${h}) 60%,var(--ink));`;
         });
         [[50,5],[100,9],[200,16],[300,28],[400,45],[500,62],[600,75],[700,85]].forEach(([n,p]) => css += `--slate-${n}:color-mix(in srgb,var(--ink) ${p}%,var(--card));`);
         const st = document.createElement('style'); st.textContent = css + '}'; document.head.appendChild(st);
-        tailwind.config = { theme: { extend: { colors: { card: 'var(--card)',
-            ...Object.fromEntries([...HUES, 'slate'].map(h => [h, Object.fromEntries(sh.map(n => [n, `var(--${h}-${n})`]))])) } } } };
-        let saved; try { saved = localStorage.getItem('magicTheme'); } catch (e) {}
-        applyTheme(saved);
+        tailwind.config = { theme: { extend: { colors: { card: 'var(--card)', ...Object.fromEntries([...HUES, 'slate'].map(h => [h, Object.fromEntries(sh.map(n => [n, `var(--${h}-${n})`]))])) } } } };
+        let saved; try { saved = localStorage.getItem('magicTheme'); } catch (e) {} applyTheme(saved);
     })();
     </script>
     <style>
@@ -63,13 +59,12 @@
 </head>
 <body class="p-2 md:p-6 flex flex-col items-center">
 
-    <!-- Chọn giao diện -->
+    <!-- Giao diện Panel -->
     <div class="w-full max-w-7xl flex justify-end relative z-40 mb-2">
         <button id="themeBtn" type="button" class="bg-card text-pink-600 border-2 border-pink-300 px-3 py-1.5 md:px-4 md:py-2 rounded-full font-black shadow btn-bounce text-sm md:text-base">🎨 Giao diện</button>
         <div id="themePanel" class="hidden absolute right-0 top-full mt-2 w-[min(92vw,20rem)] bg-card border-4 border-pink-300 rounded-2xl shadow-xl p-3 grid grid-cols-2 gap-2"></div>
     </div>
 
-    <!-- Header -->
     <header class="text-center w-full max-w-7xl">
         <h1 class="text-3xl md:text-5xl font-black text-pink-500 drop-shadow-sm mb-2">🌟 Magic Reader 🌟</h1>
         <div class="marquee-container rounded-xl shadow-sm">
@@ -77,119 +72,117 @@
         </div>
     </header>
 
-    <!-- Toast Notification -->
-    <div id="toastMessage" class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-5 py-2 md:px-6 md:py-3 rounded-full font-bold text-sm md:text-lg shadow-xl transition-all duration-300 opacity-0 pointer-events-none text-center min-w-[200px]"></div>
+    <div id="toastMessage" class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-4 py-2 md:px-6 md:py-3 rounded-full font-bold text-xs md:text-sm shadow-xl transition-all duration-300 opacity-0 pointer-events-none text-center min-w-[200px]"></div>
 
-    <!-- Main Content -->
     <main class="w-full max-w-7xl grid grid-cols-1 lg:grid-cols-12 gap-4 flex-grow pb-8">
         
-        <!-- Cột Trái: Ảnh & Quét & Lưu trữ -->
+        <!-- CỘT TRÁI -->
         <div class="lg:col-span-5 flex flex-col gap-4">
-            
-            <!-- Khu vực Bảng Xếp Hạng -->
+            <!-- Bảng Điểm -->
             <div class="bg-teal-50 p-4 rounded-[1.5rem] shadow-lg border-4 border-teal-300 flex flex-col">
                 <div class="flex justify-between items-center mb-2">
-                    <h2 class="text-lg font-black text-teal-600 flex items-center"><span class="mr-2">🏆</span> Bảng Điểm</h2>
-                    <button onclick="resetLeaderboard()" class="text-xs bg-red-400 text-white px-2 py-1 rounded-lg font-bold hover:bg-red-500">Làm mới</button>
+                    <h2 class="text-lg font-black text-teal-600 flex items-center"><span class="mr-2">🏆</span> Bảng Điểm Bảng Vàng</h2>
+                    <button onclick="resetLeaderboard()" class="text-[10px] md:text-xs bg-red-400 text-white px-2 py-1 rounded-md font-bold hover:bg-red-500">Làm mới</button>
                 </div>
                 <div id="leaderboardList" class="flex flex-wrap gap-2 justify-center">
                     <p class="text-teal-500 text-xs font-bold italic">Chưa có ai ghi điểm cả! Bé chơi ngay nào!</p>
                 </div>
             </div>
 
-            <!-- Chọn Truyện -->
+            <!-- Chọn truyện -->
             <div class="bg-card p-4 md:p-6 rounded-[1.5rem] shadow-lg border-4 border-pink-300 flex flex-col">
-                <h2 class="text-lg md:text-xl font-black text-pink-600 mb-3 flex items-center">
-                    <span class="text-2xl mr-2">📸</span> 1. Chọn truyện
-                </h2>
+                <h2 class="text-lg font-black text-pink-600 mb-2 flex items-center"><span class="text-xl mr-2">📸</span> 1. Chọn truyện</h2>
                 <input type="file" id="fileInput" multiple accept="image/*,.pdf,.txt,.md,.docx,.doc,.html,.htm" class="sr-only">
-                <label id="dropZone" for="fileInput" class="flex flex-col items-center justify-center bg-slate-50 rounded-xl border-2 border-dashed border-slate-300 overflow-hidden min-h-[150px] md:min-h-[200px] mb-3 relative cursor-pointer hover:bg-slate-100 transition-colors">
-                    <p id="placeholderText" class="text-slate-400 text-base md:text-lg font-bold text-center px-4 py-4">
-                        Chạm để chọn <b>Ảnh, PDF, Word</b>...<br>
-                        <span class="text-xs md:text-sm font-semibold">có thể chọn nhiều trang cùng lúc</span>
-                    </p>
+                <label id="dropZone" for="fileInput" class="flex flex-col items-center justify-center bg-slate-50 rounded-xl border-2 border-dashed border-slate-300 overflow-hidden min-h-[120px] mb-2 relative cursor-pointer hover:bg-slate-100 transition-colors">
+                    <p id="placeholderText" class="text-slate-400 text-sm md:text-base font-bold text-center px-4 py-4">Chạm để chọn <b>Ảnh, PDF, Word</b></p>
                     <div id="previewBox" class="w-full flex items-center justify-center p-2"></div>
                 </label>
-                <div id="fileInfo" class="hidden text-xs md:text-sm font-bold text-slate-500 mb-2 truncate"></div>
-                <div id="fileChips" class="flex flex-wrap gap-1.5 mb-3"></div>
-                <button id="extractBtn" class="w-full py-2.5 md:py-3.5 bg-pink-500 active:bg-pink-600 text-white text-lg md:text-xl font-black rounded-xl shadow-md btn-bounce flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed">
-                    <span>🪄 Đọc chữ từ file</span>
-                </button>
-                <div id="loadingStatus" class="hidden mt-3 flex-col items-center justify-center text-pink-600">
-                    <div class="spinner mb-1.5"></div>
-                    <p id="statusText" class="font-bold text-sm md:text-base text-center">Đang nhìn chữ... Bé đợi xíu!</p>
+                <div id="fileInfo" class="hidden text-xs font-bold text-slate-500 mb-1 truncate"></div>
+                <div id="fileChips" class="flex flex-wrap gap-1 mb-2"></div>
+                <button id="extractBtn" class="w-full py-2 bg-pink-500 active:bg-pink-600 text-white text-base font-black rounded-xl shadow-md btn-bounce disabled:opacity-50 flex justify-center">🪄 Đọc chữ từ file</button>
+                <div id="loadingStatus" class="hidden mt-2 flex-col items-center justify-center text-pink-600">
+                    <div class="spinner mb-1"></div>
+                    <p id="statusText" class="font-bold text-xs text-center">Đang nhìn chữ...</p>
                 </div>
             </div>
 
-            <!-- Khung Kho Truyện -->
-            <div class="bg-indigo-50 p-4 md:p-6 rounded-[1.5rem] shadow-lg border-4 border-indigo-300 flex flex-col max-h-[250px]">
-                <div class="flex justify-between items-center mb-3">
-                    <h2 class="text-lg font-black text-indigo-600 flex items-center"><span class="text-xl mr-2">☁️</span> Kho Truyện</h2>
-                    <button onclick="saveToCloud()" class="bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-sm font-bold btn-bounce shadow-sm hover:bg-indigo-600">💾 Lưu Bài</button>
+            <!-- Kho truyện -->
+            <div class="bg-indigo-50 p-4 md:p-6 rounded-[1.5rem] shadow-lg border-4 border-indigo-300 flex flex-col max-h-[200px]">
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="text-base font-black text-indigo-600 flex items-center"><span class="text-lg mr-2">☁️</span> Kho Truyện</h2>
+                    <button onclick="saveToCloud()" class="bg-indigo-500 text-white px-2 py-1 rounded-md text-xs font-bold btn-bounce shadow-sm hover:bg-indigo-600">💾 Lưu Bài</button>
                 </div>
-                <div id="storyList" class="space-y-2 overflow-y-auto pr-1 flex-grow">
-                    <p class="text-indigo-400 font-bold text-xs italic text-center py-2">Đang tải danh sách...</p>
+                <div id="storyList" class="space-y-1.5 overflow-y-auto pr-1 flex-grow">
+                    <p class="text-indigo-400 font-bold text-[10px] italic text-center py-1">Đang tải danh sách...</p>
                 </div>
             </div>
         </div>
 
-        <!-- Cột Phải: Chữ, Âm thanh & Trò chơi -->
+        <!-- CỘT PHẢI -->
         <div class="lg:col-span-7 flex flex-col gap-4 h-full">
-            <div class="bg-card p-4 md:p-6 rounded-[1.5rem] shadow-lg border-4 border-blue-300 flex flex-col flex-grow">
-                <div class="flex flex-wrap justify-between items-center mb-2 gap-2">
-                    <h2 class="text-lg md:text-xl font-black text-blue-600 flex items-center"><span class="text-2xl mr-2">📝</span> 2. Luyện nghe & Đọc</h2>
-                    <div class="flex gap-1.5">
-                        <button onclick="exportToWord()" class="bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg shadow-sm btn-bounce hover:bg-blue-200 text-sm font-bold">🖨️ In Word</button>
-                        <button onclick="exportToMP3()" id="btnMp3" class="bg-green-100 text-green-700 px-3 py-1.5 rounded-lg shadow-sm btn-bounce hover:bg-green-200 text-sm font-bold">🎵 Tải MP3</button>
+            <div class="bg-card p-3 md:p-5 rounded-[1.5rem] shadow-lg border-4 border-blue-300 flex flex-col flex-grow">
+                <div class="flex justify-between items-center mb-1">
+                    <h2 class="text-base md:text-lg font-black text-blue-600 flex items-center"><span class="text-xl mr-1">📝</span> 2. Luyện nghe</h2>
+                    <div class="flex gap-1">
+                        <button onclick="exportToWord()" class="bg-blue-100 text-blue-700 px-2 py-1 rounded shadow-sm btn-bounce text-[10px] md:text-xs font-bold">🖨️ Word</button>
+                        <button onclick="exportToMP3()" id="btnMp3" class="bg-green-100 text-green-700 px-2 py-1 rounded shadow-sm btn-bounce text-[10px] md:text-xs font-bold">🎵 MP3</button>
                     </div>
                 </div>
                 
-                <p class="text-slate-500 text-xs md:text-sm font-bold mb-2">Mẹo: Đặt con trỏ vào chữ bất kỳ rồi bấm <b>"Từ con trỏ"</b> để nghe!</p>
-                
-                <textarea id="storyText" class="flex-grow w-full p-3 md:p-4 rounded-xl border-2 border-blue-200 focus:border-blue-400 outline-none text-base md:text-lg text-slate-700 leading-relaxed resize-none min-h-[150px] md:min-h-[220px] shadow-inner mb-3 bg-blue-50 font-semibold" placeholder="Chữ sẽ hiện ở đây..."></textarea>
-                
-                <!-- Bảng điều khiển -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
-                    <div class="flex items-center gap-2 bg-blue-50 p-2 rounded-lg border border-blue-100">
-                        <span title="Đọc chậm">🐢</span>
-                        <input type="range" id="speedSlider" min="0.5" max="1.3" step="0.1" value="0.8" class="flex-grow h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer accent-blue-500">
-                        <span title="Đọc nhanh">🐇</span>
+                <!-- Bảng tùy chỉnh giọng & tốc độ (Gọn) -->
+                <div class="grid grid-cols-2 gap-2 mb-2 bg-blue-50 p-2 rounded-lg border border-blue-100 items-center">
+                    <div class="flex items-center gap-1 bg-white px-2 py-1 rounded border border-blue-200">
+                        <span class="text-xs">🗣️</span>
+                        <select id="voiceType" class="text-[10px] md:text-xs font-bold text-blue-700 bg-transparent outline-none w-full cursor-pointer">
+                            <option value="normal">Giọng Nữ chuẩn</option>
+                            <option value="child">Giọng Trẻ em</option>
+                            <option value="man">Giọng Đàn ông</option>
+                            <option value="old">Giọng Người già</option>
+                            <option value="robot">Giọng Robot</option>
+                        </select>
                     </div>
-                    <label class="flex items-center justify-center gap-2 text-xs md:text-sm font-bold text-blue-700 cursor-pointer bg-blue-50 p-2 rounded-lg border border-blue-100">
-                        <input type="checkbox" id="keepLayout" checked class="w-4 h-4 accent-blue-500"> Giữ bố cục gốc
-                    </label>
+                    <div class="flex items-center gap-1 bg-white px-2 py-1.5 rounded border border-blue-200">
+                        <span class="text-xs" title="Đọc chậm">🐢</span>
+                        <input type="range" id="speedSlider" min="0.5" max="1.5" step="0.1" value="1.0" class="flex-grow h-1.5 bg-blue-200 rounded-lg appearance-none cursor-pointer accent-blue-500">
+                        <span class="text-xs" title="Đọc nhanh">🐇</span>
+                    </div>
                 </div>
 
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    <button id="cleanBtn" class="col-span-2 sm:col-span-1 py-2.5 md:py-3 bg-yellow-400 active:bg-yellow-500 text-yellow-900 text-sm md:text-base font-bold rounded-xl shadow-sm btn-bounce flex items-center justify-center"><span class="mr-1">🧹</span> Làm sạch</button>
-                    <button id="playBtn" class="py-2.5 md:py-3 bg-green-500 active:bg-green-600 text-white text-sm md:text-base font-black rounded-xl shadow-sm btn-bounce flex items-center justify-center whitespace-nowrap">▶️ Đọc To</button>
-                    <button id="playCursorBtn" class="py-2.5 md:py-3 bg-cyan-500 active:bg-cyan-600 text-white text-sm md:text-base font-bold rounded-xl shadow-sm btn-bounce flex items-center justify-center whitespace-nowrap">👆 Từ con trỏ</button>
-                    <button id="stopBtn" class="py-2.5 md:py-3 bg-red-400 active:bg-red-500 text-white text-sm md:text-base font-bold rounded-xl shadow-sm btn-bounce flex items-center justify-center whitespace-nowrap">⏹️ Dừng</button>
+                <p class="text-slate-400 text-[10px] md:text-xs font-bold mb-1">Mẹo: Đặt trỏ vào chữ để nghe từ đó!</p>
+                <textarea id="storyText" class="flex-grow w-full p-2 md:p-3 rounded-lg border-2 border-blue-200 focus:border-blue-400 outline-none text-sm md:text-base text-slate-700 leading-relaxed resize-none min-h-[150px] shadow-inner mb-2 bg-blue-50/50 font-semibold" placeholder="Chữ sẽ hiện ở đây..."></textarea>
+                
+                <label class="flex items-center gap-1 text-[10px] md:text-xs font-bold text-blue-700 cursor-pointer mb-2 w-max">
+                    <input type="checkbox" id="keepLayout" checked class="w-3 h-3 accent-blue-500"> Giữ bố cục gốc
+                </label>
+
+                <!-- DÀN NÚT 1 HÀNG NGANG (ONE-THUMB UI) -->
+                <div class="flex w-full gap-1 sm:gap-2">
+                    <button id="cleanBtn" class="flex-1 py-1.5 px-1 bg-yellow-400 active:bg-yellow-500 text-yellow-900 text-[10px] sm:text-xs font-bold rounded-lg shadow-sm btn-bounce flex items-center justify-center whitespace-nowrap"><span class="mr-1">🧹</span>Sạch</button>
+                    <button id="playBtn" class="flex-1 py-1.5 px-1 bg-green-500 active:bg-green-600 text-white text-[10px] sm:text-xs font-black rounded-lg shadow-sm btn-bounce flex items-center justify-center whitespace-nowrap"><span class="mr-1">▶️</span>Đọc To</button>
+                    <button id="playCursorBtn" class="flex-1 py-1.5 px-1 bg-cyan-500 active:bg-cyan-600 text-white text-[10px] sm:text-xs font-bold rounded-lg shadow-sm btn-bounce flex items-center justify-center whitespace-nowrap"><span class="mr-1">👆</span>Từ Trỏ</button>
+                    <button id="stopBtn" class="flex-1 py-1.5 px-1 bg-red-400 active:bg-red-500 text-white text-[10px] sm:text-xs font-bold rounded-lg shadow-sm btn-bounce flex items-center justify-center whitespace-nowrap"><span class="mr-1">⏹️</span>Dừng</button>
                 </div>
             </div>
 
-            <!-- Khung từ vựng thông minh -->
-            <div class="p-4 bg-purple-50 border-2 border-purple-200 rounded-[1.5rem] relative transition-all duration-500" id="vocabContainer">
-                <h3 class="font-black text-purple-600 mb-2 flex items-center text-base md:text-lg"><span class="mr-2">📚</span> Từ vựng Thông Minh:</h3>
-                <div id="vocabList" class="flex flex-wrap gap-2 text-xs md:text-sm font-bold text-purple-700 transition-all duration-500">
-                    <span class="italic font-normal text-purple-400">Bấm "Làm sạch chữ" để máy tìm từ khó nhé!</span>
+            <div class="p-3 md:p-4 bg-purple-50 border-2 border-purple-200 rounded-[1.5rem] relative transition-all duration-500" id="vocabContainer">
+                <h3 class="font-black text-purple-600 mb-2 flex items-center text-sm md:text-base"><span class="mr-1">📚</span> Từ vựng Thông Minh:</h3>
+                <div id="vocabList" class="flex flex-wrap gap-1.5 text-xs font-bold text-purple-700 transition-all duration-500">
+                    <span class="italic font-normal text-purple-400 text-[10px]">Bấm "Làm sạch" để máy tìm từ khó!</span>
                 </div>
             </div>
 
-            <!-- Khung Đố Vui -->
-            <div class="p-4 bg-orange-50 border-2 border-orange-200 rounded-[1.5rem]" id="quizSection">
-                <h3 class="font-black text-orange-600 mb-2 flex items-center text-base md:text-lg"><span class="mr-2">🎮</span> Đố vui ôn tập:</h3>
-                <div id="quizContainer" class="text-slate-700 font-bold text-sm md:text-base">
-                    <span class="italic font-normal text-orange-400">Quét chữ xong bé sẽ được chơi trò chơi ở đây!</span>
+            <div class="p-3 md:p-4 bg-orange-50 border-2 border-orange-200 rounded-[1.5rem]" id="quizSection">
+                <h3 class="font-black text-orange-600 mb-2 flex items-center text-sm md:text-base"><span class="mr-1">🎮</span> Đố vui (5 câu):</h3>
+                <div id="quizContainer" class="text-slate-700 font-bold text-xs md:text-sm">
+                    <span class="italic font-normal text-orange-400 text-[10px]">Quét chữ xong bé sẽ được chơi ở đây!</span>
                 </div>
             </div>
         </div>
     </main>
 
-    <!-- Footer Author -->
     <footer class="w-full text-center pb-4 mt-auto">
-        <p class="text-pink-600 font-black text-sm md:text-base bg-card inline-block px-5 py-1.5 rounded-full shadow border-2 border-pink-200">
-            💖 Phát triển và vận hành bởi <span class="text-blue-600 uppercase">Daddy Dũng Đẹp Zai</span> 💖
+        <p class="text-pink-600 font-black text-xs md:text-sm bg-card inline-block px-4 py-1 rounded-full shadow border-2 border-pink-200">
+            💖 Phát triển bởi <span class="text-blue-600 uppercase">Daddy Dũng Đẹp Zai</span> 💖
         </p>
     </footer>
 
@@ -202,24 +195,18 @@
         const toastMessage = document.getElementById('toastMessage');
         const cleanBtn = document.getElementById('cleanBtn');
         const speedSlider = document.getElementById('speedSlider');
+        const voiceType = document.getElementById('voiceType');
         let toastTimeout;
         let globalVocabData = []; 
         
-        const posMap = {
-            'noun': 'Danh từ', 'verb': 'Động từ', 'adjective': 'Tính từ', 'adverb': 'Trạng từ',
-            'pronoun': 'Đại từ', 'preposition': 'Giới từ', 'conjunction': 'Liên từ', 'interjection': 'Thán từ'
-        };
+        const posMap = { 'noun': 'Danh từ', 'verb': 'Động từ', 'adjective': 'Tính từ', 'adverb': 'Trạng từ', 'pronoun': 'Đại từ', 'preposition': 'Giới từ', 'conjunction': 'Liên từ' };
 
-        // ================== LEADERBOARD (BẢNG XẾP HẠNG) ==================
+        // ================== LEADERBOARD ==================
         const avatars = [
-            { id: 'princess', icon: '👸', name: 'Công Chúa' },
-            { id: 'knight', icon: '🤺', name: 'Hiệp Sĩ' },
-            { id: 'king', icon: '🤴', name: 'Nhà Vua' },
-            { id: 'dragon', icon: '🐉', name: 'Rồng' },
-            { id: 'dino', icon: '🦖', name: 'Khủng Long' },
-            { id: 'tiger', icon: '🐯', name: 'Hổ Con' },
-            { id: 'rabbit', icon: '🐰', name: 'Thỏ Trắng' },
-            { id: 'turtle', icon: '🐢', name: 'Rùa Nhỏ' }
+            { id: 'princess', icon: '👸', name: 'Công Chúa' }, { id: 'knight', icon: '🤺', name: 'Hiệp Sĩ' },
+            { id: 'king', icon: '🤴', name: 'Nhà Vua' }, { id: 'dragon', icon: '🐉', name: 'Rồng Lửa' },
+            { id: 'dino', icon: '🦖', name: 'Khủng Long' }, { id: 'tiger', icon: '🐯', name: 'Hổ Con' },
+            { id: 'rabbit', icon: '🐰', name: 'Thỏ Trắng' }, { id: 'turtle', icon: '🐢', name: 'Rùa Nhỏ' }
         ];
         
         let currentPlayer = null; 
@@ -230,92 +217,59 @@
             let sorted = Object.entries(data).sort((a,b) => b[1] - a[1]);
             
             if(sorted.length === 0) {
-                board.innerHTML = '<p class="text-teal-500 text-xs font-bold italic">Chưa có ai ghi điểm cả! Bé chơi ngay nào!</p>';
-                return;
+                board.innerHTML = '<p class="text-teal-500 text-[10px] md:text-xs font-bold italic">Chưa có ai ghi điểm cả!</p>'; return;
             }
-
             board.innerHTML = sorted.map(([id, score], i) => {
                 let avt = avatars.find(a => a.id === id);
                 let rank = i === 0 ? '🥇' : (i === 1 ? '🥈' : (i === 2 ? '🥉' : '🎗️'));
-                return `<div class="bg-white px-2 py-1 rounded-lg shadow-sm border border-teal-200 flex items-center gap-1">
-                    <span class="text-lg">${rank}</span>
-                    <span class="text-2xl">${avt.icon}</span>
-                    <span class="text-teal-800 font-black text-sm">${score}đ</span>
+                return `<div class="bg-white px-2 py-0.5 rounded shadow-sm border border-teal-200 flex items-center gap-1">
+                    <span class="text-sm">${rank}</span><span class="text-base">${avt.icon}</span><span class="text-teal-800 font-black text-[10px] md:text-xs">${score}đ</span>
                 </div>`;
             }).join('');
         }
         
         window.resetLeaderboard = function() {
-            if(confirm('Xóa sạch điểm của tất cả mọi người?')) {
-                localStorage.removeItem('magicLeaderboard');
-                loadLeaderboard();
-                showToast('Đã xóa bảng điểm!', 'success');
-            }
+            if(confirm('Xóa sạch điểm của tất cả mọi người?')) { localStorage.removeItem('magicLeaderboard'); loadLeaderboard(); showToast('Đã xóa bảng điểm!', 'success'); }
         }
         loadLeaderboard();
 
-        // ================== SUPABASE DATABASE ==================
+        // ================== SUPABASE ==================
         const SUPABASE_URL = 'https://xmecpfeujkvidwmqprzd.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_wK5FXrtBK7qPdmJ5fS1aag_gJ3Gdv3G';
-        let db = null;
-        try { db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch (e) { console.warn('Supabase lỗi'); }
+        let db = null; try { db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch (e) {}
 
         async function fetchStories() {
             try {
-                let { data: stories, error } = await db.from('saved_stories').select('*').order('created_at', { ascending: false });
+                let { data: stories } = await db.from('saved_stories').select('*').order('created_at', { ascending: false });
                 const listEl = document.getElementById('storyList');
-                if (error || !stories || stories.length === 0) {
-                    listEl.innerHTML = '<p class="text-indigo-400 font-bold text-xs italic text-center">Chưa có bài nào được lưu.</p>'; return;
-                }
+                if (!stories || stories.length === 0) { listEl.innerHTML = '<p class="text-indigo-400 font-bold text-[10px] italic text-center">Chưa có bài nào.</p>'; return; }
                 listEl.innerHTML = stories.map(story => `
-                    <div class="bg-card p-2 rounded-lg border border-indigo-100 flex justify-between items-center shadow-sm">
-                        <div class="cursor-pointer truncate flex-1 pr-2" onclick="loadStory('${story.id}')">
-                            <span class="text-indigo-700 font-bold text-sm">📄 ${story.title || 'Truyện'}</span>
-                            <span class="text-[10px] text-slate-400 block">${new Date(story.created_at).toLocaleDateString('vi-VN')}</span>
+                    <div class="bg-card p-1.5 rounded border border-indigo-100 flex justify-between items-center shadow-sm">
+                        <div class="cursor-pointer truncate flex-1 pr-1" onclick="loadStory('${story.id}')">
+                            <span class="text-indigo-700 font-bold text-[10px] md:text-xs">📄 ${story.title || 'Truyện'}</span>
                         </div>
-                        <button onclick="deleteStory('${story.id}')" class="text-red-500 hover:bg-red-100 p-1.5 rounded-lg font-black text-xs">❌</button>
+                        <button onclick="deleteStory('${story.id}')" class="text-red-500 hover:bg-red-100 px-1 rounded font-black text-[10px]">❌</button>
                     </div>
                 `).join('');
             } catch (err) {}
         }
 
         async function saveToCloud() {
-            let text = storyText.value.trim(); if (!text) return showToast('Chưa có truyện để lưu!', 'warning');
-            showToast('Đang lưu vào kho...', 'success');
-            let title = text.substring(0, 25).replace(/\n/g, ' ') + '...';
-            try {
-                await db.from('saved_stories').insert([{ title, content: text }]);
-                showToast('Đã lưu truyện thành công! ☁️', 'success'); fetchStories();
-            } catch (err) { showToast('Lưu thất bại', 'error'); }
+            let text = storyText.value.trim(); if (!text) return showToast('Chưa có truyện!', 'warning');
+            showToast('Đang lưu...', 'success');
+            try { await db.from('saved_stories').insert([{ title: text.substring(0, 20).replace(/\n/g, ' ') + '...', content: text }]); showToast('Lưu thành công! ☁️', 'success'); fetchStories(); } catch (err) { }
         }
 
-        async function loadStory(id) {
-            try {
-                let { data } = await db.from('saved_stories').select('content').eq('id', id).single();
-                storyText.value = data.content; showToast('Đã tải truyện cũ!', 'success');
-            } catch (err) {}
-        }
-
-        async function deleteStory(id) {
-            if(!confirm('Xóa bài này nhé?')) return;
-            try { await db.from('saved_stories').delete().eq('id', id); fetchStories(); } catch (err) {}
-        }
+        async function loadStory(id) { try { let { data } = await db.from('saved_stories').select('content').eq('id', id).single(); storyText.value = data.content; showToast('Đã tải truyện cũ!', 'success'); } catch (err) {} }
+        async function deleteStory(id) { if(confirm('Xóa bài này nhé?')) { try { await db.from('saved_stories').delete().eq('id', id); fetchStories(); } catch (err) {} } }
         setTimeout(fetchStories, 1000);
 
-        // ================== XUẤT OFFLINE (WORD & MP3 KHÔNG BỊ LỖI 404) ==================
+        // ================== XUẤT OFFLINE (WORD & MP3 KHÔNG 404) ==================
         function exportToWord() {
-            const text = storyText.value.trim(); if (!text) return showToast('Chưa có truyện để in!', 'warning');
-            const wordHtml = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-            <head><meta charset='utf-8'><title>Magic Story</title></head>
-            <body style="font-family: 'Comic Sans MS', sans-serif; background-color: #fdf2f8; padding: 40px; border: 5px solid #fbcfe8; border-radius: 20px;">
-                <div style="text-align: center; margin-bottom: 30px;"><h1 style="color: #ec4899; font-size: 24pt; margin: 0;">🌟 MAGIC STORY READER 🌟</h1><p style="color: #3b82f6; font-size: 12pt; font-weight: bold;">Phát triển bởi Daddy Dũng Đẹp Zai</p></div>
-                <div style="background-color: #ffffff; padding: 20px; border-radius: 15px; border: 2px dashed #bfdbfe;">
-                    <div>${text.split('\n').map(l => `<p style="margin:0;font-size:16pt;line-height:1.8;font-weight:bold;color:#1e3a8a;">${String(l).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])).replace(/^ +/, m => '&nbsp;'.repeat(m.length)) || '&nbsp;'}</p>`).join('')}</div>
-                </div>
-            </body></html>`;
-            const blob = new Blob(['\ufeff', wordHtml], { type: 'application/msword' });
-            const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-            a.download = `Truyen_Cua_Be_${new Date().getTime()}.doc`; a.click(); showToast('Đã tải xuống file Word A4! 🖨️', 'success');
+            const text = storyText.value.trim(); if (!text) return showToast('Trống!', 'warning');
+            const wordHtml = `<html xmlns:w='urn:schemas-microsoft-com:office:word'><body style="font-family: 'Comic Sans MS'; background: #fdf2f8; padding: 20px;"><h1 style="color:#ec4899;text-align:center;">🌟 MAGIC STORY READER 🌟</h1><div style="background:#fff;padding:20px;border:2px dashed #bfdbfe;">${text.split('\n').map(l => `<p style="font-size:14pt;font-weight:bold;color:#1e3a8a;margin:0 0 10px 0;">${String(l).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}</p>`).join('')}</div></body></html>`;
+            const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeff', wordHtml], { type: 'application/msword' }));
+            a.download = `Truyen_${Date.now()}.doc`; a.click();
         }
 
         async function exportToMP3() {
@@ -323,31 +277,29 @@
             if (!text) return showToast('Chưa có truyện để xuất MP3!', 'warning');
             
             const btn = document.getElementById('btnMp3');
-            btn.innerHTML = '⏳ Đang tải...'; btn.disabled = true;
-            showToast('Đang tạo Audio... Xin đừng đóng web! ⏳', 'success');
+            btn.innerHTML = '⏳ Tải...'; btn.disabled = true;
+            showToast('Đang khâu toàn bộ Audio... Xin giữ nguyên web! ⏳', 'success');
             
             let chunks = text.match(/[^.!?\n]+[.!?\n]*/g) || [text];
             chunks = chunks.map(c => c.trim()).filter(c => c.length > 0);
             
             let audioBuffers = [];
-            let AudioContext = window.AudioContext || window.webkitAudioContext;
-            let audioCtx = new AudioContext();
+            let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
             try {
                 for(let i=0; i<chunks.length; i++) {
                     let url = `https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=en&q=${encodeURIComponent(chunks[i])}`;
-                    // Dùng proxy mạnh hơn để tránh CORS khi fetch ArrayBuffer
-                    let proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+                    // Proxy đáng tin cậy để bọc ArrayBuffer ko bị CORS
+                    let proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
                     
                     let res = await fetch(proxyUrl);
-                    if(!res.ok) throw new Error('Network');
+                    if(!res.ok) throw new Error('Proxy lỗi');
                     
                     let arrayBuffer = await res.arrayBuffer();
                     let audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
                     audioBuffers.push(audioBuffer);
                 }
 
-                // Gộp Audio Buffers (WAV format)
                 let totalLength = audioBuffers.reduce((sum, buffer) => sum + buffer.length, 0);
                 let finalBuffer = audioCtx.createBuffer(1, totalLength, audioCtx.sampleRate);
                 let offset = 0;
@@ -356,47 +308,37 @@
                     offset += buffer.length;
                 });
 
-                // Chuyển Buffer thành file WAV tải xuống
                 const wavBlob = bufferToWav(finalBuffer, totalLength);
                 const a = document.createElement('a');
                 a.href = URL.createObjectURL(wavBlob);
-                a.download = `Audio_Doc_Truyen_${new Date().getTime()}.wav`;
+                a.download = `Audio_Full_${Date.now()}.wav`;
                 a.click();
-                showToast('Đã tải xong file Âm thanh chất lượng cao! 🎵', 'success');
+                showToast('Tải Audio Toàn Bài thành công! 🎵 (Lưu bằng định dạng WAV chất lượng cao)', 'success');
             } catch(e) {
                 console.error(e);
-                showToast('Mở link nghe tạm thời do lỗi kết nối mạng... 🎵', 'warning');
-                let chunk = text.substring(0, 200); 
-                window.open(`https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=en&q=${encodeURIComponent(chunk)}`, '_blank');
+                showToast('Mạng yếu, đang mở link dự phòng...', 'warning');
+                window.open(`https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=en&q=${encodeURIComponent(chunks[0].substring(0,199))}`, '_blank');
             } finally {
-                btn.innerHTML = '🎵 Tải MP3'; btn.disabled = false;
+                btn.innerHTML = '🎵 MP3'; btn.disabled = false;
             }
         }
         
-        // Hàm phụ trợ tạo WAV từ AudioBuffer
         function bufferToWav(abuffer, len) {
             let numOfChan = abuffer.numberOfChannels, length = len * numOfChan * 2 + 44, buffer = new ArrayBuffer(length), view = new DataView(buffer), channels = [], i, sample, offset = 0, pos = 0;
-            setUint32(0x46464952); setUint32(length - 8); setUint32(0x45564157); setUint32(0x20746d66); setUint32(16); setUint16(1); setUint16(numOfChan);
-            setUint32(abuffer.sampleRate); setUint32(abuffer.sampleRate * 2 * numOfChan); setUint16(numOfChan * 2); setUint16(16); setUint32(0x61746164); setUint32(length - pos - 4);
-            for(i=0; i<abuffer.numberOfChannels; i++) channels.push(abuffer.getChannelData(i));
-            while(pos < length) {
-                for(i=0; i<numOfChan; i++) {
-                    sample = Math.max(-1, Math.min(1, channels[i][offset])); sample = (0.5 + sample < 0 ? sample * 32768 : sample * 32767)|0; view.setInt16(pos, sample, true); pos += 2;
-                } offset++;
-            }
+            const setU16 = (d) => { view.setUint16(pos, d, true); pos+=2; }; const setU32 = (d) => { view.setUint32(pos, d, true); pos+=4; };
+            setU32(0x46464952); setU32(length - 8); setU32(0x45564157); setU32(0x20746d66); setU32(16); setU16(1); setU16(numOfChan);
+            setU32(abuffer.sampleRate); setU32(abuffer.sampleRate * 2 * numOfChan); setU16(numOfChan * 2); setU16(16); setU32(0x61746164); setU32(length - pos - 4);
+            for(i=0; i<numOfChan; i++) channels.push(abuffer.getChannelData(i));
+            while(pos < length) { for(i=0; i<numOfChan; i++) { sample = Math.max(-1, Math.min(1, channels[i][offset])); sample = (0.5 + sample < 0 ? sample * 32768 : sample * 32767)|0; view.setInt16(pos, sample, true); pos += 2; } offset++; }
             return new Blob([buffer], {type: "audio/wav"});
-            function setUint16(data) { view.setUint16(pos, data, true); pos += 2; }
-            function setUint32(data) { view.setUint32(pos, data, true); pos += 4; }
         }
 
-        // ================== HIỆU ỨNG GIAO DIỆN & MARQUEE ==================
-        const greetings = ["Hello little angel! Have a magical day! ✨", "Keep up the great work! 🚀", "Learning English is fun! 🎈"];
+        // ================== MARQUEE & TOAST ==================
+        const greetings = ["Hello little angel! ✨", "Keep up the great work! 🚀", "Learning English is fun! 🎈"];
         document.getElementById('greetingMarquee').innerText = `Happy ${["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][new Date().getDay()]}! ${greetings[Math.floor(Math.random() * greetings.length)]}`;
-
         function showToast(msg, type = 'success') {
-            clearTimeout(toastTimeout);
-            toastMessage.textContent = msg;
-            toastMessage.className = `fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-5 py-2 rounded-full font-bold text-sm shadow-xl transition-all duration-300 text-center min-w-[200px] pointer-events-none`;
+            clearTimeout(toastTimeout); toastMessage.textContent = msg;
+            toastMessage.className = `fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-4 py-2 rounded-full font-bold text-[10px] md:text-sm shadow-xl transition-all duration-300 text-center min-w-[200px] pointer-events-none`;
             if (type === 'error') toastMessage.classList.add('bg-red-500', 'text-white');
             else if (type === 'warning') toastMessage.classList.add('bg-yellow-400', 'text-yellow-900');
             else toastMessage.classList.add('bg-green-500', 'text-white');
@@ -404,63 +346,23 @@
             toastTimeout = setTimeout(() => { toastMessage.style.opacity = '0'; toastMessage.style.transform = 'translate(-50%, 0)'; }, 3000);
         }
 
-        // ================== TESSERACT OCR ==================
+        // ================== OCR ==================
         const $ = id => document.getElementById(id);
-        const ICON = { img: '🖼️', pdf: '📕', docx: '📘', txt: '📄', html: '📄' };
-        let files = [], active = 0, pvToken = 0, pvUrl = null;
-        
-        function kind(f) {
-            const n = f.name.toLowerCase();
-            if (f.type.startsWith('image/') || /\.(jpe?g|png)$/.test(n)) return 'img';
-            if (f.type === 'application/pdf' || n.endsWith('.pdf')) return 'pdf';
-            if (n.endsWith('.docx')) return 'docx';
-            if (/\.(txt|md|text)$/.test(n)) return 'txt';
-            return null;
-        }
-
-        function addFiles(list) {
-            const ok = []; [...list].forEach(f => { if(kind(f)) ok.push(f); });
-            if (!ok.length) return;
-            active = files.length; files.push(...ok); renderFiles();
-        }
-        function pickFile(i) { active = i; renderFiles(); }
-        function removeFile(i) { files.splice(i, 1); active = Math.max(0, Math.min(active, files.length - 1)); renderFiles(); }
-        
+        let files = [], active = 0;
+        function kind(f) { const n = f.name.toLowerCase(); if(f.type.startsWith('image/')||/\.(jpe?g|png)$/.test(n)) return 'img'; if(f.type==='application/pdf'||n.endsWith('.pdf')) return 'pdf'; if(n.endsWith('.docx')) return 'docx'; if(/\.(txt|md)$/.test(n)) return 'txt'; return null; }
+        function addFiles(list) { const ok = []; [...list].forEach(f => { if(kind(f)) ok.push(f); }); if(!ok.length) return; active = files.length; files.push(...ok); renderFiles(); }
         function renderFiles() {
-            $('fileChips').innerHTML = files.map((f, i) => `<span class="inline-flex items-center rounded-full border-2 ${i === active ? 'border-pink-500 bg-pink-100' : 'border-pink-200 bg-card'} text-xs font-bold text-pink-700 overflow-hidden max-w-full">
-                <button type="button" onclick="pickFile(${i})" class="px-2 py-1 truncate max-w-[120px]">${ICON[kind(f)]} ${f.name}</button>
-                <button type="button" onclick="removeFile(${i})" class="px-1.5 py-1 hover:bg-pink-200">✕</button></span>`).join('');
-            showPreview(files[active]);
+            $('fileChips').innerHTML = files.map((f, i) => `<span class="inline-flex items-center rounded-full border border-pink-300 bg-white text-[10px] font-bold text-pink-700 max-w-full">
+                <button type="button" onclick="active=${i};renderFiles()" class="px-1.5 py-0.5 truncate max-w-[80px]">${f.name}</button><button type="button" onclick="files.splice(${i},1);renderFiles()" class="px-1 text-red-500">✕</button></span>`).join('');
         }
-        
-        async function showPreview(f) {
-            const tok = ++pvToken, box = $('previewBox'), info = $('fileInfo');
-            if (pvUrl) { URL.revokeObjectURL(pvUrl); pvUrl = null; }
-            box.innerHTML = ''; $('placeholderText').classList.toggle('hidden', !!f); info.classList.toggle('hidden', !f);
-            if (!f) return;
-            info.textContent = '⏳ Đang mở...';
-            try {
-                if (kind(f) === 'img') {
-                    let el = new Image(); pvUrl = URL.createObjectURL(f);
-                    await new Promise(ok => { el.onload = ok; el.src = pvUrl; });
-                    el.className = 'max-w-full max-h-[200px] object-contain rounded-xl';
-                    if (tok === pvToken) box.append(el);
-                } else { if (tok === pvToken) box.innerHTML = "<p class='text-slate-500 font-bold'>📄 Đã nạp file văn bản</p>"; }
-                if (tok === pvToken) info.textContent = `${f.name}`;
-            } catch (e) {}
-        }
-        
         $('fileInput').addEventListener('change', e => { addFiles([...e.target.files]); e.target.value = ''; });
-
         $('extractBtn').addEventListener('click', async () => {
             if (!files.length) return showToast('Chọn file nha!', 'warning');
-            const btn = $('extractBtn'), load = $('loadingStatus'), st = $('statusText');
-            load.classList.replace('hidden', 'flex'); btn.disabled = true;
+            $('loadingStatus').classList.replace('hidden', 'flex'); $('extractBtn').disabled = true;
             let worker = null; const parts = [];
             try {
                 for (let i = 0; i < files.length; i++) {
                     const f = files[i], k = kind(f);
-                    st.textContent = `Đang đọc file ${i + 1}...`;
                     if (k === 'img') {
                         if (!window.Tesseract) await new Promise(ok => { let s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js'; s.onload = ok; document.head.appendChild(s); });
                         worker = worker || await Tesseract.createWorker('eng', 1);
@@ -471,238 +373,135 @@
                         parts.push((await mammoth.extractRawText({ arrayBuffer: await f.arrayBuffer() })).value); 
                     }
                 }
-                const text = parts.join('\n\n'); if (!text) throw new Error();
-                storyText.value = text; showToast('Xong rồi!', 'success'); cleanBtn.click();
+                storyText.value = parts.join('\n\n'); showToast('Xong!', 'success'); cleanBtn.click();
             } catch (e) { showToast('Lỗi đọc file!', 'error'); } 
-            finally { if (worker) await worker.terminate(); btn.disabled = false; load.classList.replace('flex', 'hidden'); }
+            finally { if(worker) await worker.terminate(); $('extractBtn').disabled = false; $('loadingStatus').classList.replace('flex', 'hidden'); }
         });
 
-        // ================== XÓA RÁC OCR TUYỆT ĐỐI (REGEX MẠNH) ==================
+        // ================== LỌC RÁC OCR MẠNH ==================
         cleanBtn.addEventListener('click', () => {
-            let text = storyText.value;
-            if (!text.trim()) return showToast('Khung chữ trống!', 'warning');
+            let text = storyText.value; if (!text.trim()) return showToast('Trống!', 'warning');
             const keep = $('keepLayout').checked;
-
-            // Loại bỏ hoàn toàn các ký tự lạ, giữ lại chữ, số và dấu câu thông thường
             text = text.replace(/[^a-zA-Z0-9.,!?'";:\- \n]/g, ' ');
-
             const validShort = ['a', 'i', 'is', 'it', 'to', 'do', 'in', 'on', 'as', 'at', 'be', 'he', 'we', 'me', 'my', 'by', 'so', 'go', 'no', 'of', 'or', 'if', 'up', 'us', 'am', 'an'];
             const blacklist = ['te', 'wa', 'ni', 'el', 'od', 'yi', 'bud', 'py', 'oy', 'eo', 'ott', 'onin', 'osun', 'ose', 'om', 'ga', 'sy', 'nf', 'qj', 'fo', 'ens', 'ees'];
 
-            let lines = text.split('\n');
-            let cleanLines = lines.map(line => {
-                let words = line.split(/\s+/);
-                let filtered = words.filter(word => {
-                    let clean = word.replace(/[^a-zA-Z]/g, '').toLowerCase();
-                    if (!clean) return /^[.,!?]+$/.test(word); // Giữ dấu câu
-                    
-                    if (clean.length === 1 && !['a', 'i'].includes(clean)) return false; // Dọn rác 1 ký tự (như I. dính dấu câu cũng bị lọc)
-                    if (clean.length === 2 && !validShort.includes(clean)) return false; // Dọn rác 2 ký tự (như as, do sai ngữ cảnh)
-                    if (clean.length >= 3 && !/[aeiouy]/.test(clean)) return false; // Dọn rác không nguyên âm
-                    if (blacklist.includes(clean)) return false; // Dọn blacklist (ens, ees)
-                    
-                    return true;
-                });
-                return filtered.join(' ');
-            });
+            let cleanLines = text.split('\n').map(line => line.split(/\s+/).filter(word => {
+                let clean = word.replace(/[^a-zA-Z]/g, '').toLowerCase();
+                if (!clean) return /^[.,!?]+$/.test(word); 
+                if (clean.length === 1 && !['a', 'i'].includes(clean)) return false; 
+                if (clean.length === 2 && !validShort.includes(clean)) return false; 
+                if (clean.length >= 3 && !/[aeiouy]/.test(clean)) return false; 
+                if (blacklist.includes(clean)) return false; 
+                return true;
+            }).join(' '));
 
             text = cleanLines.join('\n');
-            if (!keep) {
-                text = text.replace(/\n[ \t]*\n/g, ' \u0001 ').replace(/\n/g, ' ').replace(/ ?\u0001 ?/g, '\n\n');
-            }
-
+            if (!keep) text = text.replace(/\n[ \t]*\n/g, ' \u0001 ').replace(/\n/g, ' ').replace(/ ?\u0001 ?/g, '\n\n');
             text = text.replace(/\s+([.,!?:;])/g, '$1').replace(/([.,!?:;])(?=[a-zA-Z])/g, '$1 ').replace(/^[.,!?:;\s]+|[.,!?:;\s]+$/g, '').replace(/ +/g, ' '); 
             text = text.toLowerCase().replace(/(^\s*[a-z]|[.!?]\s*[a-z])/g, c => c.toUpperCase()).replace(/\b(i)\b/g, 'I');
-            
-            storyText.value = text;
-            showToast('Đã làm sạch văn bản chuẩn xác!', 'success');
-            vocabList.classList.remove('blur-active');
-            extractVocabulary(text);
+            storyText.value = text; showToast('Đã lọc sạch rác!', 'success'); extractVocabulary(text);
         });
 
-        // ================== TỪ VỰNG & GAME VỚI AVATAR ==================
+        // ================== TỪ VỰNG & GAME 5 CÂU ==================
         async function extractVocabulary(text) {
-            const stopWords = ['the', 'and', 'to', 'of', 'in', 'is', 'that', 'it', 'on', 'you', 'this', 'for', 'but', 'with', 'are', 'have', 'be', 'at', 'or', 'as', 'was', 'so', 'if', 'out', 'not', 'he', 'she', 'we', 'they', 'his', 'her', 'my', 'your', 'what', 'when', 'why', 'how', 'can'];
-            let words = text.toLowerCase().match(/\b[a-z]{3,}\b/g) || [];
-            let complexWords = words.filter(w => !stopWords.includes(w));
+            const stopWords = ['the', 'and', 'to', 'of', 'in', 'is', 'that', 'it', 'on', 'you', 'this', 'for', 'but', 'with', 'are', 'have', 'be', 'at', 'or', 'as', 'was', 'so', 'if', 'out', 'not', 'he', 'she', 'we', 'they', 'his', 'her', 'my', 'your'];
+            let words = text.toLowerCase().match(/\b[a-z]{3,}\b/g) || []; let complexWords = words.filter(w => !stopWords.includes(w));
+            let counts = {}; complexWords.forEach(w => counts[w] = (counts[w] || 0) + 1);
+            let unique = Object.keys(counts).filter(w => w.length >= 4).sort((a, b) => b.length - a.length).slice(0, 10);
             
-            let wordCounts = {}; complexWords.forEach(w => wordCounts[w] = (wordCounts[w] || 0) + 1);
-            let uniqueWords = Object.keys(wordCounts).filter(w => w.length >= 4).sort((a, b) => b.length - a.length).slice(0, 10);
-            
-            if (uniqueWords.length === 0) {
-                vocabList.innerHTML = '<span class="italic text-purple-400">Chưa tìm thấy từ khó!</span>';
-                quizContainer.innerHTML = '<span class="italic text-orange-400">Truyện ngắn quá!</span>'; return;
-            }
-            
-            vocabList.innerHTML = '<span class="italic text-purple-500 animate-pulse">Đang tra từ điển... ⏳</span>';
-            let resultHTML = ''; globalVocabData = []; 
+            if (!unique.length) { vocabList.innerHTML = '<span class="italic text-purple-400">Không có từ khó!</span>'; return; }
+            vocabList.innerHTML = '<span class="italic text-purple-500 animate-pulse">Đang dịch... ⏳</span>';
+            let html = ''; globalVocabData = []; 
 
-            for (let word of uniqueWords) {
+            for (let word of unique) {
                 try {
-                    let safeWord = word.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
-                    let sentenceMatch = text.match(new RegExp(`[^.?!]*\\b${safeWord}\\b[^.?!]*[.?!]`, 'i'));
-                    
-                    let posText = "Từ vựng"; 
-                    try {
-                        let dictRes = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
-                        let dictData = await dictRes.json();
-                        if(dictData && dictData[0] && dictData[0].meanings[0]) {
-                            let enPos = dictData[0].meanings[0].partOfSpeech.toLowerCase(); posText = posMap[enPos] || enPos;
-                        }
-                    } catch(e) {}
-
-                    let res = await fetch(`https://api.mymemory.translated.net/get?q=${word}&langpair=en|vi`);
-                    let data = await res.json(); let meaning = data.responseData.translatedText.toLowerCase();
-
-                    globalVocabData.push({ word: word, meaning: meaning, pos: posText, sentence: sentenceMatch ? sentenceMatch[0].trim() : '' });
-
-                    resultHTML += `<div class="group px-3 py-2 bg-card border-2 border-purple-300 rounded-xl shadow-sm cursor-pointer hover:bg-purple-100 flex flex-col items-center justify-center text-center" onclick="playWordAudio('${word}')">
-                        <span class="text-purple-700 font-black text-base md:text-lg">${word} 🔊</span>
-                        <span class="text-[10px] md:text-xs text-white bg-purple-500 px-2 py-0.5 rounded-full mt-1 mb-1 capitalize">${posText}</span>
-                        <span class="text-xs md:text-sm text-slate-500 font-bold border-t border-purple-100 w-full pt-1 capitalize">${meaning}</span>
-                    </div>`;
+                    let sm = text.match(new RegExp(`[^.?!]*\\b${word.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}\\b[^.?!]*[.?!]`, 'i'));
+                    let res = await fetch(`https://api.mymemory.translated.net/get?q=${word}&langpair=en|vi`); let data = await res.json();
+                    globalVocabData.push({ word, meaning: data.responseData.translatedText.toLowerCase(), sentence: sm ? sm[0].trim() : '' });
+                    html += `<div class="group px-2 py-1 bg-white border border-purple-300 rounded shadow-sm flex flex-col items-center" onclick="playWordAudio('${word}')">
+                        <span class="text-purple-700 font-black text-xs">${word} 🔊</span><span class="text-[10px] text-slate-500 capitalize">${globalVocabData[globalVocabData.length-1].meaning}</span></div>`;
                 } catch (e) {}
             }
-            vocabList.innerHTML = resultHTML; setupQuizForm();
+            vocabList.innerHTML = html; setupQuizForm();
         }
 
         function setupQuizForm() {
-            if(globalVocabData.length < 2) return;
-            let avatarHTML = avatars.map(a => `
-                <button onclick="selectAvatar('${a.id}', this)" class="avatar-btn flex flex-col items-center p-2 border-2 border-slate-200 rounded-xl hover:bg-slate-100 transition-all">
-                    <span class="text-3xl">${a.icon}</span><span class="text-xs font-bold text-slate-600">${a.name}</span>
-                </button>
-            `).join('');
-
-            quizContainer.innerHTML = `
-                <div class="bg-card p-3 rounded-xl border border-orange-200 text-center shadow-sm">
-                    <p class="text-orange-600 text-sm md:text-base font-black mb-2">Chọn nhân vật của bé để chơi nào!</p>
-                    <div class="grid grid-cols-4 gap-2 mb-4">${avatarHTML}</div>
-                    <button onclick="startQuizEngine()" class="w-full py-2.5 bg-orange-500 text-white font-black text-sm rounded-xl btn-bounce hover:bg-orange-600">🎮 Chơi Ngay!</button>
-                </div>
-            `;
+            if(globalVocabData.length < 3) return;
+            let avatarHTML = avatars.map(a => `<button onclick="selectAvatar('${a.id}', this)" class="avatar-btn flex flex-col items-center p-1 border rounded-lg hover:bg-slate-100"><span class="text-2xl">${a.icon}</span></button>`).join('');
+            quizContainer.innerHTML = `<div class="bg-white p-2 rounded-xl text-center shadow-sm"><p class="text-orange-600 text-xs font-black mb-2">Chọn nhân vật thi đấu!</p><div class="flex flex-wrap justify-center gap-1.5 mb-2">${avatarHTML}</div><button onclick="startQuizEngine()" class="w-full py-1.5 bg-orange-500 text-white font-black text-xs rounded-lg btn-bounce">🎮 Bắt Đầu (5 Câu)</button></div>`;
         }
 
-        window.selectAvatar = function(id, btnElement) {
-            currentPlayer = avatars.find(a => a.id === id);
-            document.querySelectorAll('.avatar-btn').forEach(b => b.classList.remove('avatar-selected'));
-            btnElement.classList.add('avatar-selected');
-        }
-
-        window.startQuizEngine = function() {
-            if(!currentPlayer) return showToast('Bé nhớ chọn 1 nhân vật nhé!', 'warning');
-            vocabList.classList.add('blur-active');
-            showToast(`Chào ${currentPlayer.name}! Bắt đầu thôi!`, 'success');
-            generateQuiz();
-        }
+        window.selectAvatar = function(id, btn) { currentPlayer = avatars.find(a => a.id === id); document.querySelectorAll('.avatar-btn').forEach(b => b.classList.remove('avatar-selected')); btn.classList.add('avatar-selected'); }
+        window.startQuizEngine = function() { if(!currentPlayer) return showToast('Bé chọn 1 nhân vật nhé!', 'warning'); showToast(`Cố lên ${currentPlayer.name}!`, 'success'); generateQuiz(); }
 
         window.generateQuiz = function() {
-            let shuffledVocab = [...globalVocabData].sort(() => Math.random() - 0.5).slice(0, 3); 
-            let allMeanings = globalVocabData.map(v => v.meaning); let allEnglishWords = globalVocabData.map(v => v.word);
+            let shuffled = [...globalVocabData].sort(() => Math.random() - 0.5).slice(0, 5); 
+            let allMeanings = globalVocabData.map(v => v.meaning); let allEng = globalVocabData.map(v => v.word);
+            let qHTML = `<div class="flex items-center justify-center gap-2 mb-2 bg-orange-100 p-1.5 rounded-lg border border-orange-200"><span class="text-xl">${currentPlayer.icon}</span><p class="text-orange-700 text-xs font-bold">${currentPlayer.name}</p></div>`;
             
-            let quizHTML = `<div class="flex items-center justify-center gap-2 mb-4 bg-orange-100 p-2 rounded-xl border border-orange-200"><span class="text-2xl">${currentPlayer.icon}</span><p class="text-orange-700 text-sm md:text-base font-bold">Lượt chơi của: ${currentPlayer.name}</p></div>`;
-            
-            shuffledVocab.forEach((q, index) => {
-                let typeOptions = q.sentence ? [0, 1, 2] : [0, 1];
-                let qType = typeOptions[Math.floor(Math.random() * typeOptions.length)];
-                let options = []; let correctAnswer = ""; let questionText = "";
-
-                if (qType === 0) {
-                    correctAnswer = q.meaning; questionText = `Nghĩa của từ <b>"${q.word}"</b> là gì?`; options.push(correctAnswer);
-                    while(options.length < 3) { let rw = allMeanings[Math.floor(Math.random() * allMeanings.length)]; if(!options.includes(rw)) options.push(rw); }
-                } else if (qType === 1) {
-                    correctAnswer = q.word; questionText = `Từ nào có nghĩa là <b>"${q.meaning}"</b>?`; options.push(correctAnswer);
-                    while(options.length < 3) { let rw = allEnglishWords[Math.floor(Math.random() * allEnglishWords.length)]; if(!options.includes(rw)) options.push(rw); }
-                } else {
-                    correctAnswer = q.word; let maskedSentence = q.sentence.replace(new RegExp(`\\b${q.word}\\b`, 'gi'), `<b>[___]</b>`);
-                    questionText = `Điền từ vào câu: <br><i class="text-sm font-normal text-slate-500">"${maskedSentence}"</i>`; options.push(correctAnswer);
-                    while(options.length < 3) { let rw = allEnglishWords[Math.floor(Math.random() * allEnglishWords.length)]; if(!options.includes(rw)) options.push(rw); }
-                }
-                
-                options.sort(() => Math.random() - 0.5);
-                
-                quizHTML += `<div class="mb-4 quiz-question" data-answer="${correctAnswer}" id="qDiv${index}">
-                    <p class="mb-2 text-sm md:text-base font-bold text-slate-800">Câu ${index + 1}: ${questionText}</p>
-                    <div class="flex flex-col gap-1.5">
-                        ${options.map(opt => `<label class="bg-card px-3 py-2 rounded-lg border-2 border-orange-100 cursor-pointer hover:bg-orange-100 text-sm"><input type="radio" name="q${index}" value="${opt}" class="mr-2 accent-orange-500"><span class="capitalize">${opt}</span></label>`).join('')}
-                    </div></div>`;
+            shuffled.forEach((q, i) => {
+                let opts = []; let ans = ""; let txt = ""; let type = q.sentence ? Math.floor(Math.random()*3) : Math.floor(Math.random()*2);
+                if(type === 0) { ans = q.meaning; txt = `Nghĩa của <b>"${q.word}"</b>?`; opts.push(ans); while(opts.length<3){ let r=allMeanings[Math.floor(Math.random()*allMeanings.length)]; if(!opts.includes(r)) opts.push(r); } }
+                else if(type === 1) { ans = q.word; txt = `Từ nghĩa là <b>"${q.meaning}"</b>?`; opts.push(ans); while(opts.length<3){ let r=allEng[Math.floor(Math.random()*allEng.length)]; if(!opts.includes(r)) opts.push(r); } }
+                else { ans = q.word; txt = `Điền: <i class="text-[10px] text-slate-500">"${q.sentence.replace(new RegExp(`\\b${q.word}\\b`,'gi'),`<b>[___]</b>`)}"</i>`; opts.push(ans); while(opts.length<3){ let r=allEng[Math.floor(Math.random()*allEng.length)]; if(!opts.includes(r)) opts.push(r); } }
+                opts.sort(()=>Math.random()-0.5);
+                qHTML += `<div class="mb-2 quiz-question bg-white p-2 rounded border border-slate-200" data-answer="${ans}">
+                    <p class="mb-1.5 text-xs font-bold text-slate-800">C${i+1}: ${txt}</p><div class="flex flex-col gap-1">${opts.map(o => `<label class="bg-slate-50 px-2 py-1 rounded border border-orange-100 cursor-pointer hover:bg-orange-50 text-[10px]"><input type="radio" name="q${i}" value="${o}" class="mr-1 accent-orange-500"><span class="capitalize">${o}</span></label>`).join('')}</div></div>`;
             });
-            
-            quizHTML += `<div class="flex gap-2 mt-2">
-                <button id="submitQuizBtn" class="flex-1 py-2.5 bg-orange-500 text-white text-sm font-black rounded-xl active:bg-orange-600 shadow-sm" onclick="checkQuiz()">✅ Chấm Điểm</button>
-                <button id="replayQuizBtn" class="flex-1 py-2.5 bg-sky-500 text-white text-sm font-black rounded-xl active:bg-sky-600 shadow-sm" onclick="setupQuizForm()">🔄 Đổi Nhân Vật</button>
-            </div><div id="quizResult" class="mt-3 p-3 bg-green-100 border-2 border-green-400 rounded-xl text-center flex flex-col items-center gap-1 hidden"></div>`;
-            
-            quizContainer.innerHTML = quizHTML;
+            qHTML += `<div class="flex gap-1 mt-1"><button onclick="checkQuiz()" class="flex-1 py-1.5 bg-orange-500 text-white text-xs font-black rounded-lg">✅ Nộp</button><button onclick="setupQuizForm()" class="flex-1 py-1.5 bg-sky-500 text-white text-xs font-black rounded-lg">🔄 Đổi N.Vật</button></div><div id="quizResult" class="mt-2 p-2 bg-green-100 rounded-lg text-center flex flex-col items-center hidden"></div>`;
+            quizContainer.innerHTML = qHTML;
         };
 
         window.checkQuiz = function() {
-            let score = 0; let questions = document.querySelectorAll('.quiz-question');
-            questions.forEach((q, index) => {
-                let correctAnswer = q.getAttribute('data-answer');
-                let selected = document.querySelector(`input[name="q${index}"]:checked`);
-                q.querySelectorAll('label').forEach(l => { l.classList.remove('bg-green-100', 'border-green-400', 'bg-red-100', 'border-red-400'); l.classList.add('bg-card'); });
-                if(selected) {
-                    let parent = selected.parentElement;
-                    if(selected.value === correctAnswer) { score += 10; parent.classList.replace('bg-card', 'bg-green-100'); parent.classList.add('border-green-400'); } 
-                    else {
-                        parent.classList.replace('bg-card', 'bg-red-100'); parent.classList.add('border-red-400');
-                        let correctInput = q.querySelector(`input[value="${correctAnswer}"]`);
-                        if(correctInput) { correctInput.parentElement.classList.replace('bg-card', 'bg-green-100'); correctInput.parentElement.classList.add('border-green-400'); }
-                    }
-                }
+            let score = 0; let qs = document.querySelectorAll('.quiz-question');
+            qs.forEach((q, i) => {
+                let ans = q.getAttribute('data-answer'); let sel = document.querySelector(`input[name="q${i}"]:checked`);
+                q.querySelectorAll('label').forEach(l => { l.classList.remove('bg-green-100', 'bg-red-100'); l.classList.add('bg-slate-50'); });
+                if(sel) { let p = sel.parentElement; if(sel.value === ans) { score+=10; p.classList.replace('bg-slate-50','bg-green-100'); } else { p.classList.replace('bg-slate-50','bg-red-100'); let ci = q.querySelector(`input[value="${ans}"]`); if(ci) ci.parentElement.classList.replace('bg-slate-50','bg-green-100'); } }
             });
-            
-            vocabList.classList.remove('blur-active');
-            
-            // Cập nhật điểm lên Leaderboard
-            let boardData = JSON.parse(localStorage.getItem('magicLeaderboard') || '{}');
-            boardData[currentPlayer.id] = (boardData[currentPlayer.id] || 0) + score;
-            localStorage.setItem('magicLeaderboard', JSON.stringify(boardData));
-            loadLeaderboard();
-
-            let resMsg = `<span class="text-3xl">${currentPlayer.icon}</span><span class="text-sm md:text-base font-black text-green-800">${currentPlayer.name} ghi được +${score} điểm!</span><button onclick="generateQuiz()" class="mt-2 text-xs bg-orange-400 text-white px-3 py-1 rounded-full font-bold">Chơi tiếp kiếm điểm</button>`;
-            let resDiv = document.getElementById('quizResult'); resDiv.innerHTML = resMsg; resDiv.classList.remove('hidden');
+            let data = JSON.parse(localStorage.getItem('magicLeaderboard') || '{}'); data[currentPlayer.id] = (data[currentPlayer.id] || 0) + score; localStorage.setItem('magicLeaderboard', JSON.stringify(data)); loadLeaderboard();
+            let resDiv = document.getElementById('quizResult'); resDiv.innerHTML = `<span class="text-2xl">${currentPlayer.icon}</span><span class="text-xs font-black text-green-800">+${score} điểm!</span><button onclick="generateQuiz()" class="mt-1 text-[10px] bg-orange-400 text-white px-2 py-0.5 rounded-full font-bold">Chơi tiếp</button>`; resDiv.classList.remove('hidden');
         };
 
-        // ================== AUDIO ==================
-        let mainAudio = new Audio(), audioPlaylist = [], currentPlaylistIndex = 0, isPlaying = false;
-        function playWordAudio(word) { new Audio(`https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=en&q=${encodeURIComponent(word)}`).play().catch(e=>{}); }
-        function speakText(text) {
-            stopAudio(); if(!text) return;
-            audioPlaylist = text.match(/[^.!?\n]+[.!?\n]*/g)?.map(c=>c.trim()).filter(c=>c.length>0) || [];
-            currentPlaylistIndex = 0; isPlaying = true;
-            document.getElementById('playBtn').innerHTML = '🔊 Đang đọc...'; playNextAudioChunk();
-        }
-        function playNextAudioChunk() {
-            if (currentPlaylistIndex >= audioPlaylist.length) return resetAudioUI();
-            mainAudio.src = `https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=en&q=${encodeURIComponent(audioPlaylist[currentPlaylistIndex])}`;
-            mainAudio.playbackRate = parseFloat(speedSlider.value);
-            mainAudio.onended = () => { currentPlaylistIndex++; playNextAudioChunk(); };
-            mainAudio.onerror = () => { currentPlaylistIndex++; playNextAudioChunk(); };
-            mainAudio.play().catch(() => resetAudioUI());
-        }
-        function stopAudio() { mainAudio.pause(); mainAudio.currentTime = 0; isPlaying = false; }
-        function resetAudioUI() { isPlaying = false; document.getElementById('playBtn').innerHTML = '▶️ Đọc To'; }
+        // ================== AUDIO BẰNG THUẬT TOÁN PITCH ==================
+        let synth = window.speechSynthesis, currentUtterance = null;
+        function playWordAudio(word) { let u = new SpeechSynthesisUtterance(word); u.lang = 'en-US'; synth.speak(u); }
         
-        document.getElementById('playBtn').addEventListener('click', () => { if(isPlaying) return; speakText(storyText.value.trim()); });
-        document.getElementById('playCursorBtn').addEventListener('click', () => {
-            if(isPlaying) stopAudio();
-            let text = storyText.value; if (!text.trim()) return;
-            let pos = storyText.selectionStart; while(pos > 0 && /\S/.test(text[pos - 1])) pos--;
-            speakText(text.substring(pos).trim());
-        });
-        document.getElementById('stopBtn').addEventListener('click', () => stopAudio());
+        function speakText(text) {
+            synth.cancel(); if(!text) return;
+            currentUtterance = new SpeechSynthesisUtterance(text);
+            currentUtterance.lang = 'en-US';
+            
+            // Xử lý Giọng theo cao độ (Pitch) và Tốc độ (Rate)
+            let vType = voiceType.value;
+            let baseRate = parseFloat(speedSlider.value);
+            
+            if (vType === 'normal') { currentUtterance.pitch = 1.0; currentUtterance.rate = baseRate; }
+            else if (vType === 'child') { currentUtterance.pitch = 1.6; currentUtterance.rate = baseRate * 1.1; } // Nhí nhảnh
+            else if (vType === 'man') { currentUtterance.pitch = 0.6; currentUtterance.rate = baseRate * 0.9; }   // Trầm ấm
+            else if (vType === 'old') { currentUtterance.pitch = 0.3; currentUtterance.rate = baseRate * 0.7; }   // Chậm rãi
+            else if (vType === 'robot') { currentUtterance.pitch = 0.1; currentUtterance.rate = baseRate * 0.8; } // Máy móc
+            
+            currentUtterance.onend = () => resetAudioUI();
+            currentUtterance.onerror = () => resetAudioUI();
+            
+            $('playBtn').innerHTML = '<span class="mr-1">🔊</span>Đang đọc...';
+            synth.speak(currentUtterance);
+        }
+        function stopAudio() { synth.cancel(); resetAudioUI(); }
+        function resetAudioUI() { $('playBtn').innerHTML = '<span class="mr-1">▶️</span>Đọc To'; }
+        
+        $('playBtn').addEventListener('click', () => { if(synth.speaking) return; speakText(storyText.value.trim()); });
+        $('playCursorBtn').addEventListener('click', () => { stopAudio(); let t = storyText.value; if(!t.trim()) return; let p = storyText.selectionStart; while(p>0 && /\S/.test(t[p-1])) p--; speakText(t.substring(p).trim()); });
+        $('stopBtn').addEventListener('click', stopAudio);
         
         // Đổi giao diện
         $('themeBtn').addEventListener('click', () => { 
-            $('themePanel').innerHTML = THEMES.map(t => `<button type="button" data-t="${t.id}" class="text-left rounded-lg p-1.5 border-2 btn-bounce ${t.id === document.documentElement.dataset.theme ? 'border-pink-500 bg-pink-100' : 'border-pink-200 hover:bg-pink-50'}"><span class="flex h-4 rounded overflow-hidden mb-1 border border-slate-300">${[t.bg, t.card, ...t.c].map(c => `<i class="flex-1" style="background:${c}"></i>`).join('')}</span><span class="text-[10px] font-black text-pink-700">${t.icon} ${t.name}</span></button>`).join('');
+            $('themePanel').innerHTML = THEMES.map(t => `<button type="button" data-t="${t.id}" class="text-left rounded p-1 border btn-bounce ${t.id === document.documentElement.dataset.theme ? 'border-pink-500 bg-pink-100' : 'border-pink-200'}"><span class="flex h-3 rounded overflow-hidden mb-1">${[t.bg, t.card, ...t.c].map(c => `<i class="flex-1" style="background:${c}"></i>`).join('')}</span><span class="text-[10px] font-black">${t.icon} ${t.name}</span></button>`).join('');
             $('themePanel').classList.toggle('hidden'); 
         });
-        $('themePanel').addEventListener('click', e => {
-            const b = e.target.closest('[data-t]'); if (!b) return;
-            applyTheme(b.dataset.t); $('themePanel').classList.add('hidden');
-        });
+        $('themePanel').addEventListener('click', e => { const b = e.target.closest('[data-t]'); if(b) { applyTheme(b.dataset.t); $('themePanel').classList.add('hidden'); } });
         document.addEventListener('click', e => { if (!e.target.closest('#themePanel,#themeBtn')) $('themePanel').classList.add('hidden'); });
     </script>
 </body>
