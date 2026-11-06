@@ -2180,6 +2180,63 @@ setTab('home');
 // bong bóng mascot không chặn nút bấm và tự ẩn sau vài giây
 talk = m => { const b = $('mb'); if (!b) return; b.textContent = m; b.style.opacity = 1; clearTimeout(mt); mt = setTimeout(() => { b.style.opacity = 0; }, 6000); };
 
+
+// ================== V3.1: NGHE HIỂU TỪNG CÂU ==================
+const COLORS = ['red', 'blue', 'green', 'yellow', 'orange', 'pink', 'purple', 'black', 'white', 'brown', 'golden', 'gold', 'silver'];
+const NUMS = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10 };
+const C = { order: [], n: 0, s: '', qs: [], qi: 0, tries: 0, asked: 0, sum: 0, done: false };
+const cpEl = document.createElement('div');
+cpEl.id = 'cardComp'; cpEl.className = 'guide-card bg-white p-3 md:p-4 rounded-[1.5rem] shadow-lg border-4 border-cyan-300';
+cpEl.innerHTML = `<div class="flex justify-between items-center mb-2 gap-2"><h2 class="font-black text-cyan-700 text-base md:text-lg">👂 Nghe hiểu từng câu</h2><span id="cpStat" class="text-xs font-black bg-cyan-100 text-cyan-800 px-2 py-1 rounded-full">Chưa chơi</span></div><div id="cpArea" class="text-sm font-bold text-slate-700"><p class="text-slate-500 mb-2">Bé nghe 1 câu rồi trả lời câu hỏi bằng từ khóa tiếng Anh. Đúng thì được điểm, sai thì thử lại hoặc đổi câu hỏi!</p><button id="cpStart" class="w-full py-3 bg-cyan-500 text-white font-black text-lg rounded-2xl btn-bounce">▶️ Bắt đầu nghe hiểu</button></div>`;
+$('cardReadingPanel').after(cpEl); TABS.cardComp = 'read'; cpEl.classList.toggle('hid', document.body.dataset.tab !== 'read');
+const cpSents = () => {
+    let a = allStorySentences.length ? allStorySentences : (storyText.value.match(/[^.!?\n]+[.!?]*/g) || []).map(s => s.trim()).filter(s => s.split(/\s+/).length >= 4);
+    return a;
+};
+function genQs(s) {
+    const qs = [], low = s.toLowerCase().replace(/[^a-z0-9' ]/g, ' ').split(/\s+/).filter(Boolean);
+    const wm = s.match(/\b(?:in|at|on|to|into|from|near|under|behind|inside)\s+(?:the|a|an|his|her|their)?\s*([A-Za-z]{3,})/i);
+    if (wm && !STOP.has(wm[1].toLowerCase())) qs.push({ q: '📍 Câu này nói về nơi nào? (trả lời 1 từ tiếng Anh)', a: [wm[1].toLowerCase()] });
+    const col = low.find(x => COLORS.includes(x)); if (col) qs.push({ q: '🎨 Trong câu có màu gì?', a: [col] });
+    const nm = low.find(x => NUMS[x] || /^\d+$/.test(x)); if (nm) qs.push({ q: '🔢 Trong câu nhắc đến số mấy? (trả lời bằng chữ hoặc số)', a: NUMS[nm] ? [nm, String(NUMS[nm])] : [nm] });
+    const who = s.match(/^(?:the|a|an)\s+([A-Za-z]{3,})(?:\s+([A-Za-z]{3,}))?/i) || s.match(/^([A-Z][a-z]{2,})\b/);
+    if (who && !STOP.has(who[1].toLowerCase())) { const w1 = who[1].toLowerCase(), w2 = who[2] && who[2].toLowerCase(); qs.push({ q: '👀 Ai (hoặc con gì) làm việc trong câu? (1 từ tiếng Anh)', a: w2 && !STOP.has(w2) && !/ed$/.test(w2) ? [w2, w1] : [w1] }); }
+    const cands = low.filter(x => x.length >= 4 && !STOP.has(x) && !/^\d/.test(x)).sort((a, b) => (!!LOCAL_DICTIONARY[b] - !!LOCAL_DICTIONARY[a]) || b.length - a.length);
+    if (cands.length) { const k = cands[0]; qs.push({ q: `✏️ Nghe và điền từ còn thiếu: "${s.replace(new RegExp('\\b' + k + '\\b', 'i'), '_____')}"`, a: [k] }); }
+    return qs;
+}
+const cpOk = (cands, ans) => cands.some(t => { const n = t.toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/); return ans.some(x => n.some(w => w === x || w.replace(/(es|s)$/, '') === x.replace(/(es|s)$/, ''))); });
+const cpLevel = () => { const p = C.asked ? Math.round(C.sum / C.asked * 100) : 0; return { p, t: p >= 80 ? '🌟 Rất tốt' : p >= 50 ? '👍 Khá' : '💪 Cần nghe thêm' }; };
+function cpStat() { const l = cpLevel(); $('cpStat').textContent = C.asked ? `Hiểu ${l.p}% (${C.asked} câu) ${l.t}` : 'Chưa chơi'; }
+function cpNextSentence() {
+    const all = cpSents(); if (!all.length) return showToast('Chọn truyện và bấm "Sạch" trước nhé!', 'warning');
+    if (!C.order.length || C.src !== all) { C.src = all; C.order = shuf(all.map((_, i) => i)); C.n = 0; }
+    C.s = all[C.order[C.n++ % C.order.length]]; C.qs = shuf(genQs(C.s)); C.qi = 0; C.tries = 0; C.done = false; cpShow();
+}
+function cpShow() {
+    const q = C.qs[C.qi], SRx = window.SpeechRecognition || window.webkitSpeechRecognition;
+    $('cpArea').innerHTML = `<div class="text-center mb-2"><button id="cpPlay" class="text-4xl py-2 px-5 bg-amber-100 border-2 border-amber-300 rounded-2xl btn-bounce">🔊</button><div class="text-xs text-slate-500">Chạm loa để nghe lại câu</div><button id="cpPeek" class="text-xs text-cyan-700 underline mt-1">👀 Xem chữ (nếu nghe chưa rõ)</button><p id="cpTxt" class="hidden italic bg-slate-50 rounded-xl p-2 mt-1">"${C.s}"</p></div><div class="bg-cyan-50 border-2 border-cyan-200 rounded-2xl p-3 mb-2 text-base">${q.q}</div><div class="flex gap-2 mb-2"><input id="cpIn" autocomplete="off" placeholder="Bé trả lời ở đây..." class="flex-1 min-w-0 border-2 border-cyan-300 rounded-xl px-3 py-2 text-base font-bold outline-none focus:border-cyan-500">${SRx ? '<button id="cpMic" class="px-3 bg-pink-500 text-white rounded-xl text-xl">🎤</button>' : ''}<button id="cpGo" class="px-4 bg-green-500 text-white font-black rounded-xl">✅</button></div><div id="cpFb" class="min-h-[2rem] font-black mb-2"></div><div id="cpRow" class="grid grid-cols-2 gap-2"><button id="cpChg" class="py-2 bg-purple-100 text-purple-700 font-black rounded-xl">🔀 Đổi câu hỏi</button><button id="cpSkip" class="py-2 bg-slate-100 text-slate-700 font-black rounded-xl">⏭️ Câu khác</button></div>`;
+    const play = () => playSentenceSample(encodeURIComponent(C.s));
+    $('cpPlay').onclick = play; $('cpPeek').onclick = () => $('cpTxt').classList.toggle('hidden');
+    $('cpGo').onclick = () => cpCheck([$('cpIn').value]); $('cpIn').onkeydown = e => { if (e.key === 'Enter') cpCheck([$('cpIn').value]); };
+    if (SRx) $('cpMic').onclick = () => { const r = new SRx(); r.lang = 'en-US'; r.maxAlternatives = 3; $('cpFb').textContent = '👂 Đang nghe bé...'; r.onresult = e => { const al = [...e.results[0]].map(a => a.transcript); $('cpIn').value = al[0]; cpCheck(al); }; r.onerror = () => $('cpFb').textContent = 'Không nghe rõ, bé thử lại nhé!'; r.start(); };
+    $('cpChg').onclick = () => { if (C.qs.length > 1) { C.qi = (C.qi + 1) % C.qs.length; C.tries = 0; cpShow(); } else cpNextSentence(); };
+    $('cpSkip').onclick = cpNextSentence; setTimeout(play, 300); talk('Nghe thật kỹ rồi trả lời nhé bé! 👂');
+}
+function cpCheck(cands) {
+    if (C.done) return; const q = C.qs[C.qi]; if (!cands.join('').trim()) return showToast('Bé nhập hoặc nói câu trả lời nhé!', 'warning');
+    const fb = $('cpFb'), next = (label = '➡️ Câu tiếp theo') => { C.done = true; $('cpRow').innerHTML = `<button id="cpNext" class="col-span-2 py-3 bg-cyan-500 text-white font-black rounded-xl text-base">${label}</button>`; $('cpNext').onclick = cpNextSentence; $('cpIn').disabled = true; cpStat(); };
+    if (cpOk(cands, q.a)) {
+        const pts = [10, 5, 2][C.tries], w = [1, .5, .25][C.tries]; C.asked++; C.sum += w; sessionTracker.scoreEarned += pts; updateSessionUI();
+        fb.innerHTML = `<span class="text-green-600">🎉 Đúng rồi! "${q.a[0]}" +${pts}đ ${C.tries ? '' : '(hiểu ngay lần đầu!)'}</span>`; burst(...ctr(), WIN, 12); talk('Bé nghe hiểu giỏi quá! 👏'); next();
+    } else {
+        C.tries++;
+        if (C.tries >= 3) { C.asked++; fb.innerHTML = `<span class="text-amber-600">Đáp án là "<b>${q.a[0]}</b>". Bé nghe lại câu rồi sang câu mới nhé! 💪</span>`; burst(...ctr(), OOPS, 6); next(); }
+        else { const hint = C.tries === 2 ? ` Gợi ý: bắt đầu bằng chữ "${q.a[0][0]}", có ${q.a[0].length} chữ cái.` : ''; fb.innerHTML = `<span class="text-red-500">Chưa đúng rồi 🙈 Bé nghe lại rồi thử lại, hoặc đổi câu hỏi khác nha!${hint}</span>`; burst(...ctr(), OOPS, 5); $('cpIn').select(); }
+    }
+}
+$('cpStart').onclick = cpNextSentence;
+
         // KHỞI ĐỘNG HỆ THỐNG AN TOÀN
         document.addEventListener('DOMContentLoaded', () => {
             syncKidsFromCloud();
