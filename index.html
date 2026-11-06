@@ -86,7 +86,7 @@
     <!-- Main Content -->
     <main class="w-full max-w-7xl grid grid-cols-1 lg:grid-cols-12 gap-4 flex-grow pb-8">
         
-        <!-- Cột Trái: Ảnh & Quét & Lưu trữ (Chiếm 5 cột trên PC) -->
+        <!-- Cột Trái: Ảnh & Quét & Lưu trữ -->
         <div class="lg:col-span-5 flex flex-col gap-4">
             <div class="bg-card p-4 md:p-6 rounded-[1.5rem] shadow-lg border-4 border-pink-300 flex flex-col">
                 <h2 class="text-lg md:text-xl font-black text-pink-600 mb-3 flex items-center">
@@ -111,7 +111,7 @@
                 </div>
             </div>
 
-            <!-- Khung Kho Truyện (Gọn gàng hơn) -->
+            <!-- Khung Kho Truyện -->
             <div class="bg-indigo-50 p-4 md:p-6 rounded-[1.5rem] shadow-lg border-4 border-indigo-300 flex flex-col max-h-[300px]">
                 <div class="flex justify-between items-center mb-3">
                     <h2 class="text-lg font-black text-indigo-600 flex items-center"><span class="text-xl mr-2">☁️</span> Kho Truyện</h2>
@@ -123,7 +123,7 @@
             </div>
         </div>
 
-        <!-- Cột Phải: Chữ, Âm thanh & Trò chơi (Chiếm 7 cột trên PC, ưu tiên hiển thị) -->
+        <!-- Cột Phải: Chữ, Âm thanh & Trò chơi -->
         <div class="lg:col-span-7 flex flex-col gap-4 h-full">
             <div class="bg-card p-4 md:p-6 rounded-[1.5rem] shadow-lg border-4 border-blue-300 flex flex-col flex-grow">
                 <div class="flex flex-wrap justify-between items-center mb-2 gap-2">
@@ -138,7 +138,7 @@
                 
                 <textarea id="storyText" class="flex-grow w-full p-3 md:p-4 rounded-xl border-2 border-blue-200 focus:border-blue-400 outline-none text-base md:text-lg text-slate-700 leading-relaxed resize-none min-h-[150px] md:min-h-[220px] shadow-inner mb-3 bg-blue-50 font-semibold" placeholder="Chữ sẽ hiện ở đây..."></textarea>
                 
-                <!-- Bảng điều khiển gọn gàng -->
+                <!-- Bảng điều khiển -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
                     <div class="flex items-center gap-2 bg-blue-50 p-2 rounded-lg border border-blue-100">
                         <span title="Đọc chậm">🐢</span>
@@ -285,10 +285,8 @@
         async function exportToMP3() {
             const text = storyText.value.trim();
             if (!text) return showToast('Chưa có truyện để xuất MP3!', 'warning');
-            
             showToast('Đang tạo Audio Full Bài... Bé chờ chút xíu nha! ⏳', 'success');
             
-            // Tách đoạn để tránh lỗi 200 ký tự của Google
             let chunks = text.match(/[^.!?\n]+[.!?\n]*/g) || [text];
             chunks = chunks.map(c => c.trim()).filter(c => c.length > 0);
             let blobs = [];
@@ -296,15 +294,12 @@
             try {
                 for(let i=0; i<chunks.length; i++) {
                     let url = `https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=en&q=${encodeURIComponent(chunks[i])}`;
-                    // Dùng proxy trung gian để vượt lỗi CORS khi tải Blob trên JS client
                     let proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
                     let res = await fetch(proxyUrl);
                     if(!res.ok) throw new Error('Proxy lỗi');
                     let blob = await res.blob();
                     blobs.push(blob);
                 }
-                
-                // Ghép (Concatenate) tất cả các đoạn Blob MP3 thành 1 file duy nhất
                 let finalBlob = new Blob(blobs, { type: 'audio/mpeg' });
                 const a = document.createElement('a'); 
                 a.href = URL.createObjectURL(finalBlob);
@@ -312,7 +307,6 @@
                 a.click();
                 showToast('Đã ghép nối & tải xong Audio MP3 Full bài! 🎵', 'success');
             } catch(e) {
-                // Fallback nếu proxy bị lỗi mạng
                 showToast('Mở link nghe tạm thời do lỗi kết nối mạng... 🎵', 'warning');
                 let chunk = text.substring(0, 200); 
                 window.open(`https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=en&q=${encodeURIComponent(chunk)}`, '_blank');
@@ -421,20 +415,68 @@
             finally { if (worker) await worker.terminate(); btn.disabled = false; load.classList.replace('flex', 'hidden'); }
         });
 
+        // ================== XÓA RÁC OCR THÔNG MINH ==================
         cleanBtn.addEventListener('click', () => {
             let text = storyText.value;
             if (!text.trim()) return showToast('Khung chữ trống!', 'warning');
             const keep = $('keepLayout').checked;
-            text = text.replace(/[^a-zA-Z0-9.,!?'";:()\- \n]/g, ' ');
-            if (!keep) text = text.replace(/\n[ \t]*\n/g, ' \u0001 ').replace(/\n/g, ' ').replace(/ ?\u0001 ?/g, '\n\n');
+
+            // 1. Tách từng dòng và từng từ để lọc rác OCR
+            let lines = text.split('\n');
+            let cleanLines = lines.map(line => {
+                let words = line.split(/\s+/);
+                let filteredWords = words.filter(word => {
+                    let cleanWord = word.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+                    
+                    // Nếu chỉ là dấu câu đứng đơn lẻ, giữ lại các dấu chấm, phẩy cơ bản
+                    if (!cleanWord) return /^[.,!?]+$/.test(word);
+                    
+                    // Xóa các số lẻ loi (thường là số trang, rác)
+                    if (/^\d+$/.test(cleanWord)) return false;
+                    
+                    // Xóa từ bị dính lộn xộn số và chữ (VD: 2qj2)
+                    if (/\d/.test(cleanWord) && /[a-z]/i.test(cleanWord)) return false;
+                    
+                    // Xóa từ 1 ký tự nếu không phải 'a' hoặc 'i' (VD: N, F, l, o)
+                    if (cleanWord.length === 1 && !['a', 'i'].includes(cleanWord)) return false;
+                    
+                    // Xóa từ >=2 ký tự nhưng không có nguyên âm (VD: Nf, qj)
+                    if (cleanWord.length >= 2 && !/[aeiouy]/.test(cleanWord)) return false;
+                    
+                    // Danh sách đen các từ rác OCR hay xuất hiện ở viền sách
+                    const blacklist = ['py', 'oy', 'eo', 'ott', 'onin', 'osun', 'ose', 'om', 'ga', 'sy', 'nf', 'qj'];
+                    if (blacklist.includes(cleanWord)) return false;
+                    
+                    return true;
+                });
+                return filteredWords.join(' ');
+            });
+
+            text = cleanLines.join('\n');
+
+            // 2. Gộp dòng nếu không chọn giữ bố cục
+            if (!keep) {
+                text = text.replace(/\n[ \t]*\n/g, ' __PARAGRAPH_BREAK__ ');
+                text = text.replace(/\n/g, ' ');
+                text = text.replace(/ __PARAGRAPH_BREAK__ /g, '\n\n');
+            }
+
+            // 3. Chuẩn hóa khoảng trắng & Dấu câu
+            text = text.replace(/\s+([.,!?:;])/g, '$1'); // Kéo dấu câu dính sát vào chữ
+            text = text.replace(/([.,!?:;])(?=[a-zA-Z])/g, '$1 '); // Cách dấu câu với chữ tiếp theo
+            text = text.replace(/^[.,!?:;\s]+|[.,!?:;\s]+$/g, ''); // Bỏ rác đầu/cuối
+            text = text.replace(/ +/g, ' '); // Gộp khoảng trắng thừa
+
+            // 4. Sửa viết hoa
             text = text.toLowerCase().replace(/(^\s*[a-z]|[.!?]\s*[a-z])/g, c => c.toUpperCase()).replace(/\b(i)\b/g, 'I');
+            
             storyText.value = text;
-            showToast('Chữ đã gộp gọn gàng! ✨', 'success');
+            showToast('Đã quét sạch rác chữ thông minh! ✨', 'success');
             vocabList.classList.remove('blur-active');
             extractVocabulary(text);
         });
 
-        // ================== TỪ VỰNG THÔNG MINH (POS) & GAME ==================
+        // ================== TỪ VỰNG THÔNG MINH & GAME ==================
         async function extractVocabulary(text) {
             const stopWords = ['the', 'and', 'to', 'of', 'in', 'is', 'that', 'it', 'on', 'you', 'this', 'for', 'but', 'with', 'are', 'have', 'be', 'at', 'or', 'as', 'was', 'so', 'if', 'out', 'not', 'he', 'she', 'we', 'they', 'his', 'her', 'my', 'your', 'what', 'when', 'why', 'how', 'can'];
             
@@ -455,12 +497,10 @@
 
             for (let word of uniqueWords) {
                 try {
-                    // Trích xuất 1 câu văn chứa từ vựng đó để làm bài tập "Điền từ"
                     let safeWord = word.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
                     let sentenceMatch = text.match(new RegExp(`[^.?!]*\\b${safeWord}\\b[^.?!]*[.?!]`, 'i'));
                     let extractedSentence = sentenceMatch ? sentenceMatch[0].trim() : '';
 
-                    // Lấy loại từ (Noun, Verb...) từ DictionaryAPI
                     let posText = "Từ vựng"; 
                     try {
                         let dictRes = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
@@ -471,7 +511,6 @@
                         }
                     } catch(e) {}
 
-                    // Lấy nghĩa Tiếng Việt
                     let res = await fetch(`https://api.mymemory.translated.net/get?q=${word}&langpair=en|vi`);
                     let data = await res.json();
                     let meaning = data.responseData.translatedText.toLowerCase();
@@ -525,10 +564,8 @@
             let quizHTML = `<p class="text-orange-700 text-sm md:text-base mb-3 text-center">Người chơi: <b>${childName}</b> 🌟</p>`;
             
             shuffledVocab.forEach((q, index) => {
-                // Có 3 dạng câu hỏi: 0 (En->Vi), 1 (Vi->En), 2 (Điền từ - nếu có câu văn)
                 let typeOptions = q.sentence ? [0, 1, 2] : [0, 1];
                 let qType = typeOptions[Math.floor(Math.random() * typeOptions.length)];
-                
                 let options = []; let correctAnswer = ""; let questionText = "";
 
                 if (qType === 0) {
@@ -547,7 +584,7 @@
                         let rw = allEnglishWords[Math.floor(Math.random() * allEnglishWords.length)];
                         if(!options.includes(rw)) options.push(rw);
                     }
-                } else { // Điền từ vào chỗ trống
+                } else {
                     correctAnswer = q.word;
                     let maskedSentence = q.sentence.replace(new RegExp(`\\b${q.word}\\b`, 'gi'), `<b>[___ ${q.pos}]</b>`);
                     questionText = `Điền từ thích hợp vào câu: <br><i class="text-sm font-normal text-slate-500">"${maskedSentence}"</i>`;
