@@ -394,9 +394,8 @@
         <span id="me">🦄</span>
     </div>
 
-    <!-- KHỐI JAVASCRIPT HỢP NHẤT TOÀN DIỆN (ĐÃ FIX TRIỆT ĐỂ LỖI GAME NGHE ĐOÁN TỪ) -->
+    <!-- KHỐI JAVASCRIPT HỢP NHẤT TOÀN DIỆN -->
     <script>
-        // 1. KHAI BÁO TOÀN CỤC $ NGAY DÒNG ĐẦU TIÊN
         const $ = id => document.getElementById(id);
 
         const storyText = document.getElementById('storyText');
@@ -411,7 +410,6 @@
         let allStorySentences = [];
         const posMap = { 'noun': 'Danh từ', 'verb': 'Động từ', 'adjective': 'Tính từ', 'adverb': 'Trạng từ', 'pronoun': 'Đại từ', 'preposition': 'Giới từ', 'conjunction': 'Liên từ' };
 
-        // 2. TỪ ĐIỂN ANH - VIỆT HIỆU ĐÍNH
         const LOCAL_DICTIONARY = {
             "farmer": { m: "bác nông dân", p: "Danh từ" },
             "golden": { m: "bằng vàng, óng ánh", p: "Tính từ" },
@@ -462,14 +460,12 @@
             "lesson": { m: "bài học", p: "Danh từ" }
         };
 
-        // 3. QUẢN LÝ XOAY VÒNG 30% TỪ VỰNG
         let lastExtractedText = "";
         let masterCandidatePool = [];
         let initialBaseWords = [];
         let currentDisplayWords = [];
         let rotationCycle = 0;
 
-        // 4. SUPABASE CLOUD
         const SUPABASE_URL = 'https://xmecpfeujkvidwmqprzd.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_wK5FXrtBK7qPdmJ5fS1aag_gJ3Gdv3G';
         let db = null; 
@@ -479,7 +475,6 @@
             console.warn('Lỗi kết nối Supabase:', e);
         }
 
-        // 5. BỘ ĐẾM RÀNG BUỘC PHIÊN NHIỆM VỤ
         let sessionTracker = {
             readStories: new Set(),
             sentencesPassed: 0,
@@ -512,7 +507,6 @@
             return { title: '👑 Giáo Sư Tiếng Anh', minScore: score };
         }
 
-        // 6. QUẢN LÝ THÀNH VIÊN VÀ ĐỒNG BỘ CLOUD
         const defaultAvatars = ['👸', '🤴', '🤺', '🐉', '🦖', '🐯', '🐰', '🐢', '🦄', '🐼', '🦁', '🚀'];
         let selectedNewAvatar = '👸';
         let cachedKids = [
@@ -720,7 +714,7 @@
             showToast('Chúc mừng bé đã nhận được phần thưởng xứng đáng từ Bố Mẹ! 🍦🎉', 'success');
         }
 
-        // 7. NHIỆM VỤ 6 TIẾNG TỰ KHỞI TẠO KHÔNG BAO GIỜ BỊ KẸT
+        // NHIỆM VỤ 6 TIẾNG TỰ KHỞI TẠO
         const SIX_HOURS = 6 * 60 * 60 * 1000;
         const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
 
@@ -1026,7 +1020,6 @@
 
         setInterval(syncSharedQuestFromCloud, 60000);
 
-        // 8. BẢNG VÀNG CLOUD
         function loadLeaderboard() {
             let board = document.getElementById('leaderboardList');
             if (!board) return;
@@ -1052,7 +1045,6 @@
             }).join('');
         }
 
-        // 9. THỬ THÁCH ĐỌC CẢ CÂU
         function generateSentenceChallenge() {
             const area = document.getElementById('sentenceChallengeArea');
             if (!allStorySentences.length) {
@@ -1156,7 +1148,6 @@
             recognition.start();
         }
 
-        // 10. KHO TRUYỆN
         async function fetchStories() {
             if (!db) return;
             try {
@@ -1233,879 +1224,18 @@
             }
         }
 
-        // 11. PHÁT ÂM THANH TRỰC TIẾP
-        let mainAudio = new Audio();
-        let audioPlaylist = [];
-        let currentPlaylistIndex = 0;
-        let isStoryPlaying = false;
-        let wordAudio = new Audio();
-
-        function stopAudio() {
-            isStoryPlaying = false;
-            audioPlaylist = [];
-            currentPlaylistIndex = 0;
-
-            mainAudio.pause();
-            mainAudio.currentTime = 0;
-            mainAudio.onended = null;
-            mainAudio.onerror = null;
-
-            wordAudio.pause();
-            wordAudio.currentTime = 0;
-
-            const btn = document.getElementById('playBtn');
-            if (btn) btn.innerHTML = '<span class="mr-1">▶️</span>Đọc To';
-        }
-
-        window.playWordAudio = function(word, el) {
-            stopAudio();
-
-            if (el) {
-                document.querySelectorAll('.vocab-card').forEach(c => {
-                    c.classList.remove('ring-4', 'ring-purple-400', 'scale-105', 'bg-purple-100');
-                    const sp = c.querySelector('.speaker-icon');
-                    if (sp) sp.classList.remove('animate-bounce');
-                });
-                el.classList.add('ring-4', 'ring-purple-400', 'scale-105', 'bg-purple-100');
-                const speaker = el.querySelector('.speaker-icon');
-                if (speaker) speaker.classList.add('animate-bounce');
-
-                setTimeout(() => {
-                    el.classList.remove('ring-4', 'ring-purple-400', 'scale-105', 'bg-purple-100');
-                    if (speaker) speaker.classList.remove('animate-bounce');
-                }, 1000);
-            }
-
-            const cleanWord = String(word || '').trim();
-            if (!cleanWord) return;
-
-            wordAudio.src = `https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=en&q=${encodeURIComponent(cleanWord)}`;
-            wordAudio.playbackRate = 0.9;
-            wordAudio.play().catch(e => {
-                showToast('Bé kiểm tra âm lượng hoặc tắt chế độ im lặng nhé!', 'warning');
-            });
-        };
-
-        // Gắn vào window để tất cả sự kiện inline onclick đều gọi được 100%
         window.spk = function(word) {
             window.playWordAudio(word);
         };
 
-        function speakText(text) {
-            stopAudio();
-            const rawText = String(text || '').trim();
-            if (!rawText) return showToast('Chưa có nội dung để đọc!', 'warning');
-
-            audioPlaylist = rawText.match(/[^.!?\n]+[.!?\n]*/g) || [rawText];
-            audioPlaylist = audioPlaylist.map(chunk => chunk.trim()).filter(chunk => chunk.length > 0);
-            if (!audioPlaylist.length) return;
-
-            currentPlaylistIndex = 0;
-            isStoryPlaying = true;
-
-            const playBtn = document.getElementById('playBtn');
-            if (playBtn) playBtn.innerHTML = '<span class="mr-1">🔊</span>Đang đọc...';
-
-            const titleHash = rawText.substring(0, 30);
-            sessionTracker.readStories.add(titleHash);
-            updateSessionUI();
-
-            playNextAudioChunk();
-        }
-
-        function playNextAudioChunk() {
-            if (!isStoryPlaying || currentPlaylistIndex >= audioPlaylist.length) {
-                stopAudio();
-                return;
-            }
-
-            const chunk = audioPlaylist[currentPlaylistIndex];
-            mainAudio.src = `https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=en&q=${encodeURIComponent(chunk)}`;
-            mainAudio.playbackRate = parseFloat(speedSlider.value) || 0.8;
-
-            mainAudio.onended = () => {
-                currentPlaylistIndex++;
-                playNextAudioChunk();
-            };
-
-            mainAudio.onerror = () => {
-                currentPlaylistIndex++;
-                playNextAudioChunk();
-            };
-
-            mainAudio.play().catch(e => {
-                stopAudio();
-                showToast('Bé ấn lại để tiếp tục phát âm thanh nhé!', 'warning');
-            });
-        }
-
-        document.getElementById('playBtn').addEventListener('click', () => { 
-            if (!isStoryPlaying) speakText(storyText.value.trim()); 
-        });
-
-        let lastCursorClickTime = 0;
-        document.getElementById('playCursorBtn').addEventListener('click', () => {
-            const now = Date.now();
-            if (now - lastCursorClickTime < 400) return;
-            lastCursorClickTime = now;
-
-            const text = storyText.value;
-            if (!text.trim()) return showToast('Chưa có truyện!', 'warning');
-            let pos = storyText.selectionStart;
-            while (pos > 0 && /\S/.test(text[pos - 1])) pos--;
-            speakText(text.substring(pos).trim());
-        });
-
-        document.getElementById('stopBtn').addEventListener('click', stopAudio);
-        speedSlider.addEventListener('input', () => {
-            if (isStoryPlaying) mainAudio.playbackRate = parseFloat(speedSlider.value) || 0.8;
-        });
-
-        // 12. XUẤT OFFLINE WORD & MP3
-        function exportToWord() {
-            const text = storyText.value.trim(); if (!text) return showToast('Trống!', 'warning');
-            const wordHtml = `<html xmlns:w='urn:schemas-microsoft-com:office:word'><body style="font-family: 'Comic Sans MS'; background: #fdf2f8; padding: 20px;"><h1 style="color:#ec4899;text-align:center;">🌟 MAGIC STORY READER 🌟</h1><div style="background:#fff;padding:20px;border:2px dashed #bfdbfe;">${text.split('\n').map(l => `<p style="font-size:14pt;font-weight:bold;color:#1e3a8a;margin:0 0 10px 0;">${String(l).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}</p>`).join('')}</div></body></html>`;
-            const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeff', wordHtml], { type: 'application/msword' }));
-            a.download = `Truyen_${Date.now()}.doc`; a.click();
-        }
-
-        async function exportToMP3() {
-            const text = storyText.value.trim();
-            if (!text) return showToast('Chưa có truyện để xuất MP3!', 'warning');
-            
-            const btn = document.getElementById('btnMp3');
-            btn.innerHTML = '⏳ Tải...'; btn.disabled = true;
-            showToast('Đang tạo âm thanh... Bé chờ chút nha! ⏳', 'success');
-            
-            let rawChunks = text.match(/[^.!?\n]+[.!?\n]*/g) || [text];
-            let chunks = [];
-            rawChunks.forEach(c => {
-                let txt = c.trim();
-                if(txt.length > 0) {
-                    if (txt.length <= 120) chunks.push(txt);
-                    else {
-                        let words = txt.split(' '); let temp = '';
-                        words.forEach(w => {
-                            if ((temp + ' ' + w).length < 120) temp += (temp ? ' ' : '') + w;
-                            else { chunks.push(temp); temp = w; }
-                        });
-                        if(temp) chunks.push(temp);
-                    }
-                }
-            });
-            
-            let audioBuffers = [];
-            let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-            try {
-                for(let i=0; i<chunks.length; i++) {
-                    let url = `https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=en&q=${encodeURIComponent(chunks[i])}`;
-                    let proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
-                    let res = await fetch(proxyUrl);
-                    if(!res.ok) throw new Error('Proxy lỗi');
-                    
-                    let arrayBuffer = await res.arrayBuffer();
-                    let audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-                    audioBuffers.push(audioBuffer);
-                }
-
-                let totalLength = audioBuffers.reduce((sum, buffer) => sum + buffer.length, 0);
-                let finalBuffer = audioCtx.createBuffer(1, totalLength, audioCtx.sampleRate);
-                let offset = 0;
-                audioBuffers.forEach(buffer => {
-                    finalBuffer.copyToChannel(buffer.getChannelData(0), 0, offset);
-                    offset += buffer.length;
-                });
-
-                const wavBlob = bufferToWav(finalBuffer, totalLength);
-                const a = document.createElement('a');
-                a.href = URL.createObjectURL(wavBlob);
-                a.download = `Audio_Full_${Date.now()}.wav`;
-                a.click();
-                showToast('Tải Audio Toàn Bài thành công! 🎵', 'success');
-            } catch(e) {
-                showToast('Mở link nghe tạm thời...', 'warning');
-                window.open(`https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=en&q=${encodeURIComponent(chunks[0])}`, '_blank');
-            } finally {
-                btn.innerHTML = '🎵 MP3'; btn.disabled = false;
-            }
-        }
-        
-        function bufferToWav(abuffer, len) {
-            let numOfChan = abuffer.numberOfChannels, length = len * numOfChan * 2 + 44, buffer = new ArrayBuffer(length), view = new DataView(buffer), channels = [], i, sample, offset = 0, pos = 0;
-            const setU16 = (d) => { view.setUint16(pos, d, true); pos+=2; }; const setU32 = (d) => { view.setUint32(pos, d, true); pos+=4; };
-            setU32(0x46464952); setU32(length - 8); setU32(0x45564157); setU32(0x20746d66); setU32(16); setU16(1); setU16(numOfChan);
-            setU32(abuffer.sampleRate); setU32(abuffer.sampleRate * 2 * numOfChan); setU16(numOfChan * 2); setU16(16); setU32(0x61746164); setU32(length - pos - 4);
-            for(i=0; i<numOfChan; i++) channels.push(abuffer.getChannelData(i));
-            while(pos < length) { for(i=0; i<numOfChan; i++) { sample = Math.max(-1, Math.min(1, channels[i][offset])); sample = (0.5 + sample < 0 ? sample * 32768 : sample * 32767)|0; view.setInt16(pos, sample, true); pos += 2; } offset++; }
-            return new Blob([buffer], {type: "audio/wav"});
-        }
-
-        // 13. MARQUEE & TOAST
-        const greetings = [
-            "Hello little angel! ✨",
-            "Keep up the great work! 🚀",
-            "Learning English is fun! 🎈"
-        ];
-        document.getElementById('greetingMarquee').innerText =
-            `Happy ${["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][new Date().getDay()]}! ${greetings[Math.floor(Math.random() * greetings.length)]}`;
-
-        function showToast(msg, type = 'success') {
-            clearTimeout(toastTimeout); toastMessage.textContent = msg;
-            toastMessage.className = `fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-4 py-2 rounded-full font-bold text-[10px] md:text-sm shadow-xl transition-all duration-300 text-center min-w-[200px] pointer-events-none`;
-            if (type === 'error') toastMessage.classList.add('bg-red-500', 'text-white');
-            else if (type === 'warning') toastMessage.classList.add('bg-yellow-400', 'text-yellow-900');
-            else toastMessage.classList.add('bg-green-500', 'text-white');
-            toastMessage.style.opacity = '1'; toastMessage.style.transform = 'translate(-50%, 10px)'; 
-            toastTimeout = setTimeout(() => { toastMessage.style.opacity = '0'; toastMessage.style.transform = 'translate(-50%, 0)'; }, 3000);
-        }
-
-        // 14. OCR QUÉT VĂN BẢN
-        let files = [], active = 0;
-
-        function kind(f) {
-            const n = f.name.toLowerCase();
-            if (f.type.startsWith('image/') || /\.(jpe?g|png)$/.test(n)) return 'img';
-            if (f.type === 'application/pdf' || n.endsWith('.pdf')) return 'pdf';
-            if (n.endsWith('.docx')) return 'docx';
-            if (/\.(txt|md)$/.test(n)) return 'txt';
-            return null;
-        }
-
-        function addFiles(list) {
-            const ok = [];
-            [...list].forEach(f => { if (kind(f)) ok.push(f); });
-            if (!ok.length) return;
-            active = files.length; files.push(...ok); renderFiles();
-        }
-
-        function renderFiles() {
-            $('fileChips').innerHTML = files.map((f, i) => `
-                <span class="inline-flex items-center rounded-full border border-pink-300 bg-white text-[10px] font-bold text-pink-700 max-w-full">
-                    <button type="button" onclick="active=${i};renderFiles()" class="px-1.5 py-0.5 truncate max-w-[80px]">${f.name}</button>
-                    <button type="button" onclick="files.splice(${i},1);renderFiles()" class="px-1 text-red-500">✕</button>
-                </span>
-            `).join('');
-        }
-        $('fileInput').addEventListener('change', e => { addFiles([...e.target.files]); e.target.value = ''; });
-
-        async function enhanceImageForOCR(file) {
-            return new Promise((resolve) => {
-                const img = new Image();
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
-                    const scale = Math.max(1, Math.min(2200 / Math.max(img.width, img.height), 2.5));
-                    canvas.width = img.width * scale;
-                    canvas.height = img.height * scale;
-                    
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                    const d = imgData.data;
-                    
-                    for (let i = 0; i < d.length; i += 4) {
-                        const gray = 0.299 * d[i] + 0.587 * d[i+1] + 0.114 * d[i+2];
-                        const contrast = Math.min(255, Math.max(0, (gray - 128) * 1.25 + 128));
-                        d[i] = contrast;
-                        d[i+1] = contrast;
-                        d[i+2] = contrast;
-                    }
-                    ctx.putImageData(imgData, 0, 0);
-                    resolve(canvas.toDataURL('image/png'));
-                };
-                img.onerror = () => resolve(file);
-                img.src = URL.createObjectURL(file);
-            });
-        }
-
-        $('extractBtn').addEventListener('click', async () => {
-            if (!files.length) return showToast('Chọn file nha!', 'warning');
-            $('loadingStatus').classList.replace('hidden', 'flex'); $('extractBtn').disabled = true;
-
-            let worker = null; const parts = [];
-            try {
-                for (let i = 0; i < files.length; i++) {
-                    const f = files[i]; const k = kind(f);
-                    if (k === 'img') {
-                        if (!window.Tesseract) {
-                            await new Promise(ok => { let s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js'; s.onload = ok; document.head.appendChild(s); });
-                        }
-                        worker = worker || await Tesseract.createWorker('eng', 1);
-                        const preprocessedImg = await enhanceImageForOCR(f);
-                        const res = await worker.recognize(preprocessedImg);
-                        parts.push(res.data.text || '');
-                    } else if (k === 'txt') {
-                        parts.push(await f.text());
-                    } else if (k === 'docx') {
-                        if (!window.mammoth) {
-                            await new Promise(ok => { let s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js'; s.onload = ok; document.head.appendChild(s); });
-                        }
-                        parts.push((await mammoth.extractRawText({ arrayBuffer: await f.arrayBuffer() })).value);
-                    }
-                }
-                storyText.value = parts.join('\n\n'); 
-                showToast('Đọc chữ hoàn tất! Đang làm sạch...', 'success'); 
-                cleanBtn.click();
-            } catch (e) {
-                console.error(e); showToast('Lỗi đọc file!', 'error');
-            } finally {
-                if (worker) await worker.terminate();
-                $('extractBtn').disabled = false; $('loadingStatus').classList.replace('flex', 'hidden');
-            }
-        });
-
-        // 15. LÀM SẠCH VĂN BẢN OCR
-        cleanBtn.addEventListener('click', () => {
-            let text = storyText.value;
-            if (!text.trim()) return showToast('Trống!', 'warning');
-            const keep = $('keepLayout').checked;
-
-            text = text.replace(/([A-Za-z]+)-\s*[\r\n]+\s*([A-Za-z]+)/g, '$1$2');
-            text = text.replace(/[‘’`´]/g, "'").replace(/[“”]/g, '"').replace(/[—–]/g, '-');
-            text = text.replace(/[^a-zA-Z0-9.,!?'";:\-\s]/g, ' ');
-
-            const validShortWords = new Set(['a', 'i', 'is', 'it', 'to', 'do', 'in', 'on', 'as', 'at', 'be', 'he', 'we', 'me', 'my', 'by', 'so', 'go', 'no', 'of', 'or', 'if', 'up', 'us', 'am', 'an', 'ox', 'oh', 'ok']);
-            const ocrBlacklist = new Set([
-                'te', 'wa', 'ni', 'el', 'od', 'yi', 'bud', 'py', 'oy', 'eo', 'ott', 'onin', 'osun', 
-                'ose', 'om', 'ga', 'sy', 'nf', 'qj', 'fo', 'ens', 'ees', 'bgogeocc', 'bo0go', '08000', 
-                'e000', 'ii', 'iii', 'iv', 'vi', 'vii', 'viii', 'ix', 'xi', 'xii'
-            ]);
-
-            let cleanLines = text.split('\n').map(line => {
-                let tokens = line.trim().split(/\s+/).filter(Boolean);
-                let validTokens = tokens.filter(tok => {
-                    let clean = tok.replace(/^[^a-zA-Z0-9]+|[^a-zA-Z0-9]+$/g, '').toLowerCase();
-                    if (!clean) return /^[.,!?;:]+$/.test(tok);
-                    
-                    if (/^\d+$/.test(clean)) return clean.length <= 4;
-                    if (/\d/.test(clean) && /[a-z]/i.test(clean)) return false;
-                    if (ocrBlacklist.has(clean)) return false;
-
-                    if (clean.length === 1) return clean === 'a' || clean === 'i';
-                    if (clean.length === 2) return validShortWords.has(clean);
-                    if (clean.length >= 3 && !/[aeiouy]/.test(clean)) return false;
-                    if (/(.)\1\1/.test(clean)) return false;
-
-                    return true;
-                });
-                return validTokens.join(' ');
-            });
-
-            text = cleanLines.filter(line => line.length > 0).join('\n');
-            if (!keep) {
-                text = text.replace(/\n[ \t]*\n/g, ' \u0001 ')
-                           .replace(/\n/g, ' ')
-                           .replace(/ ?\u0001 ?/g, '\n\n');
-            }
-
-            text = text.replace(/\s+([.,!?:;])/g, '$1')
-                       .replace(/([.,!?:;])(?=[a-zA-Z])/g, '$1 ')
-                       .replace(/[ \t]+/g, ' ')
-                       .replace(/\n{3,}/g, '\n\n')
-                       .trim();
-
-            text = text.toLowerCase()
-                       .replace(/(^\s*[a-z]|[.!?]\s*[a-z])/g, c => c.toUpperCase())
-                       .replace(/\b(i)\b/g, 'I');
-
-            storyText.value = text;
-            showToast('Đã làm sạch văn bản chuẩn chuyên gia! ✨', 'success');
-            
-            allStorySentences = text.match(/[^.!?\n]+[.!?\n]*/g)?.map(s => s.trim()).filter(s => s.length > 15) || [];
-            generateSentenceChallenge();
-            extractVocabulary(text);
-        });
-
-        // 16. DỊCH TỪ VỰNG CHUẨN XÁC
-        async function translateWordAccurately(word, sentenceContext) {
-            const clean = word.toLowerCase().trim();
-            if (LOCAL_DICTIONARY[clean]) {
-                return { meaning: LOCAL_DICTIONARY[clean].m, pos: LOCAL_DICTIONARY[clean].p };
-            }
-
-            let detectedPos = "Từ vựng";
-            try {
-                const dictRes = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${clean}`);
-                const dictData = await dictRes.json();
-                if (dictData && dictData[0] && dictData[0].meanings && dictData[0].meanings[0]) {
-                    const enPos = dictData[0].meanings[0].partOfSpeech.toLowerCase();
-                    detectedPos = posMap[enPos] || enPos;
-                }
-            } catch(e) {}
-
-            try {
-                const gUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=vi&dt=t&q=${encodeURIComponent(clean)}`;
-                const res = await fetch(gUrl);
-                const data = await res.json();
-                if (data && data[0] && data[0][0] && data[0][0][0]) {
-                    const viTrans = data[0][0][0].toLowerCase().trim();
-                    if (viTrans !== clean) return { meaning: viTrans, pos: detectedPos };
-                }
-            } catch (err) {}
-
-            try {
-                const memUrl = `https://api.mymemory.translated.net/get?q=${clean}&langpair=en|vi`;
-                const mRes = await fetch(memUrl);
-                const mData = await mRes.json();
-                if (mData && mData.responseData && mData.responseData.translatedText) {
-                    const mText = mData.responseData.translatedText.toLowerCase().trim();
-                    if (mText !== clean) return { meaning: mText, pos: detectedPos };
-                }
-            } catch (err) {}
-
-            return { meaning: clean, pos: detectedPos };
-        }
-
-        async function extractVocabulary(text) {
-            const stopWords = [
-                'the', 'and', 'to', 'of', 'in', 'is', 'that', 'it', 'on', 'you', 'this', 'for', 
-                'but', 'with', 'are', 'have', 'be', 'at', 'or', 'as', 'was', 'so', 'if', 'out', 
-                'not', 'he', 'she', 'we', 'they', 'his', 'her', 'my', 'your', 'one', 'all', 'there',
-                'what', 'when', 'why', 'how', 'can', 'had', 'got', 'get', 'went', 'came', 'come',
-                'make', 'made', 'take', 'took', 'see', 'saw', 'look', 'say', 'said', 'were', 'could',
-                'would', 'into', 'has', 'more', 'will', 'been', 'then', 'them', 'him', 'than', 'an'
-            ];
-
-            if (text !== lastExtractedText) {
-                lastExtractedText = text;
-                rotationCycle = 0;
-                masterCandidatePool = [];
-                initialBaseWords = [];
-                currentDisplayWords = [];
-            }
-
-            if (!masterCandidatePool.length) {
-                let allTokens = text.toLowerCase().match(/\b[a-z]{3,}\b/g) || [];
-                let complexWords = allTokens.filter(w => !stopWords.includes(w));
-                let counts = {};
-                complexWords.forEach(w => counts[w] = (counts[w] || 0) + 1);
-
-                masterCandidatePool = Object.keys(counts)
-                    .filter(w => w.length >= 4)
-                    .sort((a, b) => b.length - a.length)
-                    .slice(0, 35);
-            }
-
-            const totalWordsInStory = (text.trim().match(/\s+/g) || []).length + 1;
-            let targetCount = 15;
-            if (totalWordsInStory > 120) targetCount = 20;
-            else if (totalWordsInStory > 60) targetCount = 18;
-
-            if (masterCandidatePool.length <= targetCount) {
-                targetCount = masterCandidatePool.length;
-            }
-
-            if (!masterCandidatePool.length) { 
-                vocabList.innerHTML = '<span class="italic text-purple-400">Không có từ khó!</span>'; 
-                $('rotationIndicator').classList.add('hidden');
-                return; 
-            }
-
-            let selectedWords = [];
-
-            if (rotationCycle === 0) {
-                initialBaseWords = masterCandidatePool.slice(0, targetCount);
-                selectedWords = [...initialBaseWords];
-                currentDisplayWords = [...selectedWords];
-            } else {
-                const replaceCount = Math.max(1, Math.round(targetCount * 0.3));
-                const keepCount = targetCount - replaceCount;
-
-                let shuffledCurrent = [...currentDisplayWords].sort(() => Math.random() - 0.5);
-                let keptWords = shuffledCurrent.slice(0, keepCount);
-
-                let remainingPool = masterCandidatePool.filter(w => !keptWords.includes(w));
-
-                if (remainingPool.length >= replaceCount) {
-                    let newWords = remainingPool.sort(() => Math.random() - 0.5).slice(0, replaceCount);
-                    selectedWords = [...keptWords, ...newWords];
-                } else {
-                    selectedWords = [...keptWords, ...remainingPool];
-                    while (selectedWords.length < targetCount && masterCandidatePool.length > selectedWords.length) {
-                        let addWord = masterCandidatePool.find(w => !selectedWords.includes(w));
-                        if (addWord) selectedWords.push(addWord);
-                        else break;
-                    }
-                }
-                currentDisplayWords = [...selectedWords];
-            }
-
-            const rotBadge = $('rotationIndicator');
-            rotBadge.textContent = `Vòng ${rotationCycle + 1}/5 (Thay 30% từ mới)`;
-            rotBadge.classList.remove('hidden');
-
-            rotationCycle = (rotationCycle + 1) % 5;
-
-            vocabList.innerHTML = `<span class="italic text-purple-500 animate-pulse">Đang nạp ${selectedWords.length} từ vựng chuẩn xác... ⏳</span>`;
-            globalVocabData = [];
-
-            const fetchPromises = selectedWords.map(async (word) => {
-                let sm = text.match(new RegExp(`[^.?!]*\\b${word.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}\\b[^.?!]*[.?!]`, 'i'));
-                const sentence = sm ? sm[0].trim() : '';
-                const transResult = await translateWordAccurately(word, sentence);
-
-                return {
-                    word: word,
-                    meaning: transResult.meaning,
-                    pos: transResult.pos,
-                    sentence: sentence
-                };
-            });
-
-            const results = await Promise.allSettled(fetchPromises);
-            let html = '';
-
-            results.forEach(res => {
-                if (res.status === 'fulfilled' && res.value) {
-                    const item = res.value;
-                    globalVocabData.push(item);
-                    html += `
-                        <div class="vocab-card group px-3 py-2 bg-white border-2 border-purple-300 rounded-xl shadow-sm cursor-pointer hover:bg-purple-100 transition-all flex flex-col items-center justify-center text-center select-none active:scale-95" onclick="playWordAudio('${item.word}', this)">
-                            <span class="text-purple-700 font-black text-xs md:text-sm flex items-center gap-1">${item.word} <span class="speaker-icon">🔊</span></span>
-                            <span class="text-[10px] md:text-xs text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full mt-1 font-bold border border-purple-200 capitalize">${item.pos}</span>
-                            <span class="text-[11px] md:text-xs text-slate-500 font-bold border-t border-purple-100 w-full mt-1 pt-0.5 capitalize">${item.meaning}</span>
-                        </div>
-                    `;
-                }
-            });
-
-            vocabList.innerHTML = html;
-            generateQuiz();
-            $('gameArea').innerHTML = '<span class="italic font-normal text-sky-400 text-[10px]">Chọn một trò chơi ở trên nhé! 🎮</span>';
-        }
-
-        // 17. ĐỐ VUI 5 CÂU
-        window.generateQuiz = function() {
-            if (globalVocabData.length < 3) return;
-            let shuffled = [...globalVocabData].sort(() => Math.random() - 0.5).slice(0, 5);
-            let allMeanings = globalVocabData.map(v => v.meaning);
-            let allEng = globalVocabData.map(v => v.word);
-            const kid = cachedKids.find(k => k.id === currentKidId) || cachedKids[0];
-
-            let qHTML = `
-                <div class="flex items-center justify-center gap-2 mb-2 bg-orange-100 p-1.5 rounded-lg border border-orange-200">
-                    <span class="text-xl">${kid.icon}</span>
-                    <p class="text-orange-700 text-xs font-bold">Lượt thi đấu của: ${kid.name}</p>
-                </div>
-            `;
-
-            shuffled.forEach((q, i) => {
-                let opts = []; let ans = ""; let txt = "";
-                let type = q.sentence ? Math.floor(Math.random() * 3) : Math.floor(Math.random() * 2);
-
-                if (type === 0) {
-                    ans = q.meaning; txt = `Nghĩa của <b>"${q.word}"</b>?`; opts.push(ans);
-                    while (opts.length < 3) { let r = allMeanings[Math.floor(Math.random() * allMeanings.length)]; if (!opts.includes(r)) opts.push(r); }
-                } else if (type === 1) {
-                    ans = q.word; txt = `Từ nghĩa là <b>"${q.meaning}"</b>?`; opts.push(ans);
-                    while (opts.length < 3) { let r = allEng[Math.floor(Math.random() * allEng.length)]; if (!opts.includes(r)) opts.push(r); }
-                } else {
-                    ans = q.word; txt = `Điền: <i class="text-[10px] text-slate-500">"${q.sentence.replace(new RegExp(`\\b${q.word}\\b`, 'gi'), `<b>[___]</b>`)}"</i>`; opts.push(ans);
-                    while (opts.length < 3) { let r = allEng[Math.floor(Math.random() * allEng.length)]; if (!opts.includes(r)) opts.push(r); }
-                }
-
-                opts.sort(() => Math.random() - 0.5);
-
-                qHTML += `
-                    <div class="mb-2 quiz-question bg-white p-2 rounded border border-slate-200" data-answer="${ans}">
-                        <p class="mb-1.5 text-xs font-bold text-slate-800">C${i + 1}: ${txt}</p>
-                        <div class="flex flex-col gap-1">
-                            ${opts.map(o => `
-                                <label class="bg-slate-50 px-2 py-1 rounded border border-orange-100 cursor-pointer hover:bg-orange-50 text-[10px]">
-                                    <input type="radio" name="q${i}" value="${o}" class="mr-1 accent-orange-500">
-                                    <span class="capitalize">${o}</span>
-                                </label>
-                            `).join('')}
-                        </div>
-                    </div>
-                `;
-            });
-
-            qHTML += `
-                <div class="flex gap-1 mt-1">
-                    <button onclick="checkQuiz()" class="flex-1 py-1.5 bg-orange-500 text-white text-xs font-black rounded-lg btn-bounce">✅ Nộp Bài</button>
-                    <button onclick="generateQuiz()" class="flex-1 py-1.5 bg-sky-500 text-white text-xs font-black rounded-lg btn-bounce">🔄 Đổi Câu Đố</button>
-                </div>
-                <div id="quizResult" class="mt-2 p-2 bg-green-100 rounded-lg text-center flex flex-col items-center hidden"></div>
-            `;
-            quizContainer.innerHTML = qHTML;
-        };
-
-        window.checkQuiz = async function() {
-            let score = 0;
-            let qs = document.querySelectorAll('.quiz-question');
-
-            qs.forEach((q, i) => {
-                let ans = q.getAttribute('data-answer');
-                let sel = document.querySelector(`input[name="q${i}"]:checked`);
-
-                q.querySelectorAll('label').forEach(l => { l.classList.remove('bg-green-100', 'bg-red-100'); l.classList.add('bg-slate-50'); });
-
-                if (sel) {
-                    let p = sel.parentElement;
-                    if (sel.value === ans) {
-                        score += 10;
-                        p.classList.replace('bg-slate-50', 'bg-green-100');
-                    } else {
-                        p.classList.replace('bg-slate-50', 'bg-red-100');
-                        let ci = q.querySelector(`input[value="${ans}"]`);
-                        if (ci) ci.parentElement.classList.replace('bg-slate-50', 'bg-green-100');
-                    }
-                }
-            });
-
-            sessionTracker.gamesPlayed++;
-            sessionTracker.scoreEarned += score;
-            updateSessionUI();
-
-            const kid = cachedKids.find(k => k.id === currentKidId) || cachedKids[0];
-            let resDiv = document.getElementById('quizResult');
-            resDiv.innerHTML = `
-                <span class="text-2xl">${(kid && kid.icon) || '👶'}</span>
-                <span class="text-xs font-black text-green-800">+${score} điểm vào tiến độ lượt này!</span>
-                <button onclick="generateQuiz()" class="mt-1 text-[10px] bg-orange-400 text-white px-2 py-0.5 rounded-full font-bold">Chơi tiếp</button>
-            `;
-            resDiv.classList.remove('hidden');
-        };
-
-        // 18. ĐỔI GIAO DIỆN THEME
-        $('themeBtn').addEventListener('click', () => {
-            $('themePanel').innerHTML = THEMES.map(t => `
-                <button type="button" data-t="${t.id}" class="text-left rounded p-1 border btn-bounce ${t.id === document.documentElement.dataset.theme ? 'border-pink-500 bg-pink-100' : 'border-pink-200'}">
-                    <span class="flex h-3 rounded overflow-hidden mb-1">
-                        <i class="flex-1" style="background:${t.bg}"></i>
-                        <i class="flex-1" style="background:${t.primary}"></i>
-                        <i class="flex-1" style="background:${t.secondary}"></i>
-                    </span>
-                    <span class="text-[10px] font-black">${t.icon} ${t.name}</span>
-                </button>
-            `).join('');
-            $('themePanel').classList.toggle('hidden');
-        });
-
-        $('themePanel').addEventListener('click', e => {
-            const b = e.target.closest('[data-t]');
-            if (b) { applyTheme(b.dataset.t); $('themePanel').classList.add('hidden'); }
-        });
-
-        document.addEventListener('click', e => {
-            if (!e.target.closest('#themePanel,#themeBtn')) { $('themePanel').classList.add('hidden'); }
-        });
-
-        // 19. HÌNH CHÌM & MASCOT CHATBOT
-        const WM = { 
-            candy: ['🍭', '🧁', '🦄', '🌈', '⭐', '🍩', '🎀', '🧸'], 
-            ocean: ['🐠', '🐙', '🐳', '🐚', '⚓', '🦀', '🐬', '🫧'], 
-            forest: ['🌲', '🦊', '🦉', '🍄', '🐿️', '🦋', '🌻', '🐻'] 
-        };
-        const MASCOT_SKINS = { 
-            candy: '🦄',
-            ocean: '🎠',
-            forest: '🐎'
-        };
-
-        const curTheme = () => document.documentElement.dataset.theme || 'candy';
-        function wm() {
-            let l = $('wm'); if (!l) { l = document.createElement('div'); l.id = 'wm'; document.body.prepend(l); }
-            const L = WM[curTheme()] || WM.candy;
-            l.innerHTML = Array.from({ length: 18 }, (_, i) => `<i style="left:${(i % 6) * 17 + Math.random() * 8}%;top:${((i / 6) | 0) * 34 + Math.random() * 14}%;font-size:${48 + Math.random() * 60}px;transform:rotate(${Math.random() * 60 - 30}deg);animation-delay:${-Math.random() * 8}s">${L[i % L.length]}</i>`).join('');
-            const me = $('me'); if (me) me.textContent = MASCOT_SKINS[curTheme()] || '🦄';
-        }
-        const _at = applyTheme; 
-        applyTheme = id => { _at(id); wm(); };
-        wm();
-
-        const pick = a => a[Math.random() * a.length | 0];
-        const wig = e => { e.classList.remove('wiggle'); void e.offsetWidth; e.classList.add('wiggle'); };
-        function burst(x, y, list, n = 8) {
-            for (let i = 0; i < n; i++) {
-                const e = document.createElement('span'); e.className = 'fx'; e.textContent = pick(list); e.style.left = x + 'px'; e.style.top = y + 'px'; document.body.appendChild(e);
-                const a = Math.random() * 6.28, d = 40 + Math.random() * 80;
-                e.animate([{ transform: 'translate(-50%,-50%) scale(.5)', opacity: 1 }, { transform: `translate(calc(-50% + ${Math.cos(a) * d}px),calc(-50% + ${Math.sin(a) * d - 40}px)) scale(1.4) rotate(${Math.random() * 360}deg)`, opacity: 0 }], { duration: 900 + Math.random() * 500, easing: 'ease-out' }).onfinish = () => e.remove();
-            }
-        }
-        const FUN = ['🎉', '⭐', '🌈', '🎈', '✨', '🤪', '🐣', '🍕'];
-        let mt; 
-        function talk(m) { 
-            const b = $('mb'); 
-            if (!b) return;
-            b.textContent = m; 
-            b.style.opacity = 1; 
-            clearTimeout(mt); 
-            mt = setTimeout(() => { b.style.opacity = 0.9; }, 6000); 
-        }
-
-        function getMissingStepsAdvice() {
-            if (!currentSharedQuest) return "Bé hãy chọn một truyện trong kho để bắt đầu làm bài nha! 📖";
-            const q = currentSharedQuest;
-            const missingStories = Math.max(0, (q.target_stories || 1) - sessionTracker.readStories.size);
-            const missingSentences = Math.max(0, (q.target_sentences || 1) - sessionTracker.sentencesPassed);
-            const missingGames = Math.max(0, (q.target_games || 2) - sessionTracker.gamesPlayed);
-            const missingScore = Math.max(0, (q.target_score || 150) - sessionTracker.scoreEarned);
-
-            if (missingStories === 0 && missingSentences === 0 && missingGames === 0 && missingScore === 0) {
-                return "Wao xuất sắc quá! Bé đã hoàn thành đủ cả 4 mục! Bấm '🏆 Nộp Ghi Điểm' để nhận thưởng ngay thôi! 🥳🎉";
-            }
-
-            let advise = "Nhiệm vụ còn thiếu: ";
-            let steps = [];
-            if (missingStories > 0) steps.push(`Nghe/đọc ${missingStories} bài`);
-            if (missingSentences > 0) steps.push(`Luyện đọc đúng ${missingSentences} câu`);
-            if (missingGames > 0) steps.push(`Chơi ${missingGames} lượt game`);
-            if (missingScore > 0) steps.push(`Kiếm thêm ${missingScore}đ nữa`);
-
-            return advise + steps.join(", ") + " nha! Cố lên bé yêu! 💪✨";
-        }
-
-        const MOTIVATION_QUOTES = [
-            "Cố lên bé ơi! Bác học ngôn ngữ tương lai không bao giờ bỏ cuộc! 🚀",
-            "Phát âm to và rõ ràng lên nha, chú ngựa đang lắng nghe đây! 🎧",
-            "Gần xong nhiệm vụ rồi, bim bim và trà sữa đang đợi bé đó! 🍟🧋",
-            "Đọc sách tiếng Anh mỗi ngày sẽ thông minh như nhà bác học luôn! 📚✨",
-            "Mỗi câu bé đọc đúng là một bước tiến gần tới phần thưởng bố mẹ! 🎁",
-            "Hí hí hí! Chú ngựa vỗ tay khen bé chăm chỉ nè! 👏🦄",
-            "Có từ nào khó không? Chạm vào thẻ từ vựng là có loa đọc mẫu liền nha! 🔊",
-            "Tập trung một chút nữa thôi là hoàn thành nhiệm vụ 6 tiếng rồi! ⏰"
-        ];
-
-        function scheduleRandomChat() {
-            const nextInterval = Math.floor(Math.random() * 5000) + 10000;
-            setTimeout(() => {
-                if (!document.hidden) {
-                    if (Math.random() < 0.6) {
-                        talk(getMissingStepsAdvice());
-                    } else {
-                        talk(pick(MOTIVATION_QUOTES));
-                    }
-                }
-                scheduleRandomChat();
-            }, nextInterval);
-        }
-        scheduleRandomChat();
-
-        $('me').onclick = (e) => { 
-            e.stopPropagation();
-            wig($('me')); 
-            burst(innerWidth - 40, innerHeight - 50, FUN, 7); 
-            if (Math.random() < 0.5) {
-                talk(getMissingStepsAdvice());
-            } else {
-                talk(pick(MOTIVATION_QUOTES));
-            }
-        };
-
-        document.addEventListener('click', e => {
-            const target = e.target;
-            if (target.id === 'me' || target.closest('#mascot')) return;
-
-            const b = target.closest('button');
-            const v = target.closest('.vocab-card');
-            const card = target.closest('.guide-card');
-            const isTextarea = target.id === 'storyText';
-            const isDrop = target.closest('#dropZone');
-
-            const r = b && b.getBoundingClientRect();
-            const x = e.clientX || (r ? r.left + r.width / 2 : 0);
-            const y = e.clientY || (r ? r.top : 0);
-
-            if (x && y) {
-                if (v) burst(x, y, ['🔊', '🎵', '⭐'], 5);
-                else if (b && !b.closest('#gameArea')) { burst(x, y, FUN, 7); wig(b); }
-            }
-
-            if (v) {
-                const wordText = v.querySelector('span')?.textContent || 'từ này';
-                talk(`Từ "${wordText.trim()}" hay quá! Bé nhớ đọc theo loa 2 lần để khắc sâu trí nhớ nha! 🔊`);
-                return;
-            }
-
-            if (b) {
-                if (b.id === 'cleanBtn') {
-                    talk("Chổi thần AI đã quét sạch chữ ma OCR! Kéo xuống làm thử thách đọc câu ngay nào bé! 🧹✨");
-                    return;
-                }
-                if (b.id === 'playBtn') {
-                    talk("Đang đọc to cả bài! Bé nghe thật kỹ cách phát âm và nối chữ để đọc câu nhé! 🎧");
-                    return;
-                }
-                if (b.id === 'playCursorBtn') {
-                    talk("Chỉ đâu đọc đó! Chỗ nào khó hiểu bé cứ đặt con trỏ vào đó rồi nghe lại nha! 👆");
-                    return;
-                }
-                if (b.id === 'stopBtn') {
-                    talk("Phanh kít kít! Tạm dừng để uống ngụm nước rồi học tiếp nào bé ơi! 🛑🥤");
-                    return;
-                }
-                if (b.id === 'extractBtn') {
-                    talk("Đang dùng kính lúp thông minh soi chữ từ ảnh... Bé chờ xíu là có chữ ngay! 🔍");
-                    return;
-                }
-                if (b.id === 'claimQuestBtn') {
-                    talk(getMissingStepsAdvice());
-                    return;
-                }
-                if (b.id === 'retryQuestBtn') {
-                    talk("Bắt đầu lượt thử lại! Điểm số mới sẽ ghi đè điểm cũ, cố gắng đạt điểm cao hơn nha! 🔄");
-                    return;
-                }
-            }
-
-            if (isDrop) {
-                talk("Chạm vào đây để tải ảnh trang sách rõ nét hoặc file Word/PDF truyện tranh lên nha! 📸");
-                return;
-            }
-
-            if (isTextarea) {
-                talk("Nội dung bài học ở đây! Bé có thể click vào chữ bất kỳ rồi bấm 'Từ Trỏ' để nghe riêng đoạn đó nha! 📝");
-                return;
-            }
-
-            if (card) {
-                if (card.id === 'cardKidProfile') {
-                    talk("Bảng thành tích của bé! Hoàn thành tối thiểu 5 nhiệm vụ tuần để bố mẹ thưởng bim bim nha! 🍟");
-                    return;
-                }
-                if (card.id === 'cardQuestArea') {
-                    talk(getMissingStepsAdvice());
-                    return;
-                }
-                if (card.id === 'cardLeaderboard') {
-                    talk("Bảng Vàng vinh danh các bạn nhỏ chăm chỉ nhất trên Cloud! Bé đua top 1 cùng các bạn nào! 🏆");
-                    return;
-                }
-                if (card.id === 'cardStoryLibrary') {
-                    talk("Kho truyện Cloud của bố Dũng! Bé chọn một cuốn sách bất kỳ để học bài nha! 📚");
-                    return;
-                }
-                if (card.id === 'cardSentenceSection') {
-                    talk("Thử thách đọc cả câu: Nghe mẫu trước 🔊 rồi bấm '🎤 Bé Đọc' để máy chấm điểm phát âm nha! 🎙️");
-                    return;
-                }
-                if (card.id === 'cardVocabSection') {
-                    talk("Từ vựng thông minh được máy lọc ra! Chạm vào từng từ để nghe đọc và xem giải nghĩa chuẩn nha! 💡");
-                    return;
-                }
-                if (card.id === 'cardQuizSection') {
-                    talk("Đố vui 5 câu: Trả lời đúng để kiếm điểm vượt chuẩn nhiệm vụ nào bé ơi! 🎮");
-                    return;
-                }
-                if (card.id === 'cardGameSection') {
-                    talk("Phòng Game vui nhộn: Chơi game vừa ghi nhớ từ vựng vừa tích lũy điểm thưởng! 🕹️");
-                    return;
-                }
-            }
-
-            talk(getMissingStepsAdvice());
-        });
-
-        // 20. PHÒNG GAME VUI NHỘN (ĐÃ SỬA GAME NGHE ĐOÁN TỪ & BỘ ĐẾM HOÀN CHỈNH)
+        // ================== PHÒNG GAME VUI NHỘN (ĐÃ SỬA GAME NGHE ĐOÁN TỪ) ==================
         const G = { score: 0, k: '' }; let GT;
         const V = () => globalVocabData.filter(v => v.word);
         const shuf = a => [...a].sort(() => Math.random() - .5);
         const area = () => $('gameArea');
         const ctr = () => [innerWidth / 2, innerHeight / 2];
 
-        // Sửa hàm award: Dù được 0 điểm thì lượt chơi vẫn luôn được tính vào bộ đếm
+        // Sửa hàm award: Dù bé được 0 điểm thì lượt chơi vẫn luôn được tính vào bộ đếm nhiệm vụ
         function award(n) {
             sessionTracker.gamesPlayed++;
             if (n > 0) {
@@ -2131,83 +1261,108 @@
             clearInterval(GT); G.score = 0; G.k = k; ({ listen: gListen, flip: gFlip, speak: gSpeak, scr: gScr, speed: gSpeed })[k]();
         };
 
-        function judge(btns, ok) {
-            btns.forEach(b => b.disabled = true);
-            if (ok) { G.score += 10; burst(...ctr(), WIN, 10); } else { burst(...ctr(), OOPS, 6); talk(pick(['Ối! Hụt rồi 🙈', 'Gần đúng… bé thử lại nhé!'])); }
-        }
-
-        // SỬA LỖI GAME NGHE ĐOÁN TỪ (gListen)
+        // ================== HÀM gListen SỬA LỖI KHÔNG CHUYỂN CÂU ==================
         function gListen() {
-            const list = V();
-            if (list.length < 4) return showToast('Cần ít nhất 4 từ vựng để chơi!', 'warning');
+            const list = V().filter(x => x && x.word && x.meaning);
+            if (list.length < 2) return showToast('Cần ít nhất từ vựng để chơi!', 'warning');
             const qs = shuf(list).slice(0, 6); 
             let i = 0;
+            let isProcessing = false;
 
             const nx = () => {
+                isProcessing = false;
                 if (i >= qs.length) return fin();
                 const v = qs[i];
                 const pool = list.filter(x => x.word !== v.word);
                 
-                // Luôn tạo đúng 4 đáp án nghĩa tiếng Việt, không bị trùng lặp
+                // 4 lựa chọn không bao giờ rỗng hay trùng lặp
                 const wrongOptions = shuf(pool).slice(0, 3).map(x => x.meaning);
-                const o = shuf([v.meaning, ...wrongOptions]);
+                const options = shuf([v.meaning, ...wrongOptions]);
 
-                area().innerHTML = `
-                    <div class="flex justify-between items-center text-[10px] text-sky-600 mb-1">
+                const el = area();
+                el.innerHTML = `
+                    <div class="flex justify-between items-center text-[11px] text-sky-600 mb-2 font-bold">
                         <span>Câu ${i + 1}/${qs.length}</span>
                         <span>Điểm: <b class="text-orange-600 font-black">${G.score}đ</b></span>
                     </div>
-                    <div class="text-center mb-2">
-                        <button type="button" id="btnListenSpeaker" class="text-5xl btn-bounce py-1 px-3 bg-amber-100 border-2 border-amber-300 rounded-2xl shadow-sm hover:scale-105 active:scale-95 transition-transform">🔊</button>
-                        <div class="text-[11px] text-slate-500 font-bold mt-1">Chạm vào loa để nghe và chọn nghĩa đúng nhé!</div>
+                    <div class="text-center mb-3">
+                        <button type="button" id="btnListenReplay" class="text-5xl py-2 px-4 bg-amber-100 hover:bg-amber-200 border-2 border-amber-300 rounded-2xl shadow-sm btn-bounce">🔊</button>
+                        <div class="text-[11px] text-slate-500 font-bold mt-1">Chạm vào loa để nghe lại nha!</div>
                     </div>
-                    <div class="grid grid-cols-2 gap-2">
-                        ${o.map((opt, idx) => `
-                            <button type="button" class="btn-listen-opt py-2 px-1 bg-white hover:bg-sky-50 border-2 border-sky-200 rounded-xl font-black text-xs text-slate-700 capitalize shadow-sm transition-colors" data-val="${encodeURIComponent(opt)}">
+                    <div id="listenOptContainer" class="grid grid-cols-2 gap-2 mb-2">
+                        ${options.map((opt, idx) => `
+                            <button type="button" class="opt-btn py-2.5 px-2 bg-white hover:bg-sky-50 border-2 border-sky-200 rounded-xl font-black text-xs text-slate-700 capitalize shadow-sm transition-all text-center leading-snug">
                                 ${opt}
                             </button>
                         `).join('')}
                     </div>
+                    <div id="listenNextRow" class="text-center hidden mt-1">
+                        <button type="button" id="btnManualNext" class="py-1 px-3 bg-sky-500 text-white rounded-lg text-xs font-black shadow btn-bounce">Câu tiếp theo ➡️</button>
+                    </div>
                 `;
 
-                // Gắn listener phát âm vào nút loa
-                const speakerBtn = document.getElementById('btnListenSpeaker');
-                if (speakerBtn) {
-                    speakerBtn.onclick = () => window.playWordAudio(v.word);
+                // Nút loa phát âm
+                const replayBtn = document.getElementById('btnListenReplay');
+                if (replayBtn) {
+                    replayBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        window.playWordAudio(v.word);
+                    };
                 }
 
-                // Phát âm câu đầu tiên ngay lập tức
-                window.playWordAudio(v.word);
+                // Tự động phát âm từ cho câu hiện tại
+                try { window.playWordAudio(v.word); } catch(e) {}
 
-                // Gắn sự kiện chọn đáp án
-                const optionBtns = area().querySelectorAll('.btn-listen-opt');
-                optionBtns.forEach(btn => {
-                    btn.onclick = () => {
-                        const chosen = decodeURIComponent(btn.dataset.val);
+                const optBtns = el.querySelectorAll('.opt-btn');
+                const nextRow = document.getElementById('listenNextRow');
+                const manualNextBtn = document.getElementById('btnManualNext');
+
+                if (manualNextBtn) {
+                    manualNextBtn.onclick = () => {
+                        i++;
+                        nx();
+                    };
+                }
+
+                optBtns.forEach((btn, idx) => {
+                    btn.onclick = (e) => {
+                        e.stopPropagation();
+                        if (isProcessing) return;
+                        isProcessing = true;
+
+                        // Khóa nút tránh bấm liên tiếp
+                        optBtns.forEach(b => {
+                            b.disabled = true;
+                            b.classList.remove('hover:bg-sky-50', 'bg-white');
+                        });
+
+                        const chosen = options[idx];
                         const isCorrect = (chosen === v.meaning);
 
-                        optionBtns.forEach(b => b.disabled = true);
                         if (isCorrect) {
-                            btn.classList.remove('bg-white', 'border-sky-200');
-                            btn.classList.add('bg-green-200', 'border-green-400', 'text-green-800');
+                            btn.classList.add('bg-green-200', 'border-green-500', 'text-green-800');
                             G.score += 10;
-                            burst(...ctr(), WIN, 12);
+                            try { burst(...ctr(), WIN, 12); } catch(e) {}
                             talk('Chính xác rồi! Bé nghe siêu quá! 👏🌟');
                         } else {
-                            btn.classList.remove('bg-white', 'border-sky-200');
-                            btn.classList.add('bg-red-200', 'border-red-400', 'text-red-800');
-                            // Hiện đáp án đúng
-                            optionBtns.forEach(b => {
-                                if (decodeURIComponent(b.dataset.val) === v.meaning) {
-                                    b.classList.add('bg-green-200', 'border-green-400', 'text-green-800');
+                            btn.classList.add('bg-red-200', 'border-red-500', 'text-red-800');
+                            optBtns.forEach((b, k) => {
+                                if (options[k] === v.meaning) {
+                                    b.classList.add('bg-green-200', 'border-green-500', 'text-green-800');
                                 }
                             });
-                            burst(...ctr(), OOPS, 6);
-                            talk('Tiếc quá! Hãy nhìn ô màu xanh để nhớ nghĩa nha bé! 🙈');
+                            try { burst(...ctr(), OOPS, 6); } catch(e) {}
+                            talk('Tiếc quá! Ô màu xanh mới là đáp án đúng nhé! 🙈');
                         }
 
-                        i++;
-                        setTimeout(nx, 1300);
+                        // Mở nút thủ công phòng ngừa
+                        if (nextRow) nextRow.classList.remove('hidden');
+
+                        // Luôn tự động chuyển câu sau 1.2s
+                        setTimeout(() => {
+                            i++;
+                            nx();
+                        }, 1200);
                     };
                 });
             };
@@ -2278,7 +1433,7 @@
             }; nx();
         }
 
-        // 21. KHỞI CHẠY TẤT CẢ DỊCH VỤ AN TOÀN TRONG 1 LUỒNG
+        // KHỞI ĐỘNG HỆ THỐNG
         document.addEventListener('DOMContentLoaded', () => {
             syncKidsFromCloud();
             fetchStories();
