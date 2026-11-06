@@ -660,29 +660,37 @@
             showToast('Chúc mừng bé đã nhận được phần thưởng xứng đáng từ Bố Mẹ! 🍦🎉', 'success');
         }
 
-        // ================== NHIỆM VỤ 6 TIẾNG KHÉP KÍN & RÀNG BUỘC ==================
+        // ================== NHIỆM VỤ 6 TIẾNG AN TOÀN (KHẮC PHỤC KẸT BỐC THĂM) ==================
         const SIX_HOURS = 6 * 60 * 60 * 1000;
 
         function getActiveQuest() {
-            let questData = localStorage.getItem('magicCurrentQuest');
-            if (questData) {
-                let q = JSON.parse(questData);
-                if (Date.now() - q.createdAt < SIX_HOURS) {
-                    return q;
+            try {
+                let questData = localStorage.getItem('magicCurrentQuest');
+                if (questData) {
+                    let q = JSON.parse(questData);
+                    if (Date.now() - q.createdAt < SIX_HOURS) {
+                        return q;
+                    }
                 }
+            } catch (e) {
+                console.warn('Lỗi đọc quest cũ, tạo mới:', e);
             }
             return generateNew6HourQuest();
         }
 
         function generateNew6HourQuest() {
-            const kid = cachedKids.find(k => k.id === currentKidId);
-            const rank = getKidRank((kid && kid.weekly_done) || 0);
+            // Giá trị mặc định an toàn nếu chưa load kịp bé từ Cloud
+            let rankScore = 150;
+            if (typeof cachedKids !== 'undefined' && cachedKids.length) {
+                const kid = cachedKids.find(k => k.id === currentKidId);
+                const rank = getKidRank((kid && kid.weekly_done) || 0);
+                if (rank && rank.minScore) rankScore = rank.minScore;
+            }
 
-            // Bốc thăm ngẫu nhiên yêu cầu đọc 1 hoặc 2 bài
             const targetStories = Math.random() > 0.5 ? 2 : 1;
-            const targetGames = Math.floor(Math.random() * 2 + 2);     // Chơi 2 - 3 lượt game/câu đố
-            const targetSentences = Math.floor(Math.random() * 2 + 1); // Luyện đọc 1 - 2 câu
-            const targetScore = rank.minScore;                         // Ràng buộc điểm tối thiểu theo cấp độ
+            const targetGames = Math.floor(Math.random() * 2 + 2);     // 2 - 3 lượt chơi
+            const targetSentences = Math.floor(Math.random() * 2 + 1); // 1 - 2 câu đọc
+            const targetScore = rankScore;
 
             const newQuest = {
                 id: 'quest_' + Date.now(),
@@ -695,35 +703,52 @@
                 completedKids: []
             };
 
-            localStorage.setItem('magicCurrentQuest', JSON.stringify(newQuest));
-            // Reset bộ đếm phiên
+            try {
+                localStorage.setItem('magicCurrentQuest', JSON.stringify(newQuest));
+            } catch (e) {}
+
             sessionTracker = { readStories: new Set(), sentencesPassed: 0, gamesPlayed: 0, scoreEarned: 0 };
             return newQuest;
         }
 
         function renderQuestUI() {
+            const content = document.getElementById('questContent');
+            if (!content) return;
+
             const q = getActiveQuest();
-            const timeLeft = Math.max(0, SIX_HOURS - (Date.now() - q.createdAt));
+            const now = Date.now();
+            const timeLeft = Math.max(0, SIX_HOURS - (now - (q.createdAt || now)));
             const hours = Math.floor(timeLeft / (60 * 60 * 1000));
             const minutes = Math.floor((timeLeft % (60 * 60 * 1000)) / (60 * 1000));
-            document.getElementById('questTimer').textContent = `⏱️ ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`;
+
+            const timerEl = document.getElementById('questTimer');
+            if (timerEl) {
+                timerEl.textContent = `⏱️ ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`;
+            }
 
             const attemptsUsed = (q.attempts && q.attempts[currentKidId]) || 0;
             const retryBadge = document.getElementById('retryBadge');
             const retryBtn = document.getElementById('retryQuestBtn');
 
-            retryBadge.textContent = `Lượt thử: ${Math.min(3, attemptsUsed + 1)}/3`;
+            if (retryBadge) {
+                if (attemptsUsed >= 3) {
+                    retryBadge.textContent = 'Đã hết 3 lượt thử 🛑';
+                } else {
+                    retryBadge.textContent = `Lượt thử: ${Math.min(3, attemptsUsed + 1)}/3`;
+                }
+            }
 
-            // Sau 3 lần thử lại -> Ẩn nút đi
-            if (attemptsUsed >= 3) {
-                retryBtn.classList.add('hidden');
-                retryBadge.textContent = 'Đã hết 3 lượt thử 🛑';
-            } else {
-                retryBtn.classList.remove('hidden');
+            if (retryBtn) {
+                if (attemptsUsed >= 3) {
+                    retryBtn.classList.add('hidden');
+                } else {
+                    retryBtn.classList.remove('hidden');
+                }
             }
 
             const isCompleted = (q.completedKids || []).includes(currentKidId);
-            const content = document.getElementById('questContent');
+            
+            // Render nội dung nhiệm vụ trực tiếp
             content.innerHTML = `
                 <div class="flex items-start gap-1.5">
                     <span>📚</span>
@@ -747,16 +772,18 @@
 
             const badge = document.getElementById('questStatusBadge');
             const claimBtn = document.getElementById('claimQuestBtn');
-            if (isCompleted) {
-                badge.textContent = 'Trạng thái: Đã hoàn thành xuất sắc! 🏆';
-                badge.className = 'text-xs font-black text-emerald-600';
-                claimBtn.disabled = true;
-                claimBtn.textContent = '✅ Đã Ghi Điểm';
-            } else {
-                badge.textContent = 'Trạng thái: Đang theo dõi các bước... ⏳';
-                badge.className = 'text-xs font-black text-orange-600';
-                claimBtn.disabled = false;
-                claimBtn.textContent = '🏆 Nộp Ghi Điểm';
+            if (badge && claimBtn) {
+                if (isCompleted) {
+                    badge.textContent = 'Trạng thái: Đã hoàn thành xuất sắc! 🏆';
+                    badge.className = 'text-xs font-black text-emerald-600';
+                    claimBtn.disabled = true;
+                    claimBtn.textContent = '✅ Đã Ghi Điểm';
+                } else {
+                    badge.textContent = 'Trạng thái: Đang theo dõi các bước... ⏳';
+                    badge.className = 'text-xs font-black text-orange-600';
+                    claimBtn.disabled = false;
+                    claimBtn.textContent = '🏆 Nộp Ghi Điểm';
+                }
             }
         }
 
