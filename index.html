@@ -492,7 +492,7 @@
             toastTimeout = setTimeout(() => { toastMessage.style.opacity = '0'; toastMessage.style.transform = 'translate(-50%, 0)'; }, 3000);
         }
 
-        // ================== OCR ==================
+        // ================== OCR QUÉT FILE ĐÃ SỬA CHUẨN XÁC ==================
         const $ = id => document.getElementById(id);
         let files = [], active = 0;
 
@@ -535,7 +535,8 @@
                             await new Promise(ok => { let s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js'; s.onload = ok; document.head.appendChild(s); });
                         }
                         worker = worker || await Tesseract.createWorker('eng', 1);
-                        parts.push(await ocrImage(f, worker));
+                        const res = await worker.recognize(f);
+                        parts.push(res.data.text || '');
                     } else if (k === 'txt') {
                         parts.push(await f.text());
                     } else if (k === 'docx') {
