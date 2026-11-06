@@ -84,6 +84,28 @@
 </head>
 <body class="p-2 md:p-6 flex flex-col items-center">
 
+    <!-- Modal Mật Khẩu Phụ Huynh khi Xóa Truyện -->
+    <div id="deleteModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+        <div class="bg-white rounded-2xl shadow-2xl border-4 border-pink-300 p-5 max-w-xs w-full text-center">
+            <div class="text-4xl mb-2">🔒</div>
+            <h3 class="text-base font-black text-slate-800 mb-1">Xác nhận của Bố Mẹ</h3>
+            <p class="text-xs text-slate-500 mb-3 font-semibold">Nhập mã PIN để xóa bài khỏi kho truyện</p>
+            <input type="password" id="deletePinInput" maxlength="6" placeholder="••••" 
+                   class="w-full text-center text-2xl tracking-[0.4em] font-black py-2 px-3 border-2 border-pink-300 rounded-xl outline-none focus:border-pink-500 bg-pink-50 mb-4" 
+                   autocomplete="off" inputmode="numeric">
+            <div class="flex gap-2">
+                <button type="button" onclick="closeDeleteModal()" 
+                        class="flex-1 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl text-xs btn-bounce">
+                    Hủy bỏ
+                </button>
+                <button type="button" onclick="confirmDeleteStory()" 
+                        class="flex-1 py-2 bg-red-500 hover:bg-red-600 text-white font-black rounded-xl text-xs shadow-md btn-bounce">
+                    Xác nhận
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div class="w-full max-w-7xl flex justify-end relative z-40 mb-2">
         <button id="themeBtn" type="button" class="bg-white text-pink-600 border-2 border-pink-300 px-3 py-1.5 md:px-4 md:py-2 rounded-full font-black shadow btn-bounce text-sm md:text-base">🎨 Giao diện</button>
         <div id="themePanel" class="hidden absolute right-0 top-full mt-2 w-[min(92vw,20rem)] bg-white border-4 border-pink-300 rounded-2xl shadow-xl p-3 grid grid-cols-3 gap-2"></div>
@@ -222,12 +244,12 @@
         let globalVocabData = [];
         const posMap = { 'noun': 'Danh từ', 'verb': 'Động từ', 'adjective': 'Tính từ', 'adverb': 'Trạng từ', 'pronoun': 'Đại từ', 'preposition': 'Giới từ', 'conjunction': 'Liên từ' };
 
-        // ================== BIẾN QUẢN LÝ XOAY VÒNG 30% TỪ VỰNG (5 LẦN QUAY LẠI CŨ) ==================
-        let lastExtractedText = "";     // Nhận diện nếu văn bản thay đổi
-        let masterCandidatePool = [];   // Danh sách toàn bộ từ khó tiềm năng
-        let initialBaseWords = [];      // Danh sách từ gốc của lần 1
-        let currentDisplayWords = [];   // Danh sách từ đang hiển thị
-        let rotationCycle = 0;          // Bộ đếm từ 0 -> 4 (tổng 5 lần)
+        // ================== QUẢN LÝ XOAY VÒNG 30% TỪ VỰNG ==================
+        let lastExtractedText = "";
+        let masterCandidatePool = [];
+        let initialBaseWords = [];
+        let currentDisplayWords = [];
+        let rotationCycle = 0;
 
         // ================== LEADERBOARD ==================
         const avatars = [
@@ -269,7 +291,7 @@
                         <div class="cursor-pointer truncate flex-1 pr-1" onclick="loadStory('${story.id}')">
                             <span class="text-indigo-700 font-bold text-[10px] md:text-xs">📄 ${story.title || 'Truyện'}</span>
                         </div>
-                        <button onclick="deleteStory('${story.id}')" class="text-red-500 hover:bg-red-100 px-1 rounded font-black text-[10px]">❌</button>
+                        <button onclick="deleteStory('${story.id}')" class="text-red-500 hover:bg-red-100 px-1 rounded font-black text-[10px]" title="Xóa sách">❌</button>
                     </div>
                 `).join('');
             } catch (err) {}
@@ -281,7 +303,69 @@
             try { await db.from('saved_stories').insert([{ title: text.substring(0, 20).replace(/\n/g, ' ') + '...', content: text }]); showToast('Lưu thành công! ☁️', 'success'); fetchStories(); } catch (err) { }
         }
         async function loadStory(id) { try { let { data } = await db.from('saved_stories').select('content').eq('id', id).single(); storyText.value = data.content; showToast('Đã tải truyện cũ!', 'success'); } catch (err) {} }
-        async function deleteStory(id) { if(confirm('Xóa bài này nhé?')) { try { await db.from('saved_stories').delete().eq('id', id); fetchStories(); } catch (err) {} } }
+        
+        // ================== XÓA TRUYỆN BẢO MẬT MÃ PIN 6868 (ẨN) ==================
+        let pendingDeleteId = null;
+
+        function deleteStory(id) {
+            pendingDeleteId = id;
+            const modal = document.getElementById('deleteModal');
+            const pinInput = document.getElementById('deletePinInput');
+            if (modal && pinInput) {
+                pinInput.value = '';
+                modal.classList.remove('hidden');
+                setTimeout(() => pinInput.focus(), 100);
+            }
+        }
+
+        function closeDeleteModal() {
+            pendingDeleteId = null;
+            const modal = document.getElementById('deleteModal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        async function confirmDeleteStory() {
+            const pinInput = document.getElementById('deletePinInput');
+            const pin = pinInput ? pinInput.value.trim() : '';
+
+            if (pin !== '6868') {
+                showToast('Mật khẩu không đúng!', 'error');
+                if (pinInput) {
+                    pinInput.value = '';
+                    pinInput.focus();
+                }
+                return;
+            }
+
+            if (!pendingDeleteId) {
+                closeDeleteModal();
+                return;
+            }
+
+            try {
+                showToast('Đang xóa truyện...', 'warning');
+                const targetId = pendingDeleteId;
+                closeDeleteModal();
+                const { error } = await db.from('saved_stories').delete().eq('id', targetId);
+                if (error) throw error;
+                showToast('Đã xóa truyện khỏi kho! 🗑️', 'success');
+                fetchStories();
+            } catch (err) {
+                console.error(err);
+                showToast('Lỗi khi xóa bài!', 'error');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const pinInput = document.getElementById('deletePinInput');
+            if (pinInput) {
+                pinInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') confirmDeleteStory();
+                    if (e.key === 'Escape') closeDeleteModal();
+                });
+            }
+        });
+
         setTimeout(fetchStories, 1000);
 
         // ================== CẤU TRÚC PHÁT ÂM THANH TRỰC TIẾP ==================
@@ -502,7 +586,7 @@
             toastTimeout = setTimeout(() => { toastMessage.style.opacity = '0'; toastMessage.style.transform = 'translate(-50%, 0)'; }, 3000);
         }
 
-        // ================== OCR QUÉT FILE ==================
+        // ================== OCR QUÉT FILE ĐÃ SỬA CHUẨN XÁC ==================
         const $ = id => document.getElementById(id);
         let files = [], active = 0;
 
@@ -611,7 +695,6 @@
                 'would', 'into', 'has', 'more', 'will', 'been', 'then', 'them', 'him'
             ];
 
-            // Nếu đổi nội dung bài mới -> Khởi tạo lại toàn bộ chu kỳ
             if (text !== lastExtractedText) {
                 lastExtractedText = text;
                 rotationCycle = 0;
@@ -620,14 +703,12 @@
                 currentDisplayWords = [];
             }
 
-            // Nếu chưa có masterCandidatePool thì tiến hành lọc ứng viên từ văn bản
             if (!masterCandidatePool.length) {
                 let allTokens = text.toLowerCase().match(/\b[a-z]{3,}\b/g) || [];
                 let complexWords = allTokens.filter(w => !stopWords.includes(w));
                 let counts = {};
                 complexWords.forEach(w => counts[w] = (counts[w] || 0) + 1);
 
-                // Lấy tối đa 35 từ dài và tiềm năng nhất để làm kho xoay vòng
                 masterCandidatePool = Object.keys(counts)
                     .filter(w => w.length >= 4)
                     .sort((a, b) => b.length - a.length)
@@ -649,32 +730,25 @@
                 return; 
             }
 
-            // TÍNH TOÁN DANH SÁCH TỪ CHO LẦN NÀY
             let selectedWords = [];
 
             if (rotationCycle === 0) {
-                // Lần 1: Lấy nhóm từ chuẩn ban đầu
                 initialBaseWords = masterCandidatePool.slice(0, targetCount);
                 selectedWords = [...initialBaseWords];
                 currentDisplayWords = [...selectedWords];
             } else {
-                // Lần 2, 3, 4, 5: Giữ lại 70% từ hiện tại và thay thế 30% bằng từ mới trong kho
-                const replaceCount = Math.max(1, Math.round(targetCount * 0.3)); // 30% số từ
-                const keepCount = targetCount - replaceCount;                     // 70% số từ
+                const replaceCount = Math.max(1, Math.round(targetCount * 0.3));
+                const keepCount = targetCount - replaceCount;
 
-                // Xáo trộn nhẹ nhóm đang có để giữ lại ngẫu nhiên 70%
                 let shuffledCurrent = [...currentDisplayWords].sort(() => Math.random() - 0.5);
                 let keptWords = shuffledCurrent.slice(0, keepCount);
 
-                // Tìm các từ trong kho dự phòng chưa nằm trong nhóm giữ lại
                 let remainingPool = masterCandidatePool.filter(w => !keptWords.includes(w));
 
                 if (remainingPool.length >= replaceCount) {
-                    // Xáo trộn kho dự phòng và bốc ra đúng 30% từ mới
                     let newWords = remainingPool.sort(() => Math.random() - 0.5).slice(0, replaceCount);
                     selectedWords = [...keptWords, ...newWords];
                 } else {
-                    // Nếu kho ít từ, lấy bổ sung từ danh sách gốc
                     selectedWords = [...keptWords, ...remainingPool];
                     while (selectedWords.length < targetCount && masterCandidatePool.length > selectedWords.length) {
                         let addWord = masterCandidatePool.find(w => !selectedWords.includes(w));
@@ -685,12 +759,10 @@
                 currentDisplayWords = [...selectedWords];
             }
 
-            // Cập nhật nhãn hiển thị vòng quay (Vòng 1 -> 5)
             const rotBadge = $('rotationIndicator');
             rotBadge.textContent = `Vòng ${rotationCycle + 1}/5 (Thay 30% từ mới)`;
             rotBadge.classList.remove('hidden');
 
-            // Tăng biến đếm vòng quay (Sau 5 lần: 0, 1, 2, 3, 4 sẽ quay về 0 tức như cũ)
             rotationCycle = (rotationCycle + 1) % 5;
 
             vocabList.innerHTML = `<span class="italic text-purple-500 animate-pulse">Đang nạp ${selectedWords.length} từ vựng... ⏳</span>`;
