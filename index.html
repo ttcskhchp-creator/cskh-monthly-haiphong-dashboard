@@ -64,7 +64,6 @@
         #storyText { white-space: pre-wrap; tab-size: 4; }
         #dropZone.drag { border-color: #ec4899; background: #fdf2f8; }
         .avatar-selected { border-color: #f97316 !important; background-color: #ffedd5 !important; transform: scale(1.1); }
-        /* ===== v2: hiệu ứng, hình chìm, mascot ===== */
         header,main,footer{position:relative;z-index:1}
         #wm{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
         #wm i{position:absolute;font-style:normal;opacity:.13;animation:fl 9s ease-in-out infinite alternate}
@@ -493,7 +492,7 @@
             toastTimeout = setTimeout(() => { toastMessage.style.opacity = '0'; toastMessage.style.transform = 'translate(-50%, 0)'; }, 3000);
         }
 
-        // ================== OCR FILE HANDLER ==================
+        // ================== OCR ==================
         const $ = id => document.getElementById(id);
         let files = [], active = 0;
 
@@ -557,6 +556,39 @@
             }
         });
 
+        // ================== BỘ LỌC OCR CHUẨN CHIỀU NAY ==================
+        cleanBtn.addEventListener('click', () => {
+            let text = storyText.value;
+            if (!text.trim()) return showToast('Trống!', 'warning');
+            const keep = $('keepLayout').checked;
+            text = text.replace(/[^a-zA-Z0-9.,!?'";:\- \n]/g, ' ');
+
+            const validShort = ['a', 'i', 'is', 'it', 'to', 'do', 'in', 'on', 'as', 'at', 'be', 'he', 'we', 'me', 'my', 'by', 'so', 'go', 'no', 'of', 'or', 'if', 'up', 'us', 'am', 'an'];
+            const blacklist = ['te', 'wa', 'ni', 'el', 'od', 'yi', 'bud', 'py', 'oy', 'eo', 'ott', 'onin', 'osun', 'ose', 'om', 'ga', 'sy', 'nf', 'qj', 'fo', 'ens', 'ees'];
+
+            let cleanLines = text.split('\n').map(line =>
+                line.split(/\s+/).filter(word => {
+                    let clean = word.replace(/[^a-zA-Z]/g, '').toLowerCase();
+                    if (!clean) return /^[.,!?]+$/.test(word);
+                    if (clean.length === 1 && !['a', 'i'].includes(clean)) return false;
+                    if (clean.length === 2 && !validShort.includes(clean)) return false;
+                    if (clean.length >= 3 && !/[aeiouy]/.test(clean)) return false;
+                    if (blacklist.includes(clean)) return false;
+                    return true;
+                }).join(' ')
+            );
+
+            text = cleanLines.join('\n');
+            if (!keep) {
+                text = text.replace(/\n[ \t]*\n/g, ' \u0001 ').replace(/\n/g, ' ').replace(/ ?\u0001 ?/g, '\n\n');
+            }
+            text = text.replace(/\s+([.,!?:;])/g, '$1').replace(/([.,!?:;])(?=[a-zA-Z])/g, '$1 ').replace(/^[.,!?:;\s]+|[.,!?:;\s]+$/g, '').replace(/ +/g, ' ');
+            text = text.toLowerCase().replace(/(^\s*[a-z]|[.!?]\s*[a-z])/g, c => c.toUpperCase()).replace(/\b(i)\b/g, 'I');
+            storyText.value = text;
+            showToast('Đã lọc sạch rác!', 'success');
+            extractVocabulary(text);
+        });
+
         // ================== TỪ VỰNG THÔNG MINH ==================
         async function extractVocabulary(text) {
             const stopWords = [
@@ -579,7 +611,7 @@
             else if (totalWordsInStory > 60) targetCount = 18;
 
             let unique = Object.keys(counts)
-                .filter(w => w.length >= 4 && (known(w) || plaus(w)))
+                .filter(w => w.length >= 4)
                 .sort((a, b) => b.length - a.length)
                 .slice(0, targetCount);
 
@@ -789,140 +821,7 @@
     </script>
 <div id="mascot"><div id="mb"></div><br><span id="me">🦄</span></div>
 <script>
-// ================== BỘ LỌC OCR THÔNG MINH NÂNG CẤP CHUẨN XÁC ==================
-const DICT = new Set(`a an the and or but so if of to in on at by for with from as is are was were be been am do does did have has had will would can could should may might must not no yes it its he she we they you i me my your his her our their them him us this that these those there here what when where who why how which all any some many much more most very too also just only then than now up down out over under again once one two three four five six seven eight nine ten first said say says go goes went going gone come came get got make made take took see saw look looked like liked love loved want wanted know knew think thought give gave tell told ask asked find found work play played run ran walk walked eat ate drink sleep slept sit sat stand stood open closed help called call try tried feel felt keep kept let put big small little long short tall old new young good bad happy sad angry hungry tired scared brave kind nice funny pretty beautiful strong fast slow hot cold warm dark light bright day night morning evening time year today tomorrow yesterday home house room door window garden tree flower grass river sea sun moon star sky cloud rain snow wind mountain forest road town city school class friend friends mother father mom dad mum brother sister baby child children boy girl man woman people family king queen prince princess dragon monster giant fairy witch wizard magic story book page word words letter name water food bread milk apple cake candy fish bird dog cat mouse rabbit bear fox wolf lion tiger elephant monkey duck horse cow pig sheep frog turtle butterfly bee red blue green yellow orange pink purple black white brown gold silver head hand hands eyes eye face hair nose mouth ear ears arm leg legs foot feet heart voice smile laugh cry shout whisper jump fly swim climb fall hide hid seek wait stop start end finish begin began never always often sometimes every each other another because after before while during without into through about around away back behind near next between inside outside above below together alone everyone everything something nothing someone anyone both either neither same different important special secret treasure adventure journey dream wish hope moment suddenly finally quickly slowly quietly loudly lived lives live upon wonderful amazing great best better worse well oh hello goodbye thank thanks please sorry chapter title don't can't it's i'm i'll i've that's let's didn't isn't he's she's we're they're you're won't wasn't couldn't wouldn't there's what's who's egg eggs golden goose farmer wife market sold nest inside lesson greed greedy choice foolish lived living`.split(/\s+/));
-
-// Danh sách đen chặn các chuỗi rác đặc trưng khi quét hình ảnh
-const BLACKLIST = new Set(['py', 'oy', 'eo', 'ott', 'onin', 'osun', 'ose', 'om', 'ga', 'sy', 'nf', 'qj', 'fo', 'ens', 'ees', 'bud', 'te', 'wa', 'ni', 'el', 'od', 'yi', 'bgogeocc', 'bo0go', '08000', 'e000']);
-const VALID_SHORT = new Set(['a', 'i', 'is', 'it', 'to', 'do', 'in', 'on', 'as', 'at', 'be', 'he', 'we', 'me', 'my', 'by', 'so', 'go', 'no', 'of', 'or', 'if', 'up', 'us', 'am', 'an']);
-
-const known = w => {
-    if (DICT.has(w)) return true;
-    return [w.replace(/'s$/, ''), w.replace(/ies$/, 'y'), w.replace(/ied$/, 'y'), w.replace(/(es|s|ed|d|ly|er|est|ing)$/, ''), w.replace(/ing$/, 'e'), w.replace(/ed$/, 'e'), w.replace(/(.)\1(ing|ed|er|est)$/, '$1')].some(x => x.length > 1 && DICT.has(x));
-};
-
-const plaus = w => {
-    if (w.length < 3 || w.length > 18) return false;
-    const v = (w.match(/[aeiouy]/gi) || []).length / w.length;
-    return v >= .20 && v <= .70 && !/[^aeiouy']{4,}|(.)\1\1|[aeiou]{4,}|q(?!u)|[jqxz]{2}/i.test(w);
-};
-
-// Kiểm tra từng từ đơn lẻ có phải là từ tiếng Anh chuẩn hay rác OCR
-function isValidWordToken(rawTok) {
-    const clean = rawTok.replace(/^[^a-zA-Z0-9']+|[^a-zA-Z0-9']+$/g, '');
-    if (!clean) return false;
-
-    // Giữ số đứng riêng (nếu là số hợp lệ)
-    if (/^\d+$/.test(clean)) return clean.length <= 4;
-    // Rác chữ lẫn số (vd: 2qj2, e000)
-    if (/\d/.test(clean) && /[a-zA-Z]/i.test(clean)) return false;
-
-    const lower = clean.toLowerCase();
-    if (BLACKLIST.has(lower)) return false;
-
-    // Từ 1-2 ký tự bắt buộc thuộc danh mục từ hợp lệ
-    if (lower.length === 1) return lower === 'a' || lower === 'i';
-    if (lower.length === 2) return VALID_SHORT.has(lower);
-
-    // Từ >= 3 ký tự kiểm tra nguyên âm và độ tương đồng tiếng Anh
-    if (known(lower)) return true;
-    return plaus(lower);
-}
-
-function smartClean(raw, keep) {
-    let junk = 0;
-    // 1. Chuẩn hóa ký tự cơ bản, xử lý từ bị gạch nối ngắt dòng
-    let text = raw.replace(/[‘’`´]/g, "'").replace(/[“”]/g, '"')
-                  .replace(/(\w)-\n(\w)/g, '$1$2')
-                  .replace(/(^|\s)[|lI](?=\s|$)/gm, '$1I')
-                  .replace(/[^A-Za-z0-9.,!?'";:\-\s]/g, ' ');
-
-    // 2. Lọc từng dòng, loại bỏ các dòng chân trang / rác viền
-    const cleanLines = [];
-    text.split('\n').forEach(line => {
-        const rawTokens = line.trim().split(/\s+/).filter(Boolean);
-        if (!rawTokens.length) {
-            cleanLines.push('');
-            return;
-        }
-
-        const validTokens = [];
-        rawTokens.forEach(tok => {
-            if (isValidWordToken(tok)) {
-                validTokens.push(tok);
-            } else {
-                junk++;
-            }
-        });
-
-        // Chỉ giữ dòng khi có ít nhất 1 từ hợp lệ
-        if (validTokens.length > 0) {
-            cleanLines.push(validTokens.join(' '));
-        }
-    });
-
-    let result = cleanLines.join('\n');
-
-    // 3. Gộp dòng khi không kích hoạt chế độ "Giữ bố cục gốc"
-    if (!keep) {
-        result = result.replace(/\n[ \t]*\n/g, ' \u0001 ')
-                       .replace(/\n/g, ' ')
-                       .replace(/ ?\u0001 ?/g, '\n\n');
-    }
-
-    // 4. Chuẩn hóa khoảng trắng, dấu câu và viết hoa câu tiếng Anh
-    result = result.replace(/\s+([.,!?:;])/g, '$1')
-                   .replace(/([.,!?:;])(?=[A-Za-z])/g, '$1 ')
-                   .replace(/[ \t]+/g, ' ')
-                   .replace(/\n{3,}/g, '\n\n')
-                   .trim();
-
-    result = result.toLowerCase()
-                   .replace(/(^\s*[a-z]|[.!?]\s*[a-z])/g, c => c.toUpperCase())
-                   .replace(/\b(i)\b/g, 'I');
-
-    return { text: result, junk };
-}
-
-cleanBtn.addEventListener('click', () => {
-    if (!storyText.value.trim()) return showToast('Khung chữ trống!', 'warning');
-    const r = smartClean(storyText.value, $('keepLayout').checked);
-    if (!r.text) return showToast('Máy không tìm thấy đoạn văn rõ ràng. Thử ảnh nét hơn nha!', 'warning');
-    storyText.value = r.text;
-    showToast(r.junk ? `Đã lọc sạch ${r.junk} ký tự rác OCR! ✨` : 'Văn bản đã sạch chuẩn! ✨', 'success');
-    extractVocabulary(r.text);
-});
-
-// ================== OCR XỬ LÝ ẢNH ==================
-async function prepImg(f) {
-    const b = await createImageBitmap(f);
-    const s = b.width < 1400 ? 1400 / b.width : (b.width > 2400 ? 2400 / b.width : 1);
-    const mx = b.width * .02, my = b.height * .02;
-    const cv = document.createElement('canvas'); 
-    cv.width = (b.width - 2 * mx) * s; 
-    cv.height = (b.height - 2 * my) * s;
-    const cx = cv.getContext('2d'); 
-    cx.drawImage(b, mx, my, b.width - 2 * mx, b.height - 2 * my, 0, 0, cv.width, cv.height);
-    return cv;
-}
-
-async function ocrImage(f, worker) {
-    try {
-        const prepCanvas = await prepImg(f);
-        const res = await worker.recognize(prepCanvas);
-        let txt = res.data.text || '';
-        if ((txt.match(/[A-Za-z]{3,}/g) || []).length < 8) {
-            const rawRes = await worker.recognize(f);
-            txt = rawRes.data.text || '';
-        }
-        return txt;
-    } catch (e) { 
-        const fallbackRes = await worker.recognize(f);
-        return fallbackRes.data.text || ''; 
-    }
-}
-
-// ================== V2: HÌNH CHÌM THEO CHỦ ĐỀ ==================
+// ================== HÌNH CHÌM & MASCOT ==================
 const WM = { candy: ['🍭', '🧁', '🦄', '🌈', '⭐', '🍩', '🎀', '🧸'], ocean: ['🐠', '🐙', '🐳', '🐚', '⚓', '🦀', '🐬', '🫧'], forest: ['🌲', '🦊', '🦉', '🍄', '🐿️', '🦋', '🌻', '🐻'] };
 const SKIN = { candy: '🦄', ocean: '🐙', forest: '🦊' };
 const curTheme = () => document.documentElement.dataset.theme || 'candy';
@@ -935,7 +834,6 @@ function wm() {
 const _at = applyTheme; applyTheme = id => { _at(id); wm(); };
 wm();
 
-// ================== V2: HIỆU ỨNG HÀI HƯỚC + MASCOT ==================
 const pick = a => a[Math.random() * a.length | 0];
 const wig = e => { e.classList.remove('wiggle'); void e.offsetWidth; e.classList.add('wiggle'); };
 function burst(x, y, list, n = 8) {
@@ -977,7 +875,7 @@ window.checkQuiz = function () {
     burst(innerWidth / 2, innerHeight / 2, s >= 30 ? WIN : OOPS, 16); talk(s >= 30 ? 'Siêu quá! Bé là thiên tài 🧠✨' : 'Không sao, lần sau gỡ lại nha 💪');
 };
 
-// ================== V2: PHÒNG GAME ==================
+// ================== PHÒNG GAME ==================
 const G = { score: 0, k: '' }; let GT;
 const V = () => globalVocabData.filter(v => v.word);
 const shuf = a => [...a].sort(() => Math.random() - .5);
