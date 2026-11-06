@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="referrer" content="no-referrer">
     <link rel="icon" href="data:,">
-    <title>Magic Story Reader by Daddy Dũng</title>
+    <title>Magic Story Reader by Daddy D农ng</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Tesseract.js -->
@@ -17,9 +17,9 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
     const THEMES = [
-        { id: 'candy', icon: '🍬', name: 'Kẹo Hồng', bg: '#fdf2f8', card: '#ffffff', ink: '#1e293b', primary: '#ec4899', secondary: '#3b82f6', mascot: '🦄' },
-        { id: 'ocean', icon: '🌊', name: 'Đại Dương', bg: '#e8f6ff', card: '#ffffff', ink: '#0f2a3d', primary: '#0891b2', secondary: '#2563eb', mascot: '🎠' },
-        { id: 'forest', icon: '🌿', name: 'Rừng Xanh', bg: '#eef8ea', card: '#ffffff', ink: '#1b2e1f', primary: '#16a34a', secondary: '#0f766e', mascot: '🐎' }
+        { id: 'candy', icon: '馃崿', name: 'K岷筼 H峄搉g', bg: '#fdf2f8', card: '#ffffff', ink: '#1e293b', primary: '#ec4899', secondary: '#3b82f6', mascot: '馃' },
+        { id: 'ocean', icon: '馃寠', name: '膼岷 D瓢啤ng', bg: '#e8f6ff', card: '#ffffff', ink: '#0f2a3d', primary: '#0891b2', secondary: '#2563eb', mascot: '馃帬' },
+        { id: 'forest', icon: '馃尶', name: 'R峄玭g Xanh', bg: '#eef8ea', card: '#ffffff', ink: '#1b2e1f', primary: '#16a34a', secondary: '#0f766e', mascot: '馃悗' }
     ];
 
     function applyTheme(id) {
@@ -34,7 +34,7 @@
         try { localStorage.setItem('magicTheme', t.id); } catch (e) {}
         
         const me = document.getElementById('me');
-        if (me) me.textContent = t.mascot || '🦄';
+        if (me) me.textContent = t.mascot || '馃';
     }
 
     try {
@@ -75,12 +75,12 @@
         .wiggle{animation:wg .5s}
         @keyframes wg{0%,100%{transform:rotate(0)}20%{transform:rotate(-8deg) scale(1.1)}40%{transform:rotate(8deg)}60%{transform:rotate(-5deg)}80%{transform:rotate(5deg)}}
         
-        /* Chatbot Mascot Con Ngựa */
+        /* Chatbot Mascot Con Ng峄盿 */
         #mascot{position:fixed;right:10px;bottom:10px;z-index:50;text-align:right;pointer-events:none}
         #me{font-size:46px;cursor:pointer;pointer-events:auto;display:inline-block;animation:fl 2s ease-in-out infinite alternate;user-select:none;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.15));transition:transform .2s}
         #me:hover{transform:scale(1.15)}
         #mb{display:inline-block;max-width:260px;background:#ffffff;border:3px solid #ec4899;border-radius:18px;padding:8px 12px;font-size:12px;font-weight:900;color:#9d174d;box-shadow:0 6px 16px rgba(0,0,0,0.15);opacity:1;transition:all .3s ease;margin-bottom:4px;text-align:left;pointer-events:auto}
-        /* ===== v3: giao diện thân thiện trẻ em ===== */
+        /* ===== v3: giao di峄噉 th芒n thi峄噉 tr岷� em ===== */
         #mb{pointer-events:auto}
         body{font-size:16px;padding-bottom:92px!important}
         main{display:flex!important;flex-direction:column;gap:1rem;width:100%;max-width:44rem}
@@ -115,182 +115,180 @@
 </head>
 <body class="p-2 md:p-6 flex flex-col items-center">
 
-    <!-- Modal Mật Khẩu Phụ Huynh khi Xóa Truyện -->
+    <!-- Modal M岷璽 Kh岷﹗ Ph峄� Huynh khi X贸a Truy峄噉 -->
     <div id="deleteModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
         <div class="bg-white rounded-2xl shadow-2xl border-4 border-pink-300 p-5 max-w-xs w-full text-center">
-            <div class="text-4xl mb-2">🔒</div>
-            <h3 class="text-base font-black text-slate-800 mb-1">Xác nhận của Bố Mẹ</h3>
-            <p class="text-xs text-slate-500 mb-3 font-semibold">Nhập mã PIN để xóa bài khỏi kho truyện</p>
-            <input type="password" id="deletePinInput" maxlength="6" placeholder="••••" 
+            <div class="text-4xl mb-2">馃敀</div>
+            <h3 class="text-base font-black text-slate-800 mb-1">X谩c nh岷璶 c峄 B峄� M岷�</h3>
+            <p class="text-xs text-slate-500 mb-3 font-semibold">Nh岷璸 m茫 PIN 膽峄� x贸a b脿i kh峄廼 kho truy峄噉</p>
+            <input type="password" id="deletePinInput" maxlength="6" placeholder="鈥⑩€⑩€⑩€�" 
                    class="w-full text-center text-2xl tracking-[0.4em] font-black py-2 px-3 border-2 border-pink-300 rounded-xl outline-none focus:border-pink-500 bg-pink-50 mb-4" 
                    autocomplete="off" inputmode="numeric">
             <div class="flex gap-2">
-                <button type="button" onclick="closeDeleteModal()" class="flex-1 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl text-xs btn-bounce">Hủy bỏ</button>
-                <button type="button" onclick="confirmDeleteStory()" class="flex-1 py-2 bg-red-500 hover:bg-red-600 text-white font-black rounded-xl text-xs shadow-md btn-bounce">Xác nhận</button>
+                <button type="button" onclick="closeDeleteModal()" class="flex-1 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl text-xs btn-bounce">H峄 b峄�</button>
+                <button type="button" onclick="confirmDeleteStory()" class="flex-1 py-2 bg-red-500 hover:bg-red-600 text-white font-black rounded-xl text-xs shadow-md btn-bounce">X谩c nh岷璶</button>
             </div>
         </div>
     </div>
 
-    <!-- Modal Thêm Bé Mới (PIN 6868) -->
+    <!-- Modal Th锚m B茅 M峄沬 (PIN 6868) -->
     <div id="addKidModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
         <div class="bg-white rounded-2xl shadow-2xl border-4 border-indigo-300 p-5 max-w-sm w-full text-center">
-            <div class="text-4xl mb-1">👶✨</div>
-            <h3 class="text-lg font-black text-indigo-700 mb-1">Thêm Thành Viên Nhí</h3>
-            <p class="text-xs text-slate-500 mb-3">Bố Mẹ nhập mã PIN <b>6868</b> để thêm bé nhé</p>
-            <input type="password" id="parentPinInput" maxlength="6" placeholder="Mã PIN bố mẹ (••••)" 
+            <div class="text-4xl mb-1">馃懚鉁�</div>
+            <h3 class="text-lg font-black text-indigo-700 mb-1">Th锚m Th脿nh Vi锚n Nh铆</h3>
+            <p class="text-xs text-slate-500 mb-3">B峄� M岷� nh岷璸 m茫 PIN <b>6868</b> 膽峄� th锚m b茅 nh茅</p>
+            <input type="password" id="parentPinInput" maxlength="6" placeholder="M茫 PIN b峄� m岷� (鈥⑩€⑩€⑩€�)" 
                    class="w-full text-center text-xl tracking-[0.3em] font-black py-2 px-3 border-2 border-indigo-200 rounded-xl outline-none focus:border-indigo-500 bg-indigo-50 mb-3" 
                    autocomplete="off" inputmode="numeric">
-            <input type="text" id="kidNameInput" placeholder="Tên bé (VD: Bắp, Nhím, Tí nị...)" 
+            <input type="text" id="kidNameInput" placeholder="T锚n b茅 (VD: B岷痯, Nh铆m, T铆 n峄�...)" 
                    class="w-full text-sm font-bold py-2.5 px-3 border-2 border-slate-200 rounded-xl outline-none focus:border-indigo-400 mb-3">
-            <p class="text-xs font-bold text-slate-600 mb-2 text-left">Chọn Avatar cho bé:</p>
+            <p class="text-xs font-bold text-slate-600 mb-2 text-left">Ch峄峮 Avatar cho b茅:</p>
             <div id="newKidAvatars" class="flex flex-wrap gap-1.5 justify-center mb-4"></div>
             <div class="flex gap-2">
-                <button type="button" onclick="closeAddKidModal()" class="flex-1 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl text-xs btn-bounce">Hủy</button>
-                <button type="button" onclick="confirmAddKid()" class="flex-1 py-2 bg-indigo-500 hover:bg-indigo-600 text-white font-black rounded-xl text-xs shadow-md btn-bounce">Đăng Ký</button>
+                <button type="button" onclick="closeAddKidModal()" class="flex-1 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl text-xs btn-bounce">H峄</button>
+                <button type="button" onclick="confirmAddKid()" class="flex-1 py-2 bg-indigo-500 hover:bg-indigo-600 text-white font-black rounded-xl text-xs shadow-md btn-bounce">膼膬ng K媒</button>
             </div>
         </div>
     </div>
 
-    <!-- Modal Xóa Thành Viên (Bé) Kèm Mã PIN 6868 Ẩn -->
+    <!-- Modal X贸a Th脿nh Vi锚n (B茅) K猫m M茫 PIN 6868 岷╪ -->
     <div id="removeKidModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
         <div class="bg-white rounded-2xl shadow-2xl border-4 border-red-300 p-5 max-w-sm w-full text-center">
-            <div class="text-4xl mb-1">🗑️🔒</div>
-            <h3 class="text-lg font-black text-red-600 mb-1">Xóa Thành Viên Nhí</h3>
-            <p class="text-xs text-slate-500 mb-3">Nhập mã PIN <b>6868</b> để xóa bé khỏi hệ thống</p>
-            <input type="password" id="removeKidPinInput" maxlength="6" placeholder="••••" 
+            <div class="text-4xl mb-1">馃棏锔忦煍�</div>
+            <h3 class="text-lg font-black text-red-600 mb-1">X贸a Th脿nh Vi锚n Nh铆</h3>
+            <p class="text-xs text-slate-500 mb-3">Nh岷璸 m茫 PIN <b>6868</b> 膽峄� x贸a b茅 kh峄廼 h峄� th峄憂g</p>
+            <input type="password" id="removeKidPinInput" maxlength="6" placeholder="鈥⑩€⑩€⑩€�" 
                    class="w-full text-center text-xl tracking-[0.3em] font-black py-2 px-3 border-2 border-red-200 rounded-xl outline-none focus:border-red-500 bg-red-50 mb-3" 
                    autocomplete="off" inputmode="numeric">
-            <p class="text-xs font-bold text-slate-700 mb-2 text-left">Chọn bé muốn xóa:</p>
+            <p class="text-xs font-bold text-slate-700 mb-2 text-left">Ch峄峮 b茅 mu峄憂 x贸a:</p>
             <select id="kidToDeleteSelect" class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl py-2 px-3 font-bold text-sm outline-none mb-4">
             </select>
             <div class="flex gap-2">
-                <button type="button" onclick="closeRemoveKidModal()" class="flex-1 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl text-xs btn-bounce">Hủy</button>
-                <button type="button" onclick="confirmRemoveKid()" class="flex-1 py-2 bg-red-500 hover:bg-red-600 text-white font-black rounded-xl text-xs shadow-md btn-bounce">Xác Nhận Xóa</button>
+                <button type="button" onclick="closeRemoveKidModal()" class="flex-1 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl text-xs btn-bounce">H峄</button>
+                <button type="button" onclick="confirmRemoveKid()" class="flex-1 py-2 bg-red-500 hover:bg-red-600 text-white font-black rounded-xl text-xs shadow-md btn-bounce">X谩c Nh岷璶 X贸a</button>
             </div>
         </div>
     </div>
 
-    <!-- Modal Nhắc Nhở Đổi Quà Khủng -->
+    <!-- Modal Nh岷痗 Nh峄� 膼峄昳 Qu脿 Kh峄g -->
     <div id="rewardModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4">
         <div class="bg-gradient-to-b from-yellow-50 to-orange-100 rounded-3xl shadow-2xl border-4 border-yellow-400 p-6 max-w-md w-full text-center animate-bounce-once">
-            <div class="text-6xl mb-2 animate-bounce">🎁🎉👑</div>
-            <h2 class="text-2xl font-black text-orange-600 mb-1">XUẤT SẮC QUÁ BÉ ƠI!</h2>
-            <p class="text-sm font-black text-slate-700 mb-3">Bé đã hoàn thành đủ <span class="text-red-500 text-lg font-black">5 Nhiệm Vụ Tuần</span> với điểm số vượt chuẩn!</p>
+            <div class="text-6xl mb-2 animate-bounce">馃巵馃帀馃憫</div>
+            <h2 class="text-2xl font-black text-orange-600 mb-1">XU岷 S岷瓹 QU脕 B脡 茽I!</h2>
+            <p class="text-sm font-black text-slate-700 mb-3">B茅 膽茫 ho脿n th脿nh 膽峄� <span class="text-red-500 text-lg font-black">5 Nhi峄噈 V峄� Tu岷</span> v峄沬 膽i峄僲 s峄� v瓢峄 chu岷﹏!</p>
             <div class="bg-white p-4 rounded-2xl border-2 border-orange-200 shadow-inner mb-4 text-left">
-                <p class="font-black text-orange-700 text-sm mb-2 flex items-center">🍦 Hãy chọn ngay 1 phần thưởng và đi gặp Bố Mẹ nào:</p>
+                <p class="font-black text-orange-700 text-sm mb-2 flex items-center">馃崷 H茫y ch峄峮 ngay 1 ph岷 th瓢峄焠g v脿 膽i g岷穚 B峄� M岷� n脿o:</p>
                 <ul class="text-xs font-bold text-slate-700 space-y-1.5 list-disc pl-5">
-                    <li>Gói bim bim siêu to khổng lồ 🍟</li>
-                    <li>Một ly trà sữa / chè ngọt mát lạnh 🧋</li>
-                    <li>Một bữa gà rán KFC / Pizza giòn tan 🍗🍕</li>
-                    <li>Đi siêu thị / khu vui chơi thỏa thích 🎪</li>
-                    <li>Được mua một cuốn sách / truyện tranh mới 📚</li>
-                    <li>Một món đồ chơi bé hằng yêu thích 🧸</li>
+                    <li>G贸i bim bim si锚u to kh峄昻g l峄� 馃崯</li>
+                    <li>M峄檛 ly tr脿 s峄痑 / ch猫 ng峄峵 m谩t l岷h 馃</li>
+                    <li>M峄檛 b峄痑 g脿 r谩n KFC / Pizza gi貌n tan 馃崡馃崟</li>
+                    <li>膼i si锚u th峄� / khu vui ch啤i th峄廰 th铆ch 馃帾</li>
+                    <li>膼瓢峄 mua m峄檛 cu峄憂 s谩ch / truy峄噉 tranh m峄沬 馃摎</li>
+                    <li>M峄檛 m贸n 膽峄� ch啤i b茅 h岷眓g y锚u th铆ch 馃Ц</li>
                 </ul>
             </div>
-            <button onclick="claimReward()" class="w-full py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-black text-base rounded-2xl shadow-lg btn-bounce">🎉 BÉ ĐÃ ĐỔI QUÀ VỚI BỐ MẸ RỒI!</button>
+            <button onclick="claimReward()" class="w-full py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-black text-base rounded-2xl shadow-lg btn-bounce">馃帀 B脡 膼脙 膼峄擨 QU脌 V峄欼 B峄� M岷� R峄扞!</button>
         </div>
     </div>
 
-    <!-- Nút Đổi Giao Diện -->
-    <div class="w-full max-w-7xl flex justify-end items-center gap-2 relative z-40 mb-2">
-        <span id="streak" class="bg-white border-2 border-orange-300 text-orange-600 px-3 py-1.5 rounded-full font-black text-sm">🔥 1 ngày</span>
-        <button id="lvBtn" type="button" class="bg-white border-2 border-purple-300 text-purple-600 px-3 py-1.5 rounded-full font-black text-sm btn-bounce">🐣 Cấp 1</button>
-        <button id="themeBtn" type="button" class="bg-white text-pink-600 border-2 border-pink-300 px-3 py-1.5 md:px-4 md:py-2 rounded-full font-black shadow btn-bounce text-sm md:text-base">🎨 Giao diện</button>
+    <!-- N煤t 膼峄昳 Giao Di峄噉 -->
+    <div class="w-full max-w-7xl flex justify-end items-center gap-2 relative z-40 mb-2"><span id="streak" class="bg-white border-2 border-orange-300 text-orange-600 px-3 py-1.5 rounded-full font-black text-sm">馃敟 1 ng脿y</span><button id="lvBtn" type="button" class="bg-white border-2 border-purple-300 text-purple-600 px-3 py-1.5 rounded-full font-black text-sm btn-bounce">馃悾 C岷 1</button>
+        <button id="themeBtn" type="button" class="bg-white text-pink-600 border-2 border-pink-300 px-3 py-1.5 md:px-4 md:py-2 rounded-full font-black shadow btn-bounce text-sm md:text-base">馃帹 Giao di峄噉</button>
         <div id="themePanel" class="hidden absolute right-0 top-full mt-2 w-[min(92vw,20rem)] bg-white border-4 border-pink-300 rounded-2xl shadow-xl p-3 grid grid-cols-3 gap-2"></div>
     </div>
 
     <header class="text-center w-full max-w-7xl">
-        <h1 class="text-3xl md:text-5xl font-black text-pink-500 drop-shadow-sm mb-2">🌟 Magic Reader 🌟</h1>
+        <h1 class="text-3xl md:text-5xl font-black text-pink-500 drop-shadow-sm mb-2">馃専 Magic Reader 馃専</h1>
         <div class="marquee-container rounded-xl shadow-sm">
-            <span class="marquee-text text-sm md:text-base" id="greetingMarquee">Loading magic words... ✨</span>
+            <span class="marquee-text text-sm md:text-base" id="greetingMarquee">Loading magic words... 鉁�</span>
         </div>
     </header>
 
     <div id="toastMessage" class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-4 py-2 md:px-6 md:py-3 rounded-full font-bold text-xs md:text-sm shadow-xl transition-all duration-300 opacity-0 pointer-events-none text-center min-w-[200px]"></div>
 
-    <!-- KHU VỰC CHỌN BÉ & BẢNG NHIỆM VỤ ĐỒNG BỘ CLOUD -->
+    <!-- KHU V峄癈 CH峄孨 B脡 & B岷G NHI峄哅 V峄� 膼峄扤G B峄� CLOUD -->
     <section class="w-full max-w-7xl mb-4 grid grid-cols-1 md:grid-cols-12 gap-4">
-        <!-- Thẻ Danh Sách Bé & Cấp Độ / Danh Hiệu -->
+        <!-- Th岷� Danh S谩ch B茅 & C岷 膼峄� / Danh Hi峄噓 -->
         <div id="cardKidProfile" class="guide-card md:col-span-5 bg-white p-4 rounded-[1.5rem] shadow-md border-4 border-indigo-200 flex flex-col justify-between">
             <div>
                 <div class="flex justify-between items-center mb-2">
-                    <span class="text-xs font-black text-indigo-700 uppercase tracking-wider">👦👧 Thành Viên Nhí</span>
+                    <span class="text-xs font-black text-indigo-700 uppercase tracking-wider">馃懄馃懅 Th脿nh Vi锚n Nh铆</span>
                     <div class="flex gap-1.5">
-                        <button onclick="openAddKidModal()" class="text-xs bg-indigo-500 hover:bg-indigo-600 text-white font-black px-2.5 py-1 rounded-lg btn-bounce shadow-sm">+ Thêm</button>
-                        <button onclick="openRemoveKidModal()" class="text-xs bg-red-100 hover:bg-red-200 text-red-600 font-black px-2 py-1 rounded-lg btn-bounce" title="Xóa bé (Mã PIN 6868)">🗑️ Xóa</button>
+                        <button onclick="openAddKidModal()" class="text-xs bg-indigo-500 hover:bg-indigo-600 text-white font-black px-2.5 py-1 rounded-lg btn-bounce shadow-sm">+ Th锚m</button>
+                        <button onclick="openRemoveKidModal()" class="text-xs bg-red-100 hover:bg-red-200 text-red-600 font-black px-2 py-1 rounded-lg btn-bounce" title="X贸a b茅 (M茫 PIN 6868)">馃棏锔� X贸a</button>
                     </div>
                 </div>
-                <!-- Dropdown Chọn Tên Bé -->
+                <!-- Dropdown Ch峄峮 T锚n B茅 (Ch峄峮 l脿 t峄� 膽峄檔g reload trang) -->
                 <div class="relative mb-2">
                     <select id="kidSelector" onchange="onSelectKidChanged(this.value)" class="w-full bg-indigo-50 border-2 border-indigo-300 rounded-xl py-2 px-3 font-black text-indigo-800 text-sm outline-none cursor-pointer focus:border-indigo-500">
                     </select>
                 </div>
-                <!-- Danh hiệu cấp độ hiện tại -->
+                <!-- Danh hi峄噓 c岷 膽峄� hi峄噉 t岷 -->
                 <div id="kidRankBadge" class="mb-3 px-3 py-1.5 bg-gradient-to-r from-purple-100 to-indigo-100 border border-purple-200 rounded-xl flex items-center justify-between text-xs font-black text-purple-800">
-                    <span>Danh hiệu: 🌱 Mầm Nhú Tiếng Tây</span>
-                    <span class="text-[10px] text-purple-600 font-bold bg-white px-2 py-0.5 rounded-full">Chuẩn: 150đ/NV</span>
+                    <span>Danh hi峄噓: 馃尡 M岷 Nh煤 Ti岷縩g T芒y</span>
+                    <span class="text-[10px] text-purple-600 font-bold bg-white px-2 py-0.5 rounded-full">Chu岷﹏: 150膽/NV</span>
                 </div>
             </div>
-            <!-- Lời nhắc nhở tiến độ tuần -->
+            <!-- L峄漣 nh岷痗 nh峄� ti岷縩 膽峄� tu岷 -->
             <div class="bg-indigo-50/80 p-3 rounded-xl border border-indigo-100 text-left">
                 <div class="flex justify-between text-xs font-black text-indigo-800 mb-1">
-                    <span>Nhiệm vụ tuần này:</span>
-                    <span id="weeklyQuestCount" class="text-pink-600 font-black">0/5 🎯</span>
+                    <span>Nhi峄噈 v峄� tu岷 n脿y:</span>
+                    <span id="weeklyQuestCount" class="text-pink-600 font-black">0/5 馃幆</span>
                 </div>
                 <div class="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden mb-2">
                     <div id="weeklyProgressBar" class="bg-gradient-to-r from-indigo-500 to-pink-500 h-full transition-all duration-500" style="width: 0%"></div>
                 </div>
                 <p id="kidReminderMsg" class="text-xs font-black text-indigo-900 leading-snug">
-                    Đang đồng bộ dữ liệu Cloud... ☁️
+                    膼ang 膽峄搉g b峄� d峄� li峄噓 Cloud... 鈽侊笍
                 </p>
             </div>
         </div>
 
-        <!-- Thẻ Nhiệm Vụ 6 Giờ Đồng Bộ Toàn Bộ Thiết Bị -->
+        <!-- Th岷� Nhi峄噈 V峄� 6 Gi峄� 膼峄搉g B峄� To脿n B峄� Thi岷縯 B峄� -->
         <div id="cardQuestArea" class="guide-card md:col-span-7 bg-gradient-to-r from-amber-50 to-orange-50 p-4 rounded-[1.5rem] shadow-md border-4 border-amber-300 flex flex-col justify-between">
             <div>
                 <div class="flex justify-between items-center mb-2">
                     <div class="flex items-center gap-1.5">
-                        <span class="text-2xl">⚡</span>
-                        <h2 class="text-base font-black text-amber-800">Nhiệm Vụ 6 Tiếng (Đồng Bộ Cloud)</h2>
+                        <span class="text-2xl">鈿�</span>
+                        <h2 class="text-base font-black text-amber-800">Nhi峄噈 V峄� 6 Ti岷縩g (膼峄搉g B峄� Cloud)</h2>
                     </div>
                     <div class="flex items-center gap-1.5">
-                        <span id="retryBadge" class="text-[10px] font-black text-white bg-purple-500 px-2 py-0.5 rounded-full">Lượt thử: 1/3</span>
-                        <span id="questTimer" class="text-xs font-black text-amber-700 bg-amber-200/80 px-2 py-0.5 rounded-full">⏱️ 06:00:00</span>
+                        <span id="retryBadge" class="text-[10px] font-black text-white bg-purple-500 px-2 py-0.5 rounded-full">L瓢峄 th峄�: 1/3</span>
+                        <span id="questTimer" class="text-xs font-black text-amber-700 bg-amber-200/80 px-2 py-0.5 rounded-full">鈴憋笍 06:00:00</span>
                     </div>
                 </div>
                 
-                <!-- Nội dung yêu cầu nhiệm vụ -->
+                <!-- N峄檌 dung y锚u c岷 nhi峄噈 v峄� -->
                 <div id="questContent" class="space-y-1.5 text-xs text-slate-700 font-bold mb-3">
-                    <p class="text-amber-600 font-bold italic">Đang bốc thăm thử thách...</p>
+                    <p class="text-amber-600 font-bold italic">膼ang b峄慶 th膬m th峄� th谩ch...</p>
                 </div>
 
-                <!-- BỘ ĐẾM THỰC HIỆN TRỰC TIẾP -->
+                <!-- B峄� 膼岷綧 TH峄癈 HI峄哊 TR峄癈 TI岷綪 -->
                 <div class="bg-white/80 p-2.5 rounded-xl border border-amber-200 grid grid-cols-4 gap-1.5 text-center">
                     <div class="p-1.5 rounded-lg bg-blue-50 border border-blue-200">
-                        <span class="block text-[10px] text-blue-600 font-bold">1. Đọc bài</span>
+                        <span class="block text-[10px] text-blue-600 font-bold">1. 膼峄峜 b脿i</span>
                         <b id="cntReadStories" class="text-sm font-black text-blue-700">0/1</b>
                     </div>
                     <div class="p-1.5 rounded-lg bg-emerald-50 border border-emerald-200">
-                        <span class="block text-[10px] text-emerald-600 font-bold">2. Đọc câu</span>
+                        <span class="block text-[10px] text-emerald-600 font-bold">2. 膼峄峜 c芒u</span>
                         <b id="cntReadSentences" class="text-sm font-black text-emerald-700">0/1</b>
                     </div>
                     <div class="p-1.5 rounded-lg bg-purple-50 border border-purple-200">
-                        <span class="block text-[10px] text-purple-600 font-bold">3. Lượt chơi</span>
+                        <span class="block text-[10px] text-purple-600 font-bold">3. L瓢峄 ch啤i</span>
                         <b id="cntGamesPlayed" class="text-sm font-black text-purple-700">0/1</b>
                     </div>
                     <div class="p-1.5 rounded-lg bg-orange-50 border border-orange-200">
-                        <span class="block text-[10px] text-orange-600 font-bold">4. Điểm đạt</span>
+                        <span class="block text-[10px] text-orange-600 font-bold">4. 膼i峄僲 膽岷</span>
                         <b id="cntScoreEarned" class="text-sm font-black text-orange-700">0/150</b>
                     </div>
                 </div>
             </div>
 
             <div class="flex flex-wrap justify-between items-center mt-3 pt-2 border-t border-amber-200/60 gap-2">
-                <span id="questStatusBadge" class="text-xs font-black text-orange-600">Trạng thái: Chưa hoàn thành đủ các bước ⏳</span>
+                <span id="questStatusBadge" class="text-xs font-black text-orange-600">Tr岷g th谩i: Ch瓢a ho脿n th脿nh 膽峄� c谩c b瓢峄沜 鈴�</span>
                 <div class="flex gap-1.5">
-                    <button onclick="retryCurrentQuest()" id="retryQuestBtn" class="py-1.5 px-3 bg-purple-500 hover:bg-purple-600 text-white font-black text-xs rounded-xl shadow btn-bounce">🔄 Thử Lại (3 lần)</button>
-                    <button onclick="claimQuestReward()" id="claimQuestBtn" class="py-1.5 px-3.5 bg-orange-500 hover:bg-orange-600 text-white font-black text-xs rounded-xl shadow btn-bounce">🏆 Nộp Ghi Điểm</button>
+                    <button onclick="retryCurrentQuest()" id="retryQuestBtn" class="py-1.5 px-3 bg-purple-500 hover:bg-purple-600 text-white font-black text-xs rounded-xl shadow btn-bounce">馃攧 Th峄� L岷 (3 l岷)</button>
+                    <button onclick="claimQuestReward()" id="claimQuestBtn" class="py-1.5 px-3.5 bg-orange-500 hover:bg-orange-600 text-white font-black text-xs rounded-xl shadow btn-bounce">馃弳 N峄檖 Ghi 膼i峄僲</button>
                 </div>
             </div>
         </div>
@@ -298,208 +296,216 @@
 
     <main class="w-full max-w-7xl grid grid-cols-1 lg:grid-cols-12 gap-4 flex-grow pb-8">
         
-        <!-- CỘT TRÁI -->
+        <!-- C峄楾 TR脕I -->
         <div class="lg:col-span-5 flex flex-col gap-4">
-            <!-- Bảng Điểm Bảng Vàng (Đồng bộ Cloud Supabase) -->
+            <!-- B岷g 膼i峄僲 B岷g V脿ng (膼峄搉g b峄� Cloud Supabase) -->
             <div id="cardLeaderboard" class="guide-card bg-teal-50 p-4 rounded-[1.5rem] shadow-lg border-4 border-teal-300 flex flex-col">
                 <div class="flex justify-between items-center mb-2">
-                    <h2 class="text-lg font-black text-teal-600 flex items-center"><span class="mr-2">🏆</span> Bảng Vàng Tuần Này (Cloud)</h2>
-                    <span class="text-[10px] font-bold text-teal-700 bg-teal-100 px-2 py-0.5 rounded-full">Tự reset sau 7 ngày</span>
+                    <h2 class="text-lg font-black text-teal-600 flex items-center"><span class="mr-2">馃弳</span> B岷g V脿ng Tu岷 N脿y (Cloud)</h2>
+                    <span class="text-[10px] font-bold text-teal-700 bg-teal-100 px-2 py-0.5 rounded-full">T峄� reset sau 7 ng脿y</span>
                 </div>
                 <div id="leaderboardList" class="flex flex-wrap gap-2 justify-center">
-                    <p class="text-teal-500 text-xs font-bold italic">Đang tải Bảng Vàng từ Cloud... ☁️</p>
+                    <p class="text-teal-500 text-xs font-bold italic">膼ang t岷 B岷g V脿ng t峄� Cloud... 鈽侊笍</p>
                 </div>
             </div>
 
-            <!-- Chọn truyện -->
+            <!-- Ch峄峮 truy峄噉 -->
             <div id="cardChooseFile" class="guide-card bg-white p-4 md:p-6 rounded-[1.5rem] shadow-lg border-4 border-pink-300 flex flex-col">
-                <h2 class="text-lg font-black text-pink-600 mb-2 flex items-center"><span class="text-xl mr-2">📸</span> 1. Chọn truyện</h2>
+                <h2 class="text-lg font-black text-pink-600 mb-2 flex items-center"><span class="text-xl mr-2">馃摳</span> 1. Ch峄峮 truy峄噉</h2>
                 <input type="file" id="fileInput" multiple accept="image/*,.pdf,.txt,.md,.docx,.doc,.html,.htm" class="sr-only">
                 <label id="dropZone" for="fileInput" class="flex flex-col items-center justify-center bg-slate-50 rounded-xl border-2 border-dashed border-slate-300 overflow-hidden min-h-[120px] mb-2 relative cursor-pointer hover:bg-slate-100 transition-colors">
-                    <p id="placeholderText" class="text-slate-400 text-sm md:text-base font-bold text-center px-4 py-4">Chạm để chọn <b>Ảnh, PDF, Word</b></p>
+                    <p id="placeholderText" class="text-slate-400 text-sm md:text-base font-bold text-center px-4 py-4">Ch岷 膽峄� ch峄峮 <b>岷h, PDF, Word</b></p>
                     <div id="previewBox" class="w-full flex items-center justify-center p-2"></div>
                 </label>
                 <div id="fileInfo" class="hidden text-xs font-bold text-slate-500 mb-1 truncate"></div>
                 <div id="fileChips" class="flex flex-wrap gap-1 mb-2"></div>
-                <button id="extractBtn" class="w-full py-2 bg-pink-500 active:bg-pink-600 text-white text-base font-black rounded-xl shadow-md btn-bounce disabled:opacity-50 flex justify-center">🪄 Đọc chữ từ file</button>
+                <button id="extractBtn" class="w-full py-2 bg-pink-500 active:bg-pink-600 text-white text-base font-black rounded-xl shadow-md btn-bounce disabled:opacity-50 flex justify-center">馃獎 膼峄峜 ch峄� t峄� file</button>
                 <div id="loadingStatus" class="hidden mt-2 flex-col items-center justify-center text-pink-600">
                     <div class="spinner mb-1"></div>
-                    <p id="statusText" class="font-bold text-xs text-center">Đang nhìn chữ...</p>
+                    <p id="statusText" class="font-bold text-xs text-center">膼ang nh矛n ch峄�...</p>
                 </div>
             </div>
 
-            <!-- Kho truyện -->
+            <!-- Kho truy峄噉 -->
             <div id="cardStoryLibrary" class="guide-card bg-indigo-50 p-4 md:p-6 rounded-[1.5rem] shadow-lg border-4 border-indigo-300 flex flex-col max-h-[220px]">
                 <div class="flex justify-between items-center mb-2">
-                    <h2 class="text-base font-black text-indigo-600 flex items-center"><span class="text-lg mr-2">☁️</span> Kho Truyện</h2>
-                    <button onclick="saveToCloud()" class="bg-indigo-500 text-white px-2 py-1 rounded-md text-xs font-bold btn-bounce shadow-sm hover:bg-indigo-600">💾 Lưu Bài</button>
+                    <h2 class="text-base font-black text-indigo-600 flex items-center"><span class="text-lg mr-2">鈽侊笍</span> Kho Truy峄噉</h2>
+                    <button onclick="saveToCloud()" class="bg-indigo-500 text-white px-2 py-1 rounded-md text-xs font-bold btn-bounce shadow-sm hover:bg-indigo-600">馃捑 L瓢u B脿i</button>
                 </div>
                 <div id="storyList" class="space-y-1.5 overflow-y-auto pr-1 flex-grow">
-                    <p class="text-indigo-400 font-bold text-[10px] italic text-center py-1">Đang tải danh sách...</p>
+                    <p class="text-indigo-400 font-bold text-[10px] italic text-center py-1">膼ang t岷 danh s谩ch...</p>
                 </div>
             </div>
         </div>
 
-        <!-- CỘT PHẢI -->
+        <!-- C峄楾 PH岷 -->
         <div class="lg:col-span-7 flex flex-col gap-4 h-full">
             <div id="cardReadingPanel" class="guide-card bg-white p-3 md:p-5 rounded-[1.5rem] shadow-lg border-4 border-blue-300 flex flex-col flex-grow">
                 <div class="flex justify-between items-center mb-1">
-                    <h2 class="text-base md:text-lg font-black text-blue-600 flex items-center"><span class="text-xl mr-1">📝</span> 2. Luyện nghe & Đọc</h2>
+                    <h2 class="text-base md:text-lg font-black text-blue-600 flex items-center"><span class="text-xl mr-1">馃摑</span> 2. Luy峄噉 nghe & 膼峄峜</h2>
                     <div class="flex gap-1">
-                        <button onclick="exportToWord()" class="bg-blue-100 text-blue-700 px-2 py-1 rounded shadow-sm btn-bounce text-[10px] md:text-xs font-bold">🖨️ Word</button>
-                        <button onclick="exportToMP3()" id="btnMp3" class="bg-green-100 text-green-700 px-2 py-1 rounded shadow-sm btn-bounce text-[10px] md:text-xs font-bold">🎵 MP3</button>
+                        <button onclick="exportToWord()" class="bg-blue-100 text-blue-700 px-2 py-1 rounded shadow-sm btn-bounce text-[10px] md:text-xs font-bold">馃枿锔� Word</button>
+                        <button onclick="exportToMP3()" id="btnMp3" class="bg-green-100 text-green-700 px-2 py-1 rounded shadow-sm btn-bounce text-[10px] md:text-xs font-bold">馃幍 MP3</button>
                     </div>
                 </div>
                 
-                <!-- Thanh chỉnh tốc độ -->
+                <!-- Thanh ch峄塶h t峄慶 膽峄� -->
                 <div class="flex items-center gap-2 mb-2 bg-blue-50 p-2 rounded-lg border border-blue-100">
-                    <span class="text-xs font-bold text-blue-700">Tốc độ:</span>
-                    <span class="text-xs" title="Đọc chậm">🐢</span>
+                    <span class="text-xs font-bold text-blue-700">T峄慶 膽峄�:</span>
+                    <span class="text-xs" title="膼峄峜 ch岷璵">馃悽</span>
                     <input type="range" id="speedSlider" min="0.5" max="1.3" step="0.1" value="0.8" class="flex-grow h-1.5 bg-blue-200 rounded-lg appearance-none cursor-pointer accent-blue-500">
-                    <span class="text-xs" title="Đọc nhanh">🐇</span>
+                    <span class="text-xs" title="膼峄峜 nhanh">馃悋</span>
                 </div>
 
-                <p class="text-slate-400 text-[10px] md:text-xs font-bold mb-1">Mẹo: Đặt trỏ vào chữ để nghe từ đó!</p>
-                <textarea id="storyText" class="flex-grow w-full p-2 md:p-3 rounded-lg border-2 border-blue-200 focus:border-blue-400 outline-none text-sm md:text-base text-slate-700 leading-relaxed resize-none min-h-[150px] shadow-inner mb-2 bg-blue-50/50 font-semibold" placeholder="Chữ sẽ hiện ở đây..."></textarea>
+                <p class="text-slate-400 text-[10px] md:text-xs font-bold mb-1">M岷筼: 膼岷穞 tr峄� v脿o ch峄� 膽峄� nghe t峄� 膽贸!</p>
+                <textarea id="storyText" class="flex-grow w-full p-2 md:p-3 rounded-lg border-2 border-blue-200 focus:border-blue-400 outline-none text-sm md:text-base text-slate-700 leading-relaxed resize-none min-h-[150px] shadow-inner mb-2 bg-blue-50/50 font-semibold" placeholder="Ch峄� s岷� hi峄噉 峄� 膽芒y..."></textarea>
                 
                 <label class="flex items-center gap-1 text-[10px] md:text-xs font-bold text-blue-700 cursor-pointer mb-2 w-max">
-                    <input type="checkbox" id="keepLayout" checked class="w-3 h-3 accent-blue-500"> Giữ bố cục gốc
+                    <input type="checkbox" id="keepLayout" checked class="w-3 h-3 accent-blue-500"> Gi峄� b峄� c峄 g峄慶
                 </label>
 
-                <!-- DÀN NÚT 1 HÀNG NGANG CHUẨN MOBILE -->
+                <!-- D脌N N脷T 1 H脌NG NGANG CHU岷∟ MOBILE -->
                 <div class="flex w-full gap-1 sm:gap-2">
-                    <button id="cleanBtn" class="flex-1 py-2 px-1 bg-yellow-400 active:bg-yellow-500 text-yellow-900 text-[10px] sm:text-xs font-bold rounded-lg shadow-sm btn-bounce flex items-center justify-center whitespace-nowrap"><span class="mr-1">🧹</span>Sạch</button>
-                    <button id="playBtn" class="flex-1 py-2 px-1 bg-green-500 active:bg-green-600 text-white text-[10px] sm:text-xs font-black rounded-lg shadow-sm btn-bounce flex items-center justify-center whitespace-nowrap"><span class="mr-1">▶️</span>Đọc To</button>
-                    <button id="playCursorBtn" class="flex-1 py-2 px-1 bg-cyan-500 active:bg-cyan-600 text-white text-[10px] sm:text-xs font-bold rounded-lg shadow-sm btn-bounce flex items-center justify-center whitespace-nowrap"><span class="mr-1">👆</span>Từ Trỏ</button>
-                    <button id="stopBtn" class="flex-1 py-2 px-1 bg-red-400 active:bg-red-500 text-white text-[10px] sm:text-xs font-bold rounded-lg shadow-sm btn-bounce flex items-center justify-center whitespace-nowrap"><span class="mr-1">⏹️</span>Dừng</button>
+                    <button id="cleanBtn" class="flex-1 py-2 px-1 bg-yellow-400 active:bg-yellow-500 text-yellow-900 text-[10px] sm:text-xs font-bold rounded-lg shadow-sm btn-bounce flex items-center justify-center whitespace-nowrap"><span class="mr-1">馃Ч</span>S岷h</button>
+                    <button id="playBtn" class="flex-1 py-2 px-1 bg-green-500 active:bg-green-600 text-white text-[10px] sm:text-xs font-black rounded-lg shadow-sm btn-bounce flex items-center justify-center whitespace-nowrap"><span class="mr-1">鈻讹笍</span>膼峄峜 To</button>
+                    <button id="playCursorBtn" class="flex-1 py-2 px-1 bg-cyan-500 active:bg-cyan-600 text-white text-[10px] sm:text-xs font-bold rounded-lg shadow-sm btn-bounce flex items-center justify-center whitespace-nowrap"><span class="mr-1">馃憜</span>T峄� Tr峄�</button>
+                    <button id="stopBtn" class="flex-1 py-2 px-1 bg-red-400 active:bg-red-500 text-white text-[10px] sm:text-xs font-bold rounded-lg shadow-sm btn-bounce flex items-center justify-center whitespace-nowrap"><span class="mr-1">鈴癸笍</span>D峄玭g</button>
                 </div>
             </div>
 
-            <!-- PHẦN THỬ THÁCH ĐỌC CẢ CÂU TRONG BÀI (1-3 CÂU) -->
+            <!-- PH岷 TH峄� TH脕CH 膼峄孋 C岷� C脗U TRONG B脌I (1-3 C脗U) -->
             <div id="cardSentenceSection" class="guide-card p-3 md:p-4 bg-emerald-50 border-2 border-emerald-300 rounded-[1.5rem]">
                 <div class="flex justify-between items-center mb-2">
                     <h3 class="font-black text-emerald-700 text-sm md:text-base flex items-center">
-                        <span class="mr-1.5">🎙️</span> Thử Thách Đọc Cả Câu (1-3 câu):
+                        <span class="mr-1.5">馃帣锔�</span> Th峄� Th谩ch 膼峄峜 C岷� C芒u (1-3 c芒u):
                     </h3>
-                    <button onclick="generateSentenceChallenge()" class="text-[10px] font-bold bg-emerald-200 hover:bg-emerald-300 text-emerald-800 px-2 py-0.5 rounded-lg btn-bounce">🔄 Đổi Câu Khác</button>
+                    <button onclick="generateSentenceChallenge()" class="text-[10px] font-bold bg-emerald-200 hover:bg-emerald-300 text-emerald-800 px-2 py-0.5 rounded-lg btn-bounce">馃攧 膼峄昳 C芒u Kh谩c</button>
                 </div>
                 <div id="sentenceChallengeArea" class="space-y-2 text-xs font-bold text-slate-700">
-                    <p class="text-emerald-500 italic text-[11px]">Bấm nút "Sạch" ở trên để máy chọn ra 1-3 câu hay nhất cho bé luyện đọc nhé!</p>
+                    <p class="text-emerald-500 italic text-[11px]">B岷 n煤t "S岷h" 峄� tr锚n 膽峄� m谩y ch峄峮 ra 1-3 c芒u hay nh岷 cho b茅 luy峄噉 膽峄峜 nh茅!</p>
                 </div>
             </div>
 
-            <!-- Khung Từ vựng Thông Minh -->
+            <!-- Khung T峄� v峄眓g Th么ng Minh -->
             <div id="cardVocabSection" class="guide-card p-3 md:p-4 bg-purple-50 border-2 border-purple-200 rounded-[1.5rem] relative transition-all duration-500">
                 <div class="flex justify-between items-center mb-2">
-                    <h3 class="font-black text-purple-600 text-sm md:text-base flex items-center"><span class="mr-1">📚</span> Từ vựng Thông Minh:</h3>
-                    <span id="rotationIndicator" class="text-[10px] font-bold text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full border border-purple-200 hidden">Vòng 1/5</span>
+                    <h3 class="font-black text-purple-600 text-sm md:text-base flex items-center"><span class="mr-1">馃摎</span> T峄� v峄眓g Th么ng Minh:</h3>
+                    <span id="rotationIndicator" class="text-[10px] font-bold text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full border border-purple-200 hidden">V貌ng 1/5</span>
                 </div>
                 <div id="vocabList" class="flex flex-wrap gap-2 text-xs font-bold text-purple-700 transition-all duration-500">
-                    <span class="italic font-normal text-purple-400 text-[10px]">Bấm "Làm sạch" để máy tìm từ khó!</span>
+                    <span class="italic font-normal text-purple-400 text-[10px]">B岷 "L脿m s岷h" 膽峄� m谩y t矛m t峄� kh贸!</span>
                 </div>
             </div>
 
-            <!-- Phòng Game -->
+            <!-- Khung 膼峄� Vui -->
+            <div id="cardQuizSection" class="guide-card p-3 md:p-4 bg-orange-50 border-2 border-orange-200 rounded-[1.5rem]">
+                <h3 class="font-black text-orange-600 mb-2 flex items-center text-sm md:text-base"><span class="mr-1">馃幃</span> 膼峄� vui (5 c芒u):</h3>
+                <div id="quizContainer" class="text-slate-700 font-bold text-xs md:text-sm">
+                    <span class="italic font-normal text-orange-400 text-[10px]">Qu茅t ch峄� xong b茅 s岷� 膽瓢峄 ch啤i 峄� 膽芒y!</span>
+                </div>
+            </div>
+
+            <!-- Ph貌ng Game -->
             <div id="cardGameSection" class="guide-card p-3 md:p-4 bg-sky-50 border-2 border-sky-200 rounded-[1.5rem]">
-                <h3 class="font-black text-sky-600 mb-2 text-sm md:text-base">🕹️ Phòng Game Từ Vựng</h3>
+                <h3 class="font-black text-sky-600 mb-2 text-sm md:text-base">馃暪锔� Ph貌ng Game T峄� V峄眓g</h3>
                 <div id="gameMenu" class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 mb-2"></div>
-                <div id="gameArea" class="bg-white/80 rounded-xl p-2 text-xs font-bold text-slate-700 min-h-[60px]"><span class="italic font-normal text-sky-400 text-[10px]">Bấm "Sạch" để lấy từ vựng, rồi chọn trò chơi nhé! 🎮</span></div>
+                <div id="gameArea" class="bg-white/80 rounded-xl p-2 text-xs font-bold text-slate-700 min-h-[60px]"><span class="italic font-normal text-sky-400 text-[10px]">B岷 "S岷h" 膽峄� l岷 t峄� v峄眓g, r峄搃 ch峄峮 tr貌 ch啤i nh茅! 馃幃</span></div>
             </div>
         </div>
     </main>
 
     <footer class="w-full text-center pb-4 mt-auto">
         <p class="text-pink-600 font-black text-xs md:text-sm bg-white inline-block px-4 py-1 rounded-full shadow border-2 border-pink-200">
-            💖 Phát triển bởi <span class="text-blue-600 uppercase">Daddy Dũng Đẹp Zai</span> 💖
+            馃挅 Ph谩t tri峄僴 b峄焛 <span class="text-blue-600 uppercase">Daddy D农ng 膼岷筽 Zai</span> 馃挅
         </p>
     </footer>
 
-    <nav id="nav">
-        <button data-t="home">🏠<span>Nhiệm vụ</span></button>
-        <button data-t="read">📖<span>Đọc</span></button>
-        <button data-t="practice">🗣️<span>Luyện</span></button>
-        <button data-t="play">🎮<span>Chơi</span></button>
-    </nav>
-
-    <!-- Mascot & Chatbot Huấn Luyện Viên Cá Nhân (Tự đổi hình theo Theme) -->
+<nav id="nav"><button data-t="home">馃彔<span>Nhi峄噈 v峄�</span></button><button data-t="read">馃摉<span>膼峄峜</span></button><button data-t="practice">馃棧锔�<span>Luy峄噉</span></button><button data-t="play">馃幃<span>Ch啤i</span></button></nav>
+    <!-- Mascot & Chatbot Hu岷 Luy峄噉 Vi锚n C谩 Nh芒n (T峄� 膽峄昳 h矛nh theo Theme) -->
     <div id="mascot">
-        <div id="mb">Chào bé! Tớ là trợ lý của Daddy Dũng! Bấm vào đâu tớ sẽ chỉ đường cho bé nha! 🦄</div><br>
-        <span id="me">🦄</span>
+        <div id="mb">Ch脿o b茅! T峄� l脿 tr峄� l媒 c峄 Daddy D农ng! B岷 v脿o 膽芒u t峄� s岷� ch峄� 膽瓢峄漬g cho b茅 nha! 馃</div><br>
+        <span id="me">馃</span>
     </div>
 
-    <!-- KHỐI JAVASCRIPT HỢP NHẤT TOÀN DIỆN -->
+    <!-- KH峄怚 JAVASCRIPT H峄 NH岷 TO脌N DI峄哊 (膼脙 S峄珹 D峄═ 膼I峄侻 S峄� KI峄哊 CLICK V脌 MENU GIAO DI峄哊) -->
     <script>
         const $ = id => document.getElementById(id);
 
         const storyText = document.getElementById('storyText');
         const vocabContainer = document.getElementById('vocabContainer');
         const vocabList = document.getElementById('vocabList');
+        const quizContainer = document.getElementById('quizContainer');
         const toastMessage = document.getElementById('toastMessage');
         const cleanBtn = document.getElementById('cleanBtn');
         const speedSlider = document.getElementById('speedSlider');
         let toastTimeout;
         let globalVocabData = [];
         let allStorySentences = [];
-        const posMap = { 'noun': 'Danh từ', 'verb': 'Động từ', 'adjective': 'Tính từ', 'adverb': 'Trạng từ', 'pronoun': 'Đại từ', 'preposition': 'Giới từ', 'conjunction': 'Liên từ' };
+        const posMap = { 'noun': 'Danh t峄�', 'verb': '膼峄檔g t峄�', 'adjective': 'T铆nh t峄�', 'adverb': 'Tr岷g t峄�', 'pronoun': '膼岷 t峄�', 'preposition': 'Gi峄沬 t峄�', 'conjunction': 'Li锚n t峄�' };
 
         const LOCAL_DICTIONARY = {
-            "farmer": { m: "bác nông dân", p: "Danh từ" },
-            "golden": { m: "bằng vàng, óng ánh", p: "Tính từ" },
-            "goose": { m: "con ngỗng", p: "Danh từ" },
-            "geese": { m: "những con ngỗng", p: "Danh từ" },
-            "market": { m: "khu chợ", p: "Danh từ" },
-            "greedy": { m: "tham lam", p: "Tính từ" },
-            "greed": { m: "lòng tham", p: "Danh từ" },
-            "foolish": { m: "ngốc nghếch", p: "Tính từ" },
-            "amazed": { m: "vô cùng ngạc nhiên", p: "Tính từ" },
-            "rich": { m: "giàu có", p: "Tính từ" },
-            "poor": { m: "nghèo khó", p: "Tính từ" },
-            "inside": { m: "bên trong", p: "Giới từ" },
-            "village": { m: "ngôi làng", p: "Danh từ" },
-            "forest": { m: "khu rừng", p: "Danh từ" },
-            "hunter": { m: "người thợ săn", p: "Danh từ" },
-            "clever": { m: "thông minh, nhanh trí", p: "Tính từ" },
-            "brave": { m: "dũng cảm", p: "Tính từ" },
-            "magic": { m: "phép thuật", p: "Danh từ" },
-            "story": { m: "câu chuyện", p: "Danh từ" },
-            "castle": { m: "lâu đài", p: "Danh từ" },
-            "kingdom": { m: "vương quốc", p: "Danh từ" },
-            "journey": { m: "chuyến hành trình", p: "Danh từ" },
-            "adventure": { m: "cuộc phiêu lưu", p: "Danh từ" },
-            "treasure": { m: "kho báu", p: "Danh từ" },
-            "princess": { m: "công chúa", p: "Danh từ" },
-            "prince": { m: "hoàng tử", p: "Danh từ" },
-            "dragon": { m: "con rồng", p: "Danh từ" },
-            "monster": { m: "quái vật", p: "Danh từ" },
-            "feather": { m: "lông vũ", p: "Danh từ" },
-            "knife": { m: "con dao", p: "Danh từ" },
-            "stomach": { m: "dạ dày, bụng", p: "Danh từ" },
-            "alive": { m: "còn sống", p: "Tính từ" },
-            "heavy": { m: "nặng nề", p: "Tính từ" },
-            "shiny": { m: "sáng bóng", p: "Tính từ" },
-            "valuable": { m: "quý giá", p: "Tính từ" },
-            "daughter": { m: "con gái", p: "Danh từ" },
-            "husband": { m: "người chồng", p: "Danh từ" },
-            "morning": { m: "buổi sáng", p: "Danh từ" },
-            "evening": { m: "buổi tối", p: "Danh từ" },
-            "afternoon": { m: "buổi chiều", p: "Danh từ" },
-            "wonderful": { m: "tuyệt vời", p: "Tính từ" },
-            "terrible": { m: "tồi tệ, kinh khủng", p: "Tính từ" },
-            "hungry": { m: "đói bụng", p: "Tính từ" },
-            "thirsty": { m: "khát nước", p: "Tính từ" },
-            "beautiful": { m: "xinh đẹp", p: "Tính từ" },
-            "friendly": { m: "thân thiện", p: "Tính từ" },
-            "lesson": { m: "bài học", p: "Danh từ" }
+            "farmer": { m: "b谩c n么ng d芒n", p: "Danh t峄�" },
+            "golden": { m: "b岷眓g v脿ng, 贸ng 谩nh", p: "T铆nh t峄�" },
+            "goose": { m: "con ng峄梟g", p: "Danh t峄�" },
+            "geese": { m: "nh峄痭g con ng峄梟g", p: "Danh t峄�" },
+            "market": { m: "khu ch峄�", p: "Danh t峄�" },
+            "greedy": { m: "tham lam", p: "T铆nh t峄�" },
+            "greed": { m: "l貌ng tham", p: "Danh t峄�" },
+            "foolish": { m: "ng峄慶 ngh岷縞h", p: "T铆nh t峄�" },
+            "amazed": { m: "v么 c霉ng ng岷 nhi锚n", p: "T铆nh t峄�" },
+            "rich": { m: "gi脿u c贸", p: "T铆nh t峄�" },
+            "poor": { m: "ngh猫o kh贸", p: "T铆nh t峄�" },
+            "inside": { m: "b锚n trong", p: "Gi峄沬 t峄�" },
+            "village": { m: "ng么i l脿ng", p: "Danh t峄�" },
+            "forest": { m: "khu r峄玭g", p: "Danh t峄�" },
+            "hunter": { m: "ng瓢峄漣 th峄� s膬n", p: "Danh t峄�" },
+            "clever": { m: "th么ng minh, nhanh tr铆", p: "T铆nh t峄�" },
+            "brave": { m: "d农ng c岷", p: "T铆nh t峄�" },
+            "magic": { m: "ph茅p thu岷璽", p: "Danh t峄�" },
+            "story": { m: "c芒u chuy峄噉", p: "Danh t峄�" },
+            "castle": { m: "l芒u 膽脿i", p: "Danh t峄�" },
+            "kingdom": { m: "v瓢啤ng qu峄慶", p: "Danh t峄�" },
+            "journey": { m: "chuy岷縩 h脿nh tr矛nh", p: "Danh t峄�" },
+            "adventure": { m: "cu峄檆 phi锚u l瓢u", p: "Danh t峄�" },
+            "treasure": { m: "kho b谩u", p: "Danh t峄�" },
+            "princess": { m: "c么ng ch煤a", p: "Danh t峄�" },
+            "prince": { m: "ho脿ng t峄�", p: "Danh t峄�" },
+            "dragon": { m: "con r峄搉g", p: "Danh t峄�" },
+            "monster": { m: "qu谩i v岷璽", p: "Danh t峄�" },
+            "feather": { m: "l么ng v农", p: "Danh t峄�" },
+            "knife": { m: "con dao", p: "Danh t峄�" },
+            "stomach": { m: "d岷� d脿y, b峄g", p: "Danh t峄�" },
+            "alive": { m: "c貌n s峄憂g", p: "T铆nh t峄�" },
+            "heavy": { m: "n岷穘g n峄�", p: "T铆nh t峄�" },
+            "shiny": { m: "s谩ng b贸ng", p: "T铆nh t峄�" },
+            "valuable": { m: "qu媒 gi谩", p: "T铆nh t峄�" },
+            "daughter": { m: "con g谩i", p: "Danh t峄�" },
+            "husband": { m: "ng瓢峄漣 ch峄搉g", p: "Danh t峄�" },
+            "morning": { m: "bu峄昳 s谩ng", p: "Danh t峄�" },
+            "evening": { m: "bu峄昳 t峄慽", p: "Danh t峄�" },
+            "afternoon": { m: "bu峄昳 chi峄乽", p: "Danh t峄�" },
+            "wonderful": { m: "tuy峄噒 v峄漣", p: "T铆nh t峄�" },
+            "terrible": { m: "t峄搃 t峄�, kinh kh峄g", p: "T铆nh t峄�" },
+            "hungry": { m: "膽贸i b峄g", p: "T铆nh t峄�" },
+            "thirsty": { m: "kh谩t n瓢峄沜", p: "T铆nh t峄�" },
+            "beautiful": { m: "xinh 膽岷筽", p: "T铆nh t峄�" },
+            "friendly": { m: "th芒n thi峄噉", p: "T铆nh t峄�" },
+            "lesson": { m: "b脿i h峄峜", p: "Danh t峄�" }
         };
 
-        // 3. SUPABASE CLOUD
+        let lastExtractedText = "";
+        let masterCandidatePool = [];
+        let initialBaseWords = [];
+        let currentDisplayWords = [];
+        let rotationCycle = 0;
+
         const SUPABASE_URL = 'https://xmecpfeujkvidwmqprzd.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_wK5FXrtBK7qPdmJ5fS1aag_gJ3Gdv3G';
         let db = null; 
         try { 
             db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); 
         } catch (e) {
-            console.warn('Lỗi kết nối Supabase:', e);
+            console.warn('L峄梚 k岷縯 n峄慽 Supabase:', e);
         }
 
         let sessionTracker = {
@@ -523,22 +529,22 @@
         }
 
         function getKidRank(totalDone) {
-            if (totalDone < 5) return { title: '🌱 Mầm Nhú Tiếng Tây', minScore: 150 };
-            if (totalDone < 10) return { title: '⚡ Siêu Nhân Ngoại Ngữ', minScore: 160 };
-            if (totalDone < 15) return { title: '🧠 Nhà Thông Thái', minScore: 170 };
-            if (totalDone < 20) return { title: '🔍 Chuyên Gia Ngôn Ngữ', minScore: 180 };
-            if (totalDone < 25) return { title: '📚 Bác Học Ngôn Ngữ', minScore: 190 };
+            if (totalDone < 5) return { title: '馃尡 M岷 Nh煤 Ti岷縩g T芒y', minScore: 150 };
+            if (totalDone < 10) return { title: '鈿� Si锚u Nh芒n Ngo岷 Ng峄�', minScore: 160 };
+            if (totalDone < 15) return { title: '馃 Nh脿 Th么ng Th谩i', minScore: 170 };
+            if (totalDone < 20) return { title: '馃攳 Chuy锚n Gia Ng么n Ng峄�', minScore: 180 };
+            if (totalDone < 25) return { title: '馃摎 B谩c H峄峜 Ng么n Ng峄�', minScore: 190 };
             
             const extraLevel = Math.floor((totalDone - 25) / 5);
             const score = Math.min(250, 200 + extraLevel * 10);
-            return { title: '👑 Giáo Sư Tiếng Anh', minScore: score };
+            return { title: '馃憫 Gi谩o S瓢 Ti岷縩g Anh', minScore: score };
         }
 
-        const defaultAvatars = ['👸', '🤴', '🤺', '🐉', '🦖', '🐯', '🐰', '🐢', '🦄', '🐼', '🦁', '🚀'];
-        let selectedNewAvatar = '👸';
+        const defaultAvatars = ['馃懜', '馃ご', '馃ず', '馃悏', '馃', '馃惎', '馃惏', '馃悽', '馃', '馃惣', '馃', '馃殌'];
+        let selectedNewAvatar = '馃懜';
         let cachedKids = [
-            { id: 'kid_1', name: 'Bé Bắp', icon: '👸', score: 0, weekly_done: 0, week_start: new Date().toISOString() },
-            { id: 'kid_2', name: 'Bé Nhím', icon: '🦖', score: 0, weekly_done: 0, week_start: new Date().toISOString() }
+            { id: 'kid_1', name: 'B茅 B岷痯', icon: '馃懜', score: 0, weekly_done: 0, week_start: new Date().toISOString() },
+            { id: 'kid_2', name: 'B茅 Nh铆m', icon: '馃', score: 0, weekly_done: 0, week_start: new Date().toISOString() }
         ];
         let currentKidId = localStorage.getItem('magicCurrentKid') || 'kid_1';
         let currentSharedQuest = null;
@@ -566,7 +572,7 @@
                     cachedKids = kids;
                 }
             } catch (err) {
-                console.warn('Dùng cache cục bộ:', err);
+                console.warn('D霉ng cache c峄 b峄�:', err);
             }
             renderKidSelector();
             loadLeaderboard();
@@ -584,7 +590,7 @@
 
             selector.innerHTML = cachedKids.map(k => `
                 <option value="${k.id}" ${k.id === currentKidId ? 'selected' : ''}>
-                    ${k.icon} ${k.name} (${k.score || 0}đ)
+                    ${k.icon} ${k.name} (${k.score || 0}膽)
                 </option>
             `).join('');
 
@@ -593,7 +599,7 @@
 
         function onSelectKidChanged(kidId) {
             localStorage.setItem('magicCurrentKid', kidId);
-            showToast('Đang chuyển bé...', 'success');
+            showToast('膼ang chuy峄僴 b茅...', 'success');
             setTimeout(() => { window.location.reload(); }, 300);
         }
 
@@ -608,13 +614,13 @@
             const badgeEl = document.getElementById('kidRankBadge');
             if (badgeEl) {
                 badgeEl.innerHTML = `
-                    <span>Danh hiệu: <b>${rank.title}</b></span>
-                    <span class="text-[10px] text-purple-600 font-bold bg-white px-2 py-0.5 rounded-full">Chuẩn: ${rank.minScore}đ/NV</span>
+                    <span>Danh hi峄噓: <b>${rank.title}</b></span>
+                    <span class="text-[10px] text-purple-600 font-bold bg-white px-2 py-0.5 rounded-full">Chu岷﹏: ${rank.minScore}膽/NV</span>
                 `;
             }
 
             const countEl = document.getElementById('weeklyQuestCount');
-            if (countEl) countEl.textContent = `${done}/5 🎯`;
+            if (countEl) countEl.textContent = `${done}/5 馃幆`;
             const percent = Math.min(100, Math.round((done / 5) * 100));
             const barEl = document.getElementById('weeklyProgressBar');
             if (barEl) barEl.style.width = percent + '%';
@@ -622,15 +628,15 @@
             const reminder = document.getElementById('kidReminderMsg');
             if (reminder) {
                 if (done === 0) {
-                    reminder.innerHTML = `⚠️ <span class="text-red-500 font-black">Bé ơi, tuần này chưa làm nhiệm vụ nào!</span> Mau hoàn thành nhiệm vụ đầu tiên để tích điểm đổi bim bim nha! 🍟`;
+                    reminder.innerHTML = `鈿狅笍 <span class="text-red-500 font-black">B茅 啤i, tu岷 n脿y ch瓢a l脿m nhi峄噈 v峄� n脿o!</span> Mau ho脿n th脿nh nhi峄噈 v峄� 膽岷 ti锚n 膽峄� t铆ch 膽i峄僲 膽峄昳 bim bim nha! 馃崯`;
                 } else if (done < 5) {
                     const remain = 5 - done;
-                    reminder.innerHTML = `💪 Bé đã làm được <b>${done}/5</b> bài. <span class="text-orange-600 font-black">Chỉ còn thiếu ${remain} nhiệm vụ nữa</span> là đủ điều kiện đòi quà bố mẹ!`;
+                    reminder.innerHTML = `馃挭 B茅 膽茫 l脿m 膽瓢峄 <b>${done}/5</b> b脿i. <span class="text-orange-600 font-black">Ch峄� c貌n thi岷縰 ${remain} nhi峄噈 v峄� n峄痑</span> l脿 膽峄� 膽i峄乽 ki峄噉 膽貌i qu脿 b峄� m岷�!`;
                 } else if (done >= 5 && score < rank.minScore) {
                     const need = rank.minScore - score;
-                    reminder.innerHTML = `🌟 Bé đã đạt đủ số lượng (<b>${done}/5</b> bài) nhưng <span class="text-amber-600 font-black">còn thiếu ${need}đ</span> để đạt chuẩn ${rank.minScore}đ cấp ${rank.title}! Cố gắng làm thêm bài nha!`;
+                    reminder.innerHTML = `馃専 B茅 膽茫 膽岷 膽峄� s峄� l瓢峄g (<b>${done}/5</b> b脿i) nh瓢ng <span class="text-amber-600 font-black">c貌n thi岷縰 ${need}膽</span> 膽峄� 膽岷 chu岷﹏ ${rank.minScore}膽 c岷 ${rank.title}! C峄� g岷痭g l脿m th锚m b脿i nha!`;
                 } else {
-                    reminder.innerHTML = `👑 <span class="text-emerald-600 font-black">ĐẠT CHUẨN XUẤT SẮC!</span> (${done}/5 bài - ${score}đ). Bấm nhận quà và đi gặp bố mẹ ngay thôi! 🎁🎉`;
+                    reminder.innerHTML = `馃憫 <span class="text-emerald-600 font-black">膼岷燭 CHU岷∟ XU岷 S岷瓹!</span> (${done}/5 b脿i - ${score}膽). B岷 nh岷璶 qu脿 v脿 膽i g岷穚 b峄� m岷� ngay th么i! 馃巵馃帀`;
                     if (!sessionStorage.getItem('rewardShown_' + kid.id)) {
                         openRewardModal();
                         sessionStorage.setItem('rewardShown_' + kid.id, '1');
@@ -669,8 +675,8 @@
             const pin = document.getElementById('parentPinInput').value.trim();
             const name = document.getElementById('kidNameInput').value.trim();
 
-            if (pin !== '6868') return showToast('Mã PIN phụ huynh không đúng (6868)!', 'error');
-            if (!name) return showToast('Bố mẹ nhập tên cho bé nhé!', 'warning');
+            if (pin !== '6868') return showToast('M茫 PIN ph峄� huynh kh么ng 膽煤ng (6868)!', 'error');
+            if (!name) return showToast('B峄� m岷� nh岷璸 t锚n cho b茅 nh茅!', 'warning');
 
             const newKid = {
                 id: 'kid_' + Date.now(),
@@ -685,10 +691,10 @@
                 if (db) await db.from('magic_kids').insert([newKid]);
                 cachedKids.push(newKid);
                 closeAddKidModal();
-                showToast(`Đã thêm thành công bạn ${name}! 🎉`, 'success');
+                showToast(`膼茫 th锚m th脿nh c么ng b岷 ${name}! 馃帀`, 'success');
                 syncKidsFromCloud();
             } catch (err) {
-                showToast('Lỗi khi thêm bé!', 'error');
+                showToast('L峄梚 khi th锚m b茅!', 'error');
             }
         }
 
@@ -696,7 +702,7 @@
             const modal = document.getElementById('removeKidModal');
             document.getElementById('removeKidPinInput').value = '';
             const select = document.getElementById('kidToDeleteSelect');
-            select.innerHTML = cachedKids.map(k => `<option value="${k.id}">${k.icon} ${k.name} (${k.score || 0}đ)</option>`).join('');
+            select.innerHTML = cachedKids.map(k => `<option value="${k.id}">${k.icon} ${k.name} (${k.score || 0}膽)</option>`).join('');
             modal.classList.remove('hidden');
         }
 
@@ -708,18 +714,18 @@
             const pin = document.getElementById('removeKidPinInput').value.trim();
             const kidId = document.getElementById('kidToDeleteSelect').value;
 
-            if (pin !== '6868') return showToast('Mã PIN không đúng (6868)!', 'error');
+            if (pin !== '6868') return showToast('M茫 PIN kh么ng 膽煤ng (6868)!', 'error');
             if (!kidId) return;
 
             if (cachedKids.length <= 1) {
-                return showToast('Cần giữ lại ít nhất 1 thành viên trên hệ thống!', 'warning');
+                return showToast('C岷 gi峄� l岷 铆t nh岷 1 th脿nh vi锚n tr锚n h峄� th峄憂g!', 'warning');
             }
 
             try {
                 if (db) await db.from('magic_kids').delete().eq('id', kidId);
                 cachedKids = cachedKids.filter(k => k.id !== kidId);
                 closeRemoveKidModal();
-                showToast('Đã xóa thành viên thành công! 🗑️', 'success');
+                showToast('膼茫 x贸a th脿nh vi锚n th脿nh c么ng! 馃棏锔�', 'success');
                 if (currentKidId === kidId) {
                     localStorage.removeItem('magicCurrentKid');
                     window.location.reload();
@@ -727,18 +733,18 @@
                     syncKidsFromCloud();
                 }
             } catch (e) {
-                showToast('Lỗi khi xóa thành viên!', 'error');
+                showToast('L峄梚 khi x贸a th脿nh vi锚n!', 'error');
             }
         }
 
         function openRewardModal() {
             document.getElementById('rewardModal').classList.remove('hidden');
-            burst(innerWidth/2, innerHeight/2, ['🎁', '🍕', '🍗', '🍟', '🍦', '⭐'], 30);
+            burst(innerWidth/2, innerHeight/2, ['馃巵', '馃崟', '馃崡', '馃崯', '馃崷', '猸�'], 30);
         }
 
         function claimReward() {
             document.getElementById('rewardModal').classList.add('hidden');
-            showToast('Chúc mừng bé đã nhận được phần thưởng xứng đáng từ Bố Mẹ! 🍦🎉', 'success');
+            showToast('Ch煤c m峄玭g b茅 膽茫 nh岷璶 膽瓢峄 ph岷 th瓢峄焠g x峄﹏g 膽谩ng t峄� B峄� M岷�! 馃崷馃帀', 'success');
         }
 
         const SIX_HOURS = 6 * 60 * 60 * 1000;
@@ -748,7 +754,7 @@
             let defaultTitle = 'The Golden Goose';
             const storyListEls = document.querySelectorAll('#storyList .cursor-pointer span');
             if (storyListEls.length) {
-                defaultTitle = storyListEls[Math.floor(Math.random() * storyListEls.length)].textContent.replace('📄', '').trim();
+                defaultTitle = storyListEls[Math.floor(Math.random() * storyListEls.length)].textContent.replace('馃搫', '').trim();
             }
 
             if (!db) return { id: null, title: defaultTitle };
@@ -854,7 +860,7 @@
 
             const timerEl = document.getElementById('questTimer');
             if (timerEl) {
-                timerEl.textContent = `⏱️ ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`;
+                timerEl.textContent = `鈴憋笍 ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`;
             }
 
             const attempts = q.attempts || {};
@@ -864,9 +870,9 @@
 
             if (retryBadge) {
                 if (attemptsUsed >= 3) {
-                    retryBadge.textContent = 'Đã hết 3 lượt thử 🛑';
+                    retryBadge.textContent = '膼茫 h岷縯 3 l瓢峄 th峄� 馃洃';
                 } else {
-                    retryBadge.textContent = `Lượt thử: ${Math.min(3, attemptsUsed + 1)}/3`;
+                    retryBadge.textContent = `L瓢峄 th峄�: ${Math.min(3, attemptsUsed + 1)}/3`;
                 }
             }
 
@@ -884,20 +890,20 @@
 
             content.innerHTML = `
                 <div class="flex items-start gap-1.5">
-                    <span>📚</span>
-                    <span>1. Đọc cuốn: <b class="text-blue-700">${displayTitle}</b> (hoặc đủ ${q.target_stories} bài khác nhau)</span>
+                    <span>馃摎</span>
+                    <span>1. 膼峄峜 cu峄憂: <b class="text-blue-700">${displayTitle}</b> (ho岷穋 膽峄� ${q.target_stories} b脿i kh谩c nhau)</span>
                 </div>
                 <div class="flex items-start gap-1.5">
-                    <span>🎙️</span>
-                    <span>2. Luyện phát âm đúng: <b class="text-emerald-700">${q.target_sentences} câu văn</b> trong bài</span>
+                    <span>馃帣锔�</span>
+                    <span>2. Luy峄噉 ph谩t 芒m 膽煤ng: <b class="text-emerald-700">${q.target_sentences} c芒u v膬n</b> trong b脿i</span>
                 </div>
                 <div class="flex items-start gap-1.5">
-                    <span>🕹️</span>
-                    <span>3. Tham gia đố vui hoặc game: <b class="text-purple-700">${q.target_games} lượt chơi</b></span>
+                    <span>馃暪锔�</span>
+                    <span>3. Tham gia 膽峄� vui ho岷穋 game: <b class="text-purple-700">${q.target_games} l瓢峄 ch啤i</b></span>
                 </div>
                 <div class="flex items-start gap-1.5">
-                    <span>⭐</span>
-                    <span>4. Điểm đạt trong lượt này: <b class="text-orange-700">≥ ${q.target_score} điểm</b></span>
+                    <span>猸�</span>
+                    <span>4. 膼i峄僲 膽岷 trong l瓢峄 n脿y: <b class="text-orange-700">鈮� ${q.target_score} 膽i峄僲</b></span>
                 </div>
             `;
 
@@ -907,15 +913,15 @@
             const claimBtn = document.getElementById('claimQuestBtn');
             if (badge && claimBtn) {
                 if (isCompleted) {
-                    badge.textContent = 'Trạng thái: Đã hoàn thành xuất sắc! 🏆';
+                    badge.textContent = 'Tr岷g th谩i: 膼茫 ho脿n th脿nh xu岷 s岷痗! 馃弳';
                     badge.className = 'text-xs font-black text-emerald-600';
                     claimBtn.disabled = true;
-                    claimBtn.textContent = '✅ Đã Ghi Điểm';
+                    claimBtn.textContent = '鉁� 膼茫 Ghi 膼i峄僲';
                 } else {
-                    badge.textContent = 'Trạng thái: Đang theo dõi các bước... ⏳';
+                    badge.textContent = 'Tr岷g th谩i: 膼ang theo d玫i c谩c b瓢峄沜... 鈴�';
                     badge.className = 'text-xs font-black text-orange-600';
                     claimBtn.disabled = false;
-                    claimBtn.textContent = '🏆 Nộp Ghi Điểm';
+                    claimBtn.textContent = '馃弳 N峄檖 Ghi 膼i峄僲';
                 }
             }
         }
@@ -927,7 +933,7 @@
             let currentAttempts = attempts[currentKidId] || 0;
 
             if (currentAttempts >= 3) {
-                showToast('Bé đã sử dụng hết 3 lần thử lại cho nhiệm vụ này rồi!', 'warning');
+                showToast('B茅 膽茫 s峄� d峄g h岷縯 3 l岷 th峄� l岷 cho nhi峄噈 v峄� n脿y r峄搃!', 'warning');
                 return;
             }
 
@@ -945,10 +951,10 @@
 
                 sessionTracker = { readStories: new Set(), sentencesPassed: 0, gamesPlayed: 0, scoreEarned: 0 };
                 renderQuestUI();
-                showToast(`Lượt thử thứ ${currentAttempts}/3! Điểm mới sẽ ghi đè điểm cũ! 🔄`, 'success');
-                talk(`Lượt thử thứ ${currentAttempts}/3 bắt đầu! Cố gắng đạt điểm cao hơn lần trước nha! 💪`);
+                showToast(`L瓢峄 th峄� th峄� ${currentAttempts}/3! 膼i峄僲 m峄沬 s岷� ghi 膽猫 膽i峄僲 c农! 馃攧`, 'success');
+                talk(`L瓢峄 th峄� th峄� ${currentAttempts}/3 b岷痶 膽岷! C峄� g岷痭g 膽岷 膽i峄僲 cao h啤n l岷 tr瓢峄沜 nha! 馃挭`);
             } catch (e) {
-                showToast('Lỗi cập nhật lượt thử!', 'error');
+                showToast('L峄梚 c岷璸 nh岷璽 l瓢峄 th峄�!', 'error');
             }
         }
 
@@ -984,29 +990,29 @@
 
             if (sessionTracker.readStories.size < (q.target_stories || 1)) {
                 const missing = (q.target_stories || 1) - sessionTracker.readStories.size;
-                showToast(`Bé chưa đọc đủ bài! Cần đọc thêm ${missing} bài nữa nhé!`, 'warning');
-                talk(`Bé nhớ bấm nút "Đọc To" để nghe và đọc đủ bài truyện nha! 📖`);
+                showToast(`B茅 ch瓢a 膽峄峜 膽峄� b脿i! C岷 膽峄峜 th锚m ${missing} b脿i n峄痑 nh茅!`, 'warning');
+                talk(`B茅 nh峄� b岷 n煤t "膼峄峜 To" 膽峄� nghe v脿 膽峄峜 膽峄� b脿i truy峄噉 nha! 馃摉`);
                 return;
             }
 
             if (sessionTracker.sentencesPassed < (q.target_sentences || 1)) {
                 const missing = (q.target_sentences || 1) - sessionTracker.sentencesPassed;
-                showToast(`Bé chưa luyện phát âm đủ câu! Cần đọc đúng thêm ${missing} câu nữa!`, 'warning');
-                talk(`Bé hãy xuống phần "Thử Thách Đọc Cả Câu" để phát âm chuẩn thêm ${missing} câu nha! 🎙️`);
+                showToast(`B茅 ch瓢a luy峄噉 ph谩t 芒m 膽峄� c芒u! C岷 膽峄峜 膽煤ng th锚m ${missing} c芒u n峄痑!`, 'warning');
+                talk(`B茅 h茫y xu峄憂g ph岷 "Th峄� Th谩ch 膼峄峜 C岷� C芒u" 膽峄� ph谩t 芒m chu岷﹏ th锚m ${missing} c芒u nha! 馃帣锔廯);
                 return;
             }
 
             if (sessionTracker.gamesPlayed < (q.target_games || 2)) {
                 const missing = (q.target_games || 2) - sessionTracker.gamesPlayed;
-                showToast(`Bé chưa chơi đủ số lượt game/câu đố! Cần chơi thêm ${missing} lượt nữa!`, 'warning');
-                talk(`Vào Đố vui hoặc Phòng Game chơi thêm ${missing} lượt nữa cho vui nào bé ơi! 🕹️`);
+                showToast(`B茅 ch瓢a ch啤i 膽峄� s峄� l瓢峄 game/c芒u 膽峄�! C岷 ch啤i th锚m ${missing} l瓢峄 n峄痑!`, 'warning');
+                talk(`V脿o 膼峄� vui ho岷穋 Ph貌ng Game ch啤i th锚m ${missing} l瓢峄 n峄痑 cho vui n脿o b茅 啤i! 馃暪锔廯);
                 return;
             }
 
             if (sessionTracker.scoreEarned < (q.target_score || 150)) {
                 const missing = (q.target_score || 150) - sessionTracker.scoreEarned;
-                showToast(`Chưa đạt điểm chuẩn! Điểm lượt này cần thêm ${missing}đ nữa!`, 'warning');
-                talk(`Điểm số của lượt này chưa đạt chuẩn ${q.target_score}đ. Chơi thêm đố vui kiếm thêm ${missing}đ nữa nha! ⭐`);
+                showToast(`Ch瓢a 膽岷 膽i峄僲 chu岷﹏! 膼i峄僲 l瓢峄 n脿y c岷 th锚m ${missing}膽 n峄痑!`, 'warning');
+                talk(`膼i峄僲 s峄� c峄 l瓢峄 n脿y ch瓢a 膽岷 chu岷﹏ ${q.target_score}膽. Ch啤i th锚m 膽峄� vui ki岷縨 th锚m ${missing}膽 n峄痑 nha! 猸恅);
                 return;
             }
 
@@ -1022,7 +1028,7 @@
 
                 const kid = cachedKids.find(k => k.id === currentKidId) || cachedKids[0];
                 const newTotalScore = (kid.score || 0) + sessionTracker.scoreEarned + 30;
-                const newDone = ((kid.weekly_done) || 0) + 1;
+                const newDone = ((kid && kid.weekly_done) || 0) + 1;
 
                 if (db) {
                     await db.from('magic_kids').update({
@@ -1036,11 +1042,11 @@
                 kid.weekly_done = newDone;
 
                 syncKidsFromCloud();
-                burst(innerWidth/2, innerHeight/2, ['🏆', '👑', '🎉', '⚡', '⭐'], 30);
-                showToast(`XUẤT SẮC! Bé đã hoàn thành nhiệm vụ và được ghi điểm lên Cloud! 🌟`, 'success');
-                talk(`Tuyệt vời! Bé đã vượt qua toàn bộ thử thách khắt khe! Tớ rất tự hào về bé! 🥳`);
+                burst(innerWidth/2, innerHeight/2, ['馃弳', '馃憫', '馃帀', '鈿�', '猸�'], 30);
+                showToast(`XU岷 S岷瓹! B茅 膽茫 ho脿n th脿nh nhi峄噈 v峄� v脿 膽瓢峄 ghi 膽i峄僲 l锚n Cloud! 馃専`, 'success');
+                talk(`Tuy峄噒 v峄漣! B茅 膽茫 v瓢峄 qua to脿n b峄� th峄� th谩ch kh岷痶 khe! T峄� r岷 t峄� h脿o v峄� b茅! 馃コ`);
             } catch (e) {
-                showToast('Lỗi khi lưu kết quả!', 'error');
+                showToast('L峄梚 khi l瓢u k岷縯 qu岷�!', 'error');
             }
         }
 
@@ -1050,25 +1056,128 @@
             let board = document.getElementById('leaderboardList');
             if (!board) return;
             if (!cachedKids.length) {
-                board.innerHTML = '<p class="text-teal-500 text-xs font-bold italic">Đang tải bảng điểm... ☁️</p>';
+                board.innerHTML = '<p class="text-teal-500 text-xs font-bold italic">膼ang t岷 b岷g 膽i峄僲... 鈽侊笍</p>';
                 return;
             }
 
             let sorted = [...cachedKids].sort((a,b) => (b.score || 0) - (a.score || 0));
 
             board.innerHTML = sorted.map((k, i) => {
-                let rankIcon = i === 0 ? '🥇' : (i === 1 ? '🥈' : (i === 2 ? '🥉' : '🎗️'));
+                let rankIcon = i === 0 ? '馃' : (i === 1 ? '馃' : (i === 2 ? '馃' : '馃帡锔�'));
                 const kRank = getKidRank(k.weekly_done || 0);
                 return `<div class="bg-white px-3 py-1.5 rounded-xl shadow-sm border border-teal-200 flex flex-col items-center gap-0.5 ${k.id === currentKidId ? 'ring-2 ring-teal-400 bg-teal-50/50' : ''}">
                     <div class="flex items-center gap-1">
                         <span class="text-sm">${rankIcon}</span>
                         <span class="text-lg">${k.icon}</span>
                         <span class="text-xs font-black text-slate-800">${k.name}</span>
-                        <span class="text-teal-800 font-black text-xs">(${k.score || 0}đ)</span>
+                        <span class="text-teal-800 font-black text-xs">(${k.score || 0}膽)</span>
                     </div>
                     <span class="text-[10px] font-bold text-purple-700">${kRank.title}</span>
                 </div>`;
             }).join('');
+        }
+
+        function generateSentenceChallenge() {
+            const area = document.getElementById('sentenceChallengeArea');
+            if (!allStorySentences.length) {
+                const text = storyText.value.trim();
+                if (text) {
+                    allStorySentences = text.match(/[^.!?\n]+[.!?\n]*/g)?.map(s => s.trim()).filter(s => s.length > 15) || [];
+                }
+            }
+
+            if (!allStorySentences.length) {
+                area.innerHTML = '<p class="text-emerald-500 italic text-[11px]">Ch瓢a c贸 b脿i 膽峄峜 n脿o! H茫y ch峄峮 s谩ch v脿 b岷 "S岷h" 膽峄� m谩y ch峄峮 c芒u luy峄噉 膽峄峜 nh茅.</p>';
+                return;
+            }
+
+            const count = Math.min(3, Math.max(1, Math.floor(Math.random() * 3) + 1));
+            const shuffled = [...allStorySentences].sort(() => Math.random() - 0.5).slice(0, count);
+            const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+            area.innerHTML = shuffled.map((sentence, idx) => `
+                <div class="bg-white p-2.5 rounded-xl border border-emerald-200 shadow-sm sentence-item" data-sentence="${encodeURIComponent(sentence)}">
+                    <div class="flex justify-between items-start gap-2 mb-1">
+                        <span class="text-emerald-800 font-black text-xs">C芒u ${idx + 1}:</span>
+                        <div class="flex gap-1">
+                            <button onclick="playSentenceSample('${encodeURIComponent(sentence)}')" class="px-2 py-0.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 text-[10px] font-black rounded-lg btn-bounce">馃攰 Nghe M岷玼</button>
+                            ${SR ? `<button onclick="recordSentenceVoice(this, '${encodeURIComponent(sentence)}')" class="px-2 py-0.5 bg-pink-500 hover:bg-pink-600 text-white text-[10px] font-black rounded-lg btn-bounce flex items-center gap-0.5">馃帳 B茅 膼峄峜</button>` : ''}
+                        </div>
+                    </div>
+                    <p class="text-slate-800 text-xs font-bold leading-relaxed mb-1.5 italic">"${sentence}"</p>
+                    <div class="sentence-feedback text-[10px] font-black min-h-[16px] text-slate-500">B茅 nghe m岷玼 r峄搃 nh岷 n煤t "馃帳 B茅 膼峄峜" nh茅!</div>
+                </div>
+            `).join('');
+
+            talk('Th峄� th谩ch 膽峄峜 c岷� c芒u 膽茫 s岷祅 s脿ng! 膼峄峜 to v脿 t峄� tin l锚n nh茅! 馃帣锔�');
+        }
+
+        function playSentenceSample(encodedSentence) {
+            stopAudio();
+            const sentence = decodeURIComponent(encodedSentence);
+            mainAudio.src = `https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=en&q=${encodeURIComponent(sentence)}`;
+            mainAudio.playbackRate = 0.8;
+            mainAudio.play().catch(() => showToast('B岷璽 芒m l瓢峄g l锚n nha b茅!', 'warning'));
+        }
+
+        function recordSentenceVoice(btn, encodedSentence) {
+            const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SR) return showToast('Tr矛nh duy峄噒 ch瓢a h峄� tr峄� micro nh岷璶 di峄噉!', 'warning');
+
+            const parent = btn.closest('.sentence-item');
+            const feedback = parent.querySelector('.sentence-feedback');
+            const originalSentence = decodeURIComponent(encodedSentence).toLowerCase().replace(/[^a-z0-9\s]/g, '');
+
+            const recognition = new SR();
+            recognition.lang = 'en-US';
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 3;
+
+            feedback.innerHTML = '<span class="text-pink-600 animate-pulse">馃憘 膼ang l岷痭g nghe... B茅 膽峄峜 to l锚n n脿o!</span>';
+            btn.disabled = true;
+
+            recognition.onresult = async (event) => {
+                const results = Array.from(event.results[0]).map(r => r.transcript.toLowerCase().replace(/[^a-z0-9\s]/g, ''));
+                btn.disabled = false;
+
+                const origWords = originalSentence.split(/\s+/).filter(Boolean);
+                let bestMatchScore = 0;
+                let heardText = results[0];
+
+                results.forEach(resText => {
+                    const resWords = resText.split(/\s+/).filter(Boolean);
+                    let matchedCount = 0;
+                    origWords.forEach(w => {
+                        if (resWords.includes(w)) matchedCount++;
+                    });
+                    const score = Math.round((matchedCount / origWords.length) * 100);
+                    if (score > bestMatchScore) {
+                        bestMatchScore = score;
+                        heardText = resText;
+                    }
+                });
+
+                if (bestMatchScore >= 70) {
+                    feedback.innerHTML = `<span class="text-emerald-600">馃帀 Xu岷 s岷痗! B茅 膽峄峜 kh峄沺 ${bestMatchScore}% ("${heardText}") 馃専 +10膽</span>`;
+                    burst(btn.getBoundingClientRect().left, btn.getBoundingClientRect().top, ['猸�', '馃憦', '馃帀'], 10);
+                    
+                    sessionTracker.sentencesPassed++;
+                    sessionTracker.scoreEarned += 10;
+                    updateSessionUI();
+                    
+                    talk('Ph谩t 芒m chu岷﹏ qu谩 b茅 啤i! C峄� th岷� ph谩t huy nha! 馃憦');
+                } else {
+                    feedback.innerHTML = `<span class="text-amber-600">馃 M谩y nghe l脿: "${heardText}" (Kh峄沺 ${bestMatchScore}%). B茅 nghe m岷玼 r峄搃 th峄� l岷 nha! 馃挭</span>`;
+                    talk('G岷 膽煤ng r峄搃! Nghe m岷玼 l岷 m峄檛 l岷 n峄痑 r峄搃 膽峄峜 l岷 nh茅! 馃帶');
+                }
+            };
+
+            recognition.onerror = () => {
+                btn.disabled = false;
+                feedback.innerHTML = '<span class="text-red-400">Kh么ng nghe r玫, b茅 th峄� ch岷 l岷 micro nh茅!</span>';
+            };
+
+            recognition.start();
         }
 
         async function fetchStories() {
@@ -1076,13 +1185,13 @@
             try {
                 let { data: stories } = await db.from('saved_stories').select('*').order('created_at', { ascending: false });
                 const listEl = document.getElementById('storyList');
-                if (!stories || stories.length === 0) { listEl.innerHTML = '<p class="text-indigo-400 font-bold text-[10px] italic text-center">Chưa có bài nào.</p>'; return; }
+                if (!stories || stories.length === 0) { listEl.innerHTML = '<p class="text-indigo-400 font-bold text-[10px] italic text-center">Ch瓢a c贸 b脿i n脿o.</p>'; return; }
                 listEl.innerHTML = stories.map(story => `
                     <div class="bg-white p-1.5 rounded border border-indigo-100 flex justify-between items-center shadow-sm">
                         <div class="cursor-pointer truncate flex-1 pr-1" onclick="loadStory('${story.id}')">
-                            <span class="text-indigo-700 font-bold text-[10px] md:text-xs">📄 ${story.title || 'Truyện'}</span>
+                            <span class="text-indigo-700 font-bold text-[10px] md:text-xs">馃搫 ${story.title || 'Truy峄噉'}</span>
                         </div>
-                        <button onclick="deleteStory('${story.id}')" class="text-red-500 hover:bg-red-100 px-1 rounded font-black text-[10px]" title="Xóa sách">❌</button>
+                        <button onclick="deleteStory('${story.id}')" class="text-red-500 hover:bg-red-100 px-1 rounded font-black text-[10px]" title="X贸a s谩ch">鉂�</button>
                     </div>
                 `).join('');
                 renderQuestUI();
@@ -1090,16 +1199,17 @@
         }
 
         async function saveToCloud() {
-            let text = storyText.value.trim(); if (!text) return showToast('Chưa có truyện!', 'warning');
-            showToast('Đang lưu...', 'success');
-            try { await db.from('saved_stories').insert([{ title: text.substring(0, 20).replace(/\n/g, ' ') + '...', content: text }]); showToast('Lưu thành công! ☁️', 'success'); fetchStories(); } catch (err) { }
+            let text = storyText.value.trim(); if (!text) return showToast('Ch瓢a c贸 truy峄噉!', 'warning');
+            if (!db) return showToast('Ch瓢a k岷縯 n峄慽 膽瓢峄 Cloud, th峄� l岷 sau nh茅!', 'warning');
+            showToast('膼ang l瓢u...', 'success');
+            try { await db.from('saved_stories').insert([{ title: text.substring(0, 20).replace(/\n/g, ' ') + '...', content: text }]); showToast('L瓢u th脿nh c么ng! 鈽侊笍', 'success'); fetchStories(); } catch (err) { }
         }
 
         async function loadStory(id) { 
             try { 
                 let { data } = await db.from('saved_stories').select('content, title').eq('id', id).single(); 
                 storyText.value = data.content; 
-                showToast('Đã tải truyện cũ!', 'success');
+                showToast('膼茫 t岷 truy峄噉 c农!', 'success');
                 cleanBtn.click();
             } catch (err) {} 
         }
@@ -1127,7 +1237,7 @@
             const pin = pinInput ? pinInput.value.trim() : '';
 
             if (pin !== '6868') {
-                showToast('Mật khẩu không đúng!', 'error');
+                showToast('M岷璽 kh岷﹗ kh么ng 膽煤ng!', 'error');
                 if (pinInput) { pinInput.value = ''; pinInput.focus(); }
                 return;
             }
@@ -1135,15 +1245,15 @@
             if (!pendingDeleteId) { closeDeleteModal(); return; }
 
             try {
-                showToast('Đang xóa truyện...', 'warning');
+                showToast('膼ang x贸a truy峄噉...', 'warning');
                 const targetId = pendingDeleteId;
                 closeDeleteModal();
                 const { error } = await db.from('saved_stories').delete().eq('id', targetId);
                 if (error) throw error;
-                showToast('Đã xóa truyện khỏi kho! 🗑️', 'success');
+                showToast('膼茫 x贸a truy峄噉 kh峄廼 kho! 馃棏锔�', 'success');
                 fetchStories();
             } catch (err) {
-                showToast('Lỗi khi xóa bài!', 'error');
+                showToast('L峄梚 khi x贸a b脿i!', 'error');
             }
         }
 
@@ -1151,153 +1261,1050 @@
             window.playWordAudio(word);
         };
 
-        // KHỞI ĐỘNG HỆ THỐNG AN TOÀN
+        const G = { score: 0, k: '' }; let GT;
+        const V = () => globalVocabData.filter(v => v.word);
+        const shuf = a => [...a].sort(() => Math.random() - .5);
+        const area = () => $('gameArea');
+        const ctr = () => [innerWidth / 2, innerHeight / 2];
+
+        function award(n) {
+            sessionTracker.gamesPlayed++;
+            if (n > 0) {
+                sessionTracker.scoreEarned += n;
+            }
+            updateSessionUI();
+        }
+
+        function fin() {
+            clearInterval(GT); 
+            award(G.score); 
+            const kid = cachedKids.find(k => k.id === currentKidId) || cachedKids[0];
+            area().innerHTML = `<div class="text-center"><div class="text-4xl">${G.score >= 40 ? '馃弳' : '馃帠锔�'}</div><div class="text-base font-black text-green-600">${kid.icon} +${G.score} 膽i峄僲 l瓢峄 n脿y!</div><div class="text-[10px] mb-1">${G.score >= 40 ? '膼峄塶h c峄 ch贸p! 馃殌' : 'C农ng 峄昻 膽贸, ch啤i l岷 cho 膽峄塶h h啤n nh茅! 馃槅'}</div><button class="px-3 py-1 bg-sky-500 text-white rounded-lg" onclick="playGame(G.k)">馃攧 Ch啤i l岷</button></div>`;
+            burst(...ctr(), WIN, 24); 
+            talk(G.score >= 40 ? '膼i峄僲 c峄 l瓢峄 n脿y t膬ng v霉n v峄 r峄搃! S岷痯 膽岷 chu岷﹏ n峄檖 b脿i r峄搃 膽贸! 馃殌' : 'Ti岷縫 t峄 luy峄噉 th锚m c芒u 膽峄� 膽峄� 膽峄� 膽i峄僲 n峄檖 b脿i nha! 馃槑');
+        }
+
+        const GAMES = [['listen', '馃帶', 'Nghe 膽o谩n t峄�'], ['flip', '馃儚', 'L岷璽 th岷� nh峄�'], ['speak', '馃帳', 'T岷璸 ph谩t 芒m'], ['scr', '馃敜', 'X岷縫 ch峄�'], ['speed', '鈿�', '膼ua t峄慶 膽峄�']];
+        $('gameMenu').innerHTML = GAMES.map(g => `<button class="py-1.5 bg-sky-500 text-white rounded-lg text-[11px] font-black btn-bounce" onclick="playGame('${g[0]}')">${g[1]} ${g[2]}</button>`).join('');
+
+        window.playGame = k => {
+            if (V().length < 4) return showToast('B岷 "S岷h" 膽峄� l岷 t峄� v峄眓g tr瓢峄沜 nh茅!', 'warning');
+            clearInterval(GT); G.score = 0; G.k = k; ({ listen: gListen, flip: gFlip, speak: gSpeak, scr: gScr, speed: gSpeed })[k]();
+        };
+
+        function gListen() {
+            const list = V().filter(x => x && x.word && x.meaning);
+            if (list.length < 2) return showToast('C岷 铆t nh岷 t峄� v峄眓g 膽峄� ch啤i!', 'warning');
+            const qs = shuf(list).slice(0, 6); 
+            let i = 0;
+            let isProcessing = false;
+
+            const nx = () => {
+                isProcessing = false;
+                if (i >= qs.length) return fin();
+                const v = qs[i];
+                const pool = list.filter(x => x.word !== v.word);
+                
+                const wrongOptions = shuf(pool).slice(0, 3).map(x => x.meaning);
+                const options = shuf([v.meaning, ...wrongOptions]);
+
+                const el = area();
+                el.innerHTML = `
+                    <div class="flex justify-between items-center text-[11px] text-sky-600 mb-2 font-bold">
+                        <span>C芒u ${i + 1}/${qs.length}</span>
+                        <span>膼i峄僲: <b class="text-orange-600 font-black">${G.score}膽</b></span>
+                    </div>
+                    <div class="text-center mb-3">
+                        <button type="button" id="btnListenReplay" class="text-5xl py-2 px-4 bg-amber-100 hover:bg-amber-200 border-2 border-amber-300 rounded-2xl shadow-sm btn-bounce">馃攰</button>
+                        <div class="text-[11px] text-slate-500 font-bold mt-1">Ch岷 v脿o loa 膽峄� nghe l岷 nha!</div>
+                    </div>
+                    <div id="listenOptContainer" class="grid grid-cols-2 gap-2 mb-2">
+                        ${options.map((opt, idx) => `
+                            <button type="button" class="opt-btn py-2.5 px-2 bg-white hover:bg-sky-50 border-2 border-sky-200 rounded-xl font-black text-xs text-slate-700 capitalize shadow-sm transition-all text-center leading-snug">
+                                ${opt}
+                            </button>
+                        `).join('')}
+                    </div>
+                    <div id="listenNextRow" class="text-center hidden mt-1">
+                        <button type="button" id="btnManualNext" class="py-1 px-3 bg-sky-500 text-white rounded-lg text-xs font-black shadow btn-bounce">C芒u ti岷縫 theo 鉃★笍</button>
+                    </div>
+                `;
+
+                const replayBtn = document.getElementById('btnListenReplay');
+                if (replayBtn) {
+                    replayBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        window.playWordAudio(v.word);
+                    };
+                }
+
+                try { window.playWordAudio(v.word); } catch(e) {}
+
+                const optBtns = el.querySelectorAll('.opt-btn');
+                const nextRow = document.getElementById('listenNextRow');
+                const manualNextBtn = document.getElementById('btnManualNext');
+
+                if (manualNextBtn) {
+                    manualNextBtn.onclick = () => {
+                        i++;
+                        nx();
+                    };
+                }
+
+                optBtns.forEach((btn, idx) => {
+                    btn.onclick = (e) => {
+                        e.stopPropagation();
+                        if (isProcessing) return;
+                        isProcessing = true;
+
+                        optBtns.forEach(b => {
+                            b.disabled = true;
+                            b.classList.remove('hover:bg-sky-50', 'bg-white');
+                        });
+
+                        const chosen = options[idx];
+                        const isCorrect = (chosen === v.meaning);
+
+                        if (isCorrect) {
+                            btn.classList.add('bg-green-200', 'border-green-500', 'text-green-800');
+                            G.score += 10;
+                            try { burst(...ctr(), WIN, 12); } catch(e) {}
+                            talk('Ch铆nh x谩c r峄搃! B茅 nghe si锚u qu谩! 馃憦馃専');
+                        } else {
+                            btn.classList.add('bg-red-200', 'border-red-500', 'text-red-800');
+                            optBtns.forEach((b, k) => {
+                                if (options[k] === v.meaning) {
+                                    b.classList.add('bg-green-200', 'border-green-500', 'text-green-800');
+                                }
+                            });
+                            try { burst(...ctr(), OOPS, 6); } catch(e) {}
+                            talk('Ti岷縞 qu谩! 脭 m脿u xanh m峄沬 l脿 膽谩p 谩n 膽煤ng nh茅! 馃檲');
+                        }
+
+                        if (nextRow) nextRow.classList.remove('hidden');
+
+                        setTimeout(() => {
+                            i++;
+                            nx();
+                        }, 1200);
+                    };
+                });
+            };
+
+            nx();
+        }
+
+        function gSpeed() {
+            let t = 30; const pool = V(), el = area();
+            const nx = () => {
+                const v = pick(pool), o = shuf([v, ...shuf(pool.filter(x => x !== v)).slice(0, 2)]);
+                el.innerHTML = `<div class="flex justify-between text-[10px] text-sky-600"><span>鈴憋笍 <b id="tm">${t}</b>s</span><span>${G.score}膽</span></div><div class="text-center text-xl font-black my-2">${v.word}</div><div class="grid gap-1.5">${o.map(x => `<button class="o py-1.5 bg-slate-50 border-2 border-sky-200 rounded-lg capitalize">${x.meaning}</button>`).join('')}</div>`;
+                el.querySelectorAll('.o').forEach((b, j) => b.onclick = () => { if (o[j] === v) { G.score += 10; burst(...ctr(), FUN, 5); } else { t = Math.max(0, t - 3); wig(el); } nx(); });
+            };
+            GT = setInterval(() => { t--; const e = $('tm'); if (e) e.textContent = t; if (t <= 0) fin(); }, 1000); nx();
+        }
+
+        function gFlip() {
+            const vs = shuf(V()).slice(0, 6), cs = shuf(vs.flatMap((v, k) => [{ k, t: v.word, en: 1 }, { k, t: v.meaning }]));
+            let sel = [], lock = false, done = 0, moves = 0;
+            area().innerHTML = `<div id="mv" class="text-[10px] text-sky-600 mb-1">L瓢峄: 0</div><div class="grid grid-cols-4 gap-1.5">${cs.map((c, i) => `<button class="cd h-14 rounded-lg bg-sky-300 text-white text-[10px] font-black leading-tight px-0.5 capitalize">鉂�</button>`).join('')}</div>`;
+            const OPEN = 'bg-white text-sky-700 border-2 border-sky-300';
+            area().querySelectorAll('.cd').forEach((b, i) => b.onclick = () => {
+                const c = cs[i]; if (lock || b.dataset.o) return; b.dataset.o = 1; b.textContent = c.t; b.className = b.className.replace('bg-sky-300', OPEN);
+                if (c.en) window.playWordAudio(c.t); sel.push([b, c]); if (sel.length < 2) return;
+                moves++; $('mv').textContent = 'L瓢峄: ' + moves; const [[b1, c1], [b2, c2]] = sel; sel = [];
+                if (c1.k === c2.k) {
+                    done++; [b1, b2].forEach(x => x.className = x.className.replace('bg-white', 'bg-green-200')); burst(...ctr(), FUN, 6);
+                    if (done === vs.length) { G.score = Math.max(10, 100 - moves * 5); setTimeout(fin, 700); }
+                } else { lock = true; setTimeout(() => { [b1, b2].forEach(x => { delete x.dataset.o; x.textContent = '鉂�'; x.className = x.className.replace(OPEN, 'bg-sky-300'); }); lock = false; }, 900); }
+            });
+        }
+
+        function gScr() {
+            const pl = V().filter(v => v.word.length <= 9), vs = shuf(pl.length >= 3 ? pl : V()).slice(0, 5); let i = 0, pk = [];
+            const nx = () => {
+                if (i >= vs.length) return fin(); const v = vs[i], L = shuf(v.word.split('').map(c => ({ c }))); pk = [];
+                const r = () => {
+                    area().innerHTML = `<div class="text-[10px] text-sky-500">C芒u ${i + 1}/${vs.length} 鈥� ${G.score}膽</div><div class="text-center my-1">Ngh末a: <b class="text-purple-600 capitalize">${v.meaning}</b> <button onclick="window.playWordAudio('${v.word}')">馃攰</button></div><div class="flex justify-center gap-1 mb-2 min-h-[2.2rem]">${v.word.split('').map((_, k) => `<span class="w-7 h-8 border-b-4 border-sky-300 text-center text-lg uppercase">${pk[k] ? pk[k].c : ''}</span>`).join('')}</div><div class="flex flex-wrap justify-center gap-1">${L.map(l => `<button class="lt w-8 h-8 rounded-lg bg-yellow-300 text-yellow-900 font-black uppercase ${pk.includes(l) ? 'opacity-30' : ''}">${l.c}</button>`).join('')}<button id="un" class="px-2 rounded-lg bg-red-200">鈱�</button></div>`;
+                    area().querySelectorAll('.lt').forEach((b, j) => b.onclick = () => {
+                        const l = L[j]; if (pk.includes(l)) return; pk.push(l); r();
+                        if (pk.length === v.word.length) {
+                            if (pk.map(x => x.c).join('') === v.word) { G.score += 10; window.playWordAudio(v.word); burst(...ctr(), FUN, 10); i++; setTimeout(nx, 1100); }
+                            else { wig(area()); talk('Ch峄� nh岷 lo岷 x岷� r峄搃! 馃お'); setTimeout(() => { pk = []; r(); }, 700); }
+                        }
+                    });
+                    $('un').onclick = () => { pk.pop(); r(); };
+                }; r();
+            }; nx();
+        }
+
+        function gSpeak() {
+            const vs = shuf(V()).slice(0, 5), SR = window.SpeechRecognition || window.webkitSpeechRecognition; let i = 0;
+            const nx = () => {
+                if (i >= vs.length) return fin(); const v = vs[i];
+                area().innerHTML = `<div class="text-center"><div class="text-[10px] text-sky-500">C芒u ${i + 1}/${vs.length} 鈥� ${G.score}膽</div><div class="text-2xl font-black text-purple-700">${v.word}</div><div class="text-[11px] capitalize text-slate-500 mb-2">${v.meaning}</div><button onclick="window.playWordAudio('${v.word}')" class="px-3 py-1.5 bg-cyan-500 text-white rounded-lg">馃攰 Nghe m岷玼</button> ${SR ? '<button id="mic" class="px-3 py-1.5 bg-pink-500 text-white rounded-lg">馃帳 B茅 膽峄峜</button>' : ''} <button id="sk" class="px-2 py-1.5 bg-slate-200 rounded-lg">鈴笍</button><div id="sr" class="mt-2 min-h-[1.5rem]"></div></div>`;
+                const go = p => { G.score += p; i++; setTimeout(nx, 1300); };
+                $('sk').onclick = () => go(0);
+                if (SR) $('mic').onclick = () => {
+                    const r = new SR(); r.lang = 'en-US'; r.maxAlternatives = 5; $('sr').textContent = '馃憘 膼ang nghe...';
+                    r.onresult = e => {
+                        const al = [...e.results[0]].map(a => a.transcript.toLowerCase().trim()), ok = al.some(a => a.split(/\s+/).includes(v.word));
+                        $('sr').innerHTML = ok ? '馃帀 Chu岷﹏ lu么n!' : `馃 M谩y nghe l脿 "${al[0]}" 鈥� th峄� l岷 nh茅!`;
+                        if (ok) { burst(...ctr(), WIN, 12); go(10); } else wig(area());
+                    };
+                    r.onerror = () => $('sr').textContent = 'Kh么ng nghe th岷 g矛 馃檳 (nh峄� cho ph茅p micro nh茅)'; r.start();
+                };
+            }; nx();
+        }
+
+        // ================== S峄� KI峄哊 CLICK AN TO脌N TUY峄員 膼峄怚 ==================
+        const WM = { 
+            candy: ['馃嵀', '馃', '馃', '馃寛', '猸�', '馃崺', '馃巰', '馃Ц'], 
+            ocean: ['馃悹', '馃悪', '馃惓', '馃悮', '鈿�', '馃', '馃惉', '馃'], 
+            forest: ['馃尣', '馃', '馃', '馃崉', '馃惪锔�', '馃', '馃尰', '馃惢'] 
+        };
+        const MASCOT_SKINS = { 
+            candy: '馃',
+            ocean: '馃帬',
+            forest: '馃悗'
+        };
+
+        const curTheme = () => document.documentElement.dataset.theme || 'candy';
+        function wm() {
+            let l = $('wm'); if (!l) { l = document.createElement('div'); l.id = 'wm'; document.body.prepend(l); }
+            const L = WM[curTheme()] || WM.candy;
+            l.innerHTML = Array.from({ length: 18 }, (_, i) => `<i style="left:${(i % 6) * 17 + Math.random() * 8}%;top:${((i / 6) | 0) * 34 + Math.random() * 14}%;font-size:${48 + Math.random() * 60}px;transform:rotate(${Math.random() * 60 - 30}deg);animation-delay:${-Math.random() * 8}s">${L[i % L.length]}</i>`).join('');
+            const me = $('me'); if (me) me.textContent = MASCOT_SKINS[curTheme()] || '馃';
+        }
+        const _at = applyTheme; 
+        applyTheme = id => { _at(id); wm(); };
+        wm();
+
+        const pick = a => a[Math.random() * a.length | 0];
+        const wig = e => { e.classList.remove('wiggle'); void e.offsetWidth; e.classList.add('wiggle'); };
+        function burst(x, y, list, n = 8) {
+            for (let i = 0; i < n; i++) {
+                const e = document.createElement('span'); e.className = 'fx'; e.textContent = pick(list); e.style.left = x + 'px'; e.style.top = y + 'px'; document.body.appendChild(e);
+                const a = Math.random() * 6.28, d = 40 + Math.random() * 80;
+                try {
+                    e.animate([{ transform: 'translate(-50%,-50%) scale(.5)', opacity: 1 }, { transform: `translate(calc(-50% + ${Math.cos(a) * d}px),calc(-50% + ${Math.sin(a) * d - 40}px)) scale(1.4) rotate(${Math.random() * 360}deg)`, opacity: 0 }], { duration: 900 + Math.random() * 500, easing: 'ease-out' }).onfinish = () => e.remove();
+                } catch(err) {
+                    setTimeout(() => e.remove(), 1000);
+                }
+            }
+        }
+        const FUN = ['馃帀', '猸�', '馃寛', '馃巿', '鉁�', '馃お', '馃悾', '馃崟'];
+        let mt; 
+        function talk(m) { 
+            const b = $('mb'); 
+            if (!b) return;
+            b.textContent = m; 
+            b.style.opacity = 1; 
+            clearTimeout(mt); 
+            mt = setTimeout(() => { b.style.opacity = 0.9; }, 6000); 
+        }
+
+        function getMissingStepsAdvice() {
+            if (!currentSharedQuest) return "B茅 h茫y ch峄峮 m峄檛 truy峄噉 trong kho 膽峄� b岷痶 膽岷 l脿m b脿i nha! 馃摉";
+            const q = currentSharedQuest;
+            const missingStories = Math.max(0, (q.target_stories || 1) - sessionTracker.readStories.size);
+            const missingSentences = Math.max(0, (q.target_sentences || 1) - sessionTracker.sentencesPassed);
+            const missingGames = Math.max(0, (q.target_games || 2) - sessionTracker.gamesPlayed);
+            const missingScore = Math.max(0, (q.target_score || 150) - sessionTracker.scoreEarned);
+
+            if (missingStories === 0 && missingSentences === 0 && missingGames === 0 && missingScore === 0) {
+                return "Wao xu岷 s岷痗 qu谩! B茅 膽茫 ho脿n th脿nh 膽峄� c岷� 4 m峄! B岷 '馃弳 N峄檖 Ghi 膼i峄僲' 膽峄� nh岷璶 th瓢峄焠g ngay th么i! 馃コ馃帀";
+            }
+
+            let advise = "Nhi峄噈 v峄� c貌n thi岷縰: ";
+            let steps = [];
+            if (missingStories > 0) steps.push(`Nghe/膽峄峜 ${missingStories} b脿i`);
+            if (missingSentences > 0) steps.push(`Luy峄噉 膽峄峜 膽煤ng ${missingSentences} c芒u`);
+            if (missingGames > 0) steps.push(`Ch啤i ${missingGames} l瓢峄 game`);
+            if (missingScore > 0) steps.push(`Ki岷縨 th锚m ${missingScore}膽 n峄痑`);
+
+            return advise + steps.join(", ") + " nha! C峄� l锚n b茅 y锚u! 馃挭鉁�";
+        }
+
+        const MOTIVATION_QUOTES = [
+            "C峄� l锚n b茅 啤i! B谩c h峄峜 ng么n ng峄� t瓢啤ng lai kh么ng bao gi峄� b峄� cu峄檆! 馃殌",
+            "Ph谩t 芒m to v脿 r玫 r脿ng l锚n nha, ch煤 ng峄盿 膽ang l岷痭g nghe 膽芒y! 馃帶",
+            "G岷 xong nhi峄噈 v峄� r峄搃, bim bim v脿 tr脿 s峄痑 膽ang 膽峄 b茅 膽贸! 馃崯馃",
+            "膼峄峜 s谩ch ti岷縩g Anh m峄梚 ng脿y s岷� th么ng minh nh瓢 nh脿 b谩c h峄峜 lu么n! 馃摎鉁�",
+            "M峄梚 c芒u b茅 膽峄峜 膽煤ng l脿 m峄檛 b瓢峄沜 ti岷縩 g岷 t峄沬 ph岷 th瓢峄焠g b峄� m岷�! 馃巵",
+            "H铆 h铆 h铆! Ch煤 ng峄盿 v峄� tay khen b茅 ch膬m ch峄� n猫! 馃憦馃",
+            "C贸 t峄� n脿o kh贸 kh么ng? Ch岷 v脿o th岷� t峄� v峄眓g l脿 c贸 loa 膽峄峜 m岷玼 li峄乶 nha! 馃攰",
+            "T岷璸 trung m峄檛 ch煤t n峄痑 th么i l脿 ho脿n th脿nh nhi峄噈 v峄� 6 ti岷縩g r峄搃! 鈴�"
+        ];
+
+        function scheduleRandomChat() {
+            const nextInterval = Math.floor(Math.random() * 5000) + 10000;
+            setTimeout(() => {
+                if (!document.hidden) {
+                    if (Math.random() < 0.6) {
+                        talk(getMissingStepsAdvice());
+                    } else {
+                        talk(pick(MOTIVATION_QUOTES));
+                    }
+                }
+                scheduleRandomChat();
+            }, nextInterval);
+        }
+        scheduleRandomChat();
+
+        $('me').onclick = (e) => { 
+            e.stopPropagation();
+            wig($('me')); 
+            burst(innerWidth - 40, innerHeight - 50, FUN, 7); 
+            if (Math.random() < 0.5) {
+                talk(getMissingStepsAdvice());
+            } else {
+                talk(pick(MOTIVATION_QUOTES));
+            }
+        };
+
+        // L岷甆G NGHE CLICK CHU峄楾 AN TO脌N (KH脭NG CH岷禢 N脷T CH峄– N膫NG)
+        document.addEventListener('click', e => {
+            const target = e.target;
+            if (target.id === 'me' || target.closest('#mascot') || target.closest('#themeBtn') || target.closest('#themePanel')) return;
+
+            const b = target.closest('button');
+            const v = target.closest('.vocab-card');
+            const card = target.closest('.guide-card');
+            const isTextarea = target.id === 'storyText';
+            const isDrop = target.closest('#dropZone');
+
+            const r = b && b.getBoundingClientRect();
+            const x = e.clientX || (r ? r.left + r.width / 2 : 0);
+            const y = e.clientY || (r ? r.top : 0);
+
+            if (x && y) {
+                if (v) burst(x, y, ['馃攰', '馃幍', '猸�'], 5);
+                else if (b && !b.closest('#gameArea')) { burst(x, y, FUN, 7); wig(b); }
+            }
+
+            if (v) {
+                const wordText = v.querySelector('span')?.textContent || 't峄� n脿y';
+                talk(`T峄� "${wordText.trim()}" hay qu谩! B茅 nh峄� 膽峄峜 theo loa 2 l岷 膽峄� kh岷痗 s芒u tr铆 nh峄� nha! 馃攰`);
+                return;
+            }
+
+            if (b) {
+                if (b.id === 'cleanBtn') {
+                    talk("Ch峄昳 th岷 AI 膽茫 qu茅t s岷h ch峄� ma OCR! K茅o xu峄憂g l脿m th峄� th谩ch 膽峄峜 c芒u ngay n脿o b茅! 馃Ч鉁�");
+                    return;
+                }
+                if (b.id === 'playBtn') {
+                    talk("膼ang 膽峄峜 to c岷� b脿i! B茅 nghe th岷璽 k峄� c谩ch ph谩t 芒m v脿 n峄慽 ch峄� 膽峄� 膽峄峜 c芒u nh茅! 馃帶");
+                    return;
+                }
+                if (b.id === 'playCursorBtn') {
+                    talk("Ch峄� 膽芒u 膽峄峜 膽贸! Ch峄� n脿o kh贸 hi峄僽 b茅 c峄� 膽岷穞 con tr峄� v脿o 膽贸 r峄搃 nghe l岷 nha! 馃憜");
+                    return;
+                }
+                if (b.id === 'stopBtn') {
+                    talk("Phanh k铆t k铆t! T岷 d峄玭g 膽峄� u峄憂g ng峄 n瓢峄沜 r峄搃 h峄峜 ti岷縫 n脿o b茅 啤i! 馃洃馃イ");
+                    return;
+                }
+                if (b.id === 'extractBtn') {
+                    talk("膼ang d霉ng k铆nh l煤p th么ng minh soi ch峄� t峄� 岷h... B茅 ch峄� x铆u l脿 c贸 ch峄� ngay! 馃攳");
+                    return;
+                }
+                if (b.id === 'claimQuestBtn') {
+                    talk(getMissingStepsAdvice());
+                    return;
+                }
+                if (b.id === 'retryQuestBtn') {
+                    talk("B岷痶 膽岷 l瓢峄 th峄� l岷! 膼i峄僲 s峄� m峄沬 s岷� ghi 膽猫 膽i峄僲 c农, c峄� g岷痭g 膽岷 膽i峄僲 cao h啤n nha! 馃攧");
+                    return;
+                }
+            }
+
+            if (isDrop) {
+                talk("Ch岷 v脿o 膽芒y 膽峄� t岷 岷h trang s谩ch r玫 n茅t ho岷穋 file Word/PDF truy峄噉 tranh l锚n nha! 馃摳");
+                return;
+            }
+
+            if (isTextarea) {
+                talk("N峄檌 dung b脿i h峄峜 峄� 膽芒y! B茅 c贸 th峄� click v脿o ch峄� b岷 k峄� r峄搃 b岷 'T峄� Tr峄�' 膽峄� nghe ri锚ng 膽o岷 膽贸 nha! 馃摑");
+                return;
+            }
+
+            if (card) {
+                if (card.id === 'cardKidProfile') {
+                    talk("B岷g th脿nh t铆ch c峄 b茅! Ho脿n th脿nh t峄慽 thi峄僽 5 nhi峄噈 v峄� tu岷 膽峄� b峄� m岷� th瓢峄焠g bim bim nha! 馃崯");
+                    return;
+                }
+                if (card.id === 'cardQuestArea') {
+                    talk(getMissingStepsAdvice());
+                    return;
+                }
+                if (card.id === 'cardLeaderboard') {
+                    talk("B岷g V脿ng vinh danh c谩c b岷 nh峄� ch膬m ch峄� nh岷 tr锚n Cloud! B茅 膽ua top 1 c霉ng c谩c b岷 n脿o! 馃弳");
+                    return;
+                }
+                if (card.id === 'cardStoryLibrary') {
+                    talk("Kho truy峄噉 Cloud c峄 b峄� D农ng! B茅 ch峄峮 m峄檛 cu峄憂 s谩ch b岷 k峄� 膽峄� h峄峜 b脿i nha! 馃摎");
+                    return;
+                }
+                if (card.id === 'cardSentenceSection') {
+                    talk("Th峄� th谩ch 膽峄峜 c岷� c芒u: Nghe m岷玼 tr瓢峄沜 馃攰 r峄搃 b岷 '馃帳 B茅 膼峄峜' 膽峄� m谩y ch岷 膽i峄僲 ph谩t 芒m nha! 馃帣锔�");
+                    return;
+                }
+                if (card.id === 'cardVocabSection') {
+                    talk("T峄� v峄眓g th么ng minh 膽瓢峄 m谩y l峄峜 ra! Ch岷 v脿o t峄玭g t峄� 膽峄� nghe 膽峄峜 v脿 xem gi岷 ngh末a chu岷﹏ nha! 馃挕");
+                    return;
+                }
+                if (card.id === 'cardQuizSection') {
+                    talk("膼峄� vui 5 c芒u: Tr岷� l峄漣 膽煤ng 膽峄� ki岷縨 膽i峄僲 v瓢峄 chu岷﹏ nhi峄噈 v峄� n脿o b茅 啤i! 馃幃");
+                    return;
+                }
+                if (card.id === 'cardGameSection') {
+                    talk("Ph貌ng Game vui nh峄檔: Ch啤i game v峄玜 ghi nh峄� t峄� v峄眓g v峄玜 t铆ch l农y 膽i峄僲 th瓢峄焠g! 馃暪锔�");
+                    return;
+                }
+            }
+        });
+
+        // ================== C岷 TR脷C PH脕T 脗M THANH TR峄癈 TI岷綪 (CHU岷∟ 峄擭 膼峄奛H C浓) ==================
+        let mainAudio = new Audio();
+        let audioPlaylist = [];
+        let currentPlaylistIndex = 0;
+        let isStoryPlaying = false;
+        let wordAudio = new Audio();
+
+        function stopAudio() {
+            isStoryPlaying = false;
+            audioPlaylist = [];
+            currentPlaylistIndex = 0;
+
+            mainAudio.pause();
+            mainAudio.currentTime = 0;
+            mainAudio.onended = null;
+            mainAudio.onerror = null;
+
+            wordAudio.pause();
+            wordAudio.currentTime = 0;
+
+            const btn = document.getElementById('playBtn');
+            if (btn) btn.innerHTML = '<span class="mr-1">鈻讹笍</span>膼峄峜 To';
+        }
+
+        // --- 1. PH脕T T峄� V峄癗G DUY NH岷 (HI峄哢 峄∟G TH峄� GI脕C, KH脭NG 膼峄孋 C岷� B脌I) ---
+        window.playWordAudio = function(word, el) {
+            stopAudio();
+
+            if (el) {
+                document.querySelectorAll('.vocab-card').forEach(c => {
+                    c.classList.remove('ring-4', 'ring-purple-400', 'scale-105', 'bg-purple-100');
+                    const sp = c.querySelector('.speaker-icon');
+                    if (sp) sp.classList.remove('animate-bounce');
+                });
+                el.classList.add('ring-4', 'ring-purple-400', 'scale-105', 'bg-purple-100');
+                const speaker = el.querySelector('.speaker-icon');
+                if (speaker) speaker.classList.add('animate-bounce');
+
+                setTimeout(() => {
+                    el.classList.remove('ring-4', 'ring-purple-400', 'scale-105', 'bg-purple-100');
+                    if (speaker) speaker.classList.remove('animate-bounce');
+                }, 1000);
+            }
+
+            const cleanWord = String(word || '').trim();
+            if (!cleanWord) return;
+
+            wordAudio.src = `https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=en&q=${encodeURIComponent(cleanWord)}`;
+            wordAudio.playbackRate = 0.9;
+            wordAudio.play().catch(e => {
+                showToast('B茅 ki峄僲 tra 芒m l瓢峄g ho岷穋 t岷痶 ch岷� 膽峄� im l岷穘g nh茅!', 'warning');
+            });
+        };
+
+        // --- 2. PH脕T B脌I 膼峄孋 (H岷綯 L岷禤 2 L岷) ---
+        function speakText(text) {
+            stopAudio();
+            const rawText = String(text || '').trim();
+            if (!rawText) return showToast('Ch瓢a c贸 n峄檌 dung 膽峄� 膽峄峜!', 'warning');
+
+            audioPlaylist = rawText.match(/[^.!?\n]+[.!?\n]*/g) || [rawText];
+            audioPlaylist = audioPlaylist.map(chunk => chunk.trim()).filter(chunk => chunk.length > 0);
+            if (!audioPlaylist.length) return;
+
+            currentPlaylistIndex = 0;
+            isStoryPlaying = true;
+
+            const playBtn = document.getElementById('playBtn');
+            if (playBtn) playBtn.innerHTML = '<span class="mr-1">馃攰</span>膼ang 膽峄峜...';
+
+            playNextAudioChunk();
+        }
+
+        function playNextAudioChunk() {
+            if (isStoryPlaying && currentPlaylistIndex >= audioPlaylist.length && audioPlaylist.length > 2) markRead();
+            if (!isStoryPlaying || currentPlaylistIndex >= audioPlaylist.length) {
+                stopAudio();
+                return;
+            }
+
+            const chunk = audioPlaylist[currentPlaylistIndex];
+            mainAudio.src = `https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=en&q=${encodeURIComponent(chunk)}`;
+            mainAudio.playbackRate = parseFloat(speedSlider.value) || 0.8;
+
+            mainAudio.onended = () => {
+                currentPlaylistIndex++;
+                playNextAudioChunk();
+            };
+
+            mainAudio.onerror = () => {
+                currentPlaylistIndex++;
+                playNextAudioChunk();
+            };
+
+            mainAudio.play().catch(e => {
+                stopAudio();
+                showToast('B茅 岷 l岷 膽峄� ti岷縫 t峄 ph谩t 芒m thanh nh茅!', 'warning');
+            });
+        }
+
+        document.getElementById('playBtn').addEventListener('click', () => { 
+            if (!isStoryPlaying) speakText(storyText.value.trim()); 
+        });
+
+        // 岷 t峄� con tr峄�: Ng岷痶 ngay lu峄搉g c农 v脿 膽峄峜 chu岷﹏ x谩c kh么ng b峄� l岷穚
+        let lastCursorClickTime = 0;
+        document.getElementById('playCursorBtn').addEventListener('click', () => {
+            const now = Date.now();
+            if (now - lastCursorClickTime < 400) return;
+            lastCursorClickTime = now;
+
+            const text = storyText.value;
+            if (!text.trim()) return showToast('Ch瓢a c贸 truy峄噉!', 'warning');
+            let pos = storyText.selectionStart;
+            while (pos > 0 && /\S/.test(text[pos - 1])) pos--;
+            speakText(text.substring(pos).trim());
+        });
+
+        document.getElementById('stopBtn').addEventListener('click', stopAudio);
+        speedSlider.addEventListener('input', () => {
+            if (isStoryPlaying) mainAudio.playbackRate = parseFloat(speedSlider.value) || 0.8;
+        });
+
+        // ================== XU岷 OFFLINE (WORD & MP3) ==================
+        function exportToWord() {
+            const text = storyText.value.trim(); if (!text) return showToast('Tr峄憂g!', 'warning');
+            const wordHtml = `<html xmlns:w='urn:schemas-microsoft-com:office:word'><body style="font-family: 'Comic Sans MS'; background: #fdf2f8; padding: 20px;"><h1 style="color:#ec4899;text-align:center;">馃専 MAGIC STORY READER 馃専</h1><div style="background:#fff;padding:20px;border:2px dashed #bfdbfe;">${text.split('\n').map(l => `<p style="font-size:14pt;font-weight:bold;color:#1e3a8a;margin:0 0 10px 0;">${String(l).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}</p>`).join('')}</div></body></html>`;
+            const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeff', wordHtml], { type: 'application/msword' }));
+            a.download = `Truyen_${Date.now()}.doc`; a.click();
+        }
+
+        async function exportToMP3() {
+            const text = storyText.value.trim();
+            if (!text) return showToast('Ch瓢a c贸 truy峄噉 膽峄� xu岷 MP3!', 'warning');
+            
+            const btn = document.getElementById('btnMp3');
+            btn.innerHTML = '鈴� T岷...'; btn.disabled = true;
+            showToast('膼ang t岷 芒m thanh... B茅 ch峄� ch煤t nha! 鈴�', 'success');
+            
+            let rawChunks = text.match(/[^.!?\n]+[.!?\n]*/g) || [text];
+            let chunks = [];
+            rawChunks.forEach(c => {
+                let txt = c.trim();
+                if(txt.length > 0) {
+                    if (txt.length <= 120) chunks.push(txt);
+                    else {
+                        let words = txt.split(' '); let temp = '';
+                        words.forEach(w => {
+                            if ((temp + ' ' + w).length < 120) temp += (temp ? ' ' : '') + w;
+                            else { chunks.push(temp); temp = w; }
+                        });
+                        if(temp) chunks.push(temp);
+                    }
+                }
+            });
+            
+            let audioBuffers = [];
+            let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+            try {
+                for(let i=0; i<chunks.length; i++) {
+                    let url = `https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=en&q=${encodeURIComponent(chunks[i])}`;
+                    let proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+                    let res = await fetch(proxyUrl);
+                    if(!res.ok) throw new Error('Proxy l峄梚');
+                    
+                    let arrayBuffer = await res.arrayBuffer();
+                    let audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+                    audioBuffers.push(audioBuffer);
+                }
+
+                let totalLength = audioBuffers.reduce((sum, buffer) => sum + buffer.length, 0);
+                let finalBuffer = audioCtx.createBuffer(1, totalLength, audioCtx.sampleRate);
+                let offset = 0;
+                audioBuffers.forEach(buffer => {
+                    finalBuffer.copyToChannel(buffer.getChannelData(0), 0, offset);
+                    offset += buffer.length;
+                });
+
+                const wavBlob = bufferToWav(finalBuffer, totalLength);
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(wavBlob);
+                a.download = `Audio_Full_${Date.now()}.wav`;
+                a.click();
+                showToast('T岷 Audio To脿n B脿i th脿nh c么ng! 馃幍', 'success');
+            } catch(e) {
+                showToast('M峄� link nghe t岷 th峄漣...', 'warning');
+                window.open(`https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=en&q=${encodeURIComponent(chunks[0])}`, '_blank');
+            } finally {
+                btn.innerHTML = '馃幍 MP3'; btn.disabled = false;
+            }
+        }
+        
+        function bufferToWav(abuffer, len) {
+            let numOfChan = abuffer.numberOfChannels, length = len * numOfChan * 2 + 44, buffer = new ArrayBuffer(length), view = new DataView(buffer), channels = [], i, sample, offset = 0, pos = 0;
+            const setU16 = (d) => { view.setUint16(pos, d, true); pos+=2; }; const setU32 = (d) => { view.setUint32(pos, d, true); pos+=4; };
+            setU32(0x46464952); setU32(length - 8); setU32(0x45564157); setU32(0x20746d66); setU32(16); setU16(1); setU16(numOfChan);
+            setU32(abuffer.sampleRate); setU32(abuffer.sampleRate * 2 * numOfChan); setU16(numOfChan * 2); setU16(16); setU32(0x61746164); setU32(length - pos - 4);
+            for(i=0; i<numOfChan; i++) channels.push(abuffer.getChannelData(i));
+            while(pos < length) { for(i=0; i<numOfChan; i++) { sample = Math.max(-1, Math.min(1, channels[i][offset])); sample = (0.5 + sample < 0 ? sample * 32768 : sample * 32767)|0; view.setInt16(pos, sample, true); pos += 2; } offset++; }
+            return new Blob([buffer], {type: "audio/wav"});
+        }
+
+        // ================== MARQUEE & TOAST ==================
+        const greetings = [
+            "Hello little angel! 鉁�",
+            "Keep up the great work! 馃殌",
+            "Learning English is fun! 馃巿"
+        ];
+        document.getElementById('greetingMarquee').innerText =
+            `Happy ${["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][new Date().getDay()]}! ${greetings[Math.floor(Math.random() * greetings.length)]}`;
+
+        function showToast(msg, type = 'success') {
+            clearTimeout(toastTimeout); toastMessage.textContent = msg;
+            toastMessage.className = `fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-4 py-2 rounded-full font-bold text-[10px] md:text-sm shadow-xl transition-all duration-300 text-center min-w-[200px] pointer-events-none`;
+            if (type === 'error') toastMessage.classList.add('bg-red-500', 'text-white');
+            else if (type === 'warning') toastMessage.classList.add('bg-yellow-400', 'text-yellow-900');
+            else toastMessage.classList.add('bg-green-500', 'text-white');
+            toastMessage.style.opacity = '1'; toastMessage.style.transform = 'translate(-50%, 10px)';
+            toastTimeout = setTimeout(() => { toastMessage.style.opacity = '0'; toastMessage.style.transform = 'translate(-50%, 0)'; }, 3000);
+        }
+
+        // ================== OCR ==================
+                let files = [], active = 0;
+
+        function kind(f) {
+            const n = f.name.toLowerCase();
+            if (f.type.startsWith('image/') || /\.(jpe?g|png)$/.test(n)) return 'img';
+            if (f.type === 'application/pdf' || n.endsWith('.pdf')) return 'pdf';
+            if (n.endsWith('.docx')) return 'docx';
+            if (/\.(txt|md)$/.test(n)) return 'txt';
+            return null;
+        }
+
+        function addFiles(list) {
+            const ok = [];
+            [...list].forEach(f => { if (kind(f)) ok.push(f); });
+            if (!ok.length) return;
+            active = files.length; files.push(...ok); renderFiles();
+        }
+
+        function renderFiles() {
+            $('fileChips').innerHTML = files.map((f, i) => `
+                <span class="inline-flex items-center rounded-full border border-pink-300 bg-white text-[10px] font-bold text-pink-700 max-w-full">
+                    <button type="button" onclick="active=${i};renderFiles()" class="px-1.5 py-0.5 truncate max-w-[80px]">${f.name}</button>
+                    <button type="button" onclick="files.splice(${i},1);renderFiles()" class="px-1 text-red-500">鉁�</button>
+                </span>
+            `).join('');
+        }
+        $('fileInput').addEventListener('change', e => { addFiles([...e.target.files]); e.target.value = ''; });
+
+        $('extractBtn').addEventListener('click', async () => {
+            if (!files.length) return showToast('Ch峄峮 file nha!', 'warning');
+            $('loadingStatus').classList.replace('hidden', 'flex'); $('extractBtn').disabled = true;
+
+            let worker = null; const parts = [];
+            try {
+                for (let i = 0; i < files.length; i++) {
+                    const f = files[i]; const k = kind(f);
+                    if (k === 'img') {
+                        if (!window.Tesseract) {
+                            await new Promise(ok => { let s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js'; s.onload = ok; document.head.appendChild(s); });
+                        }
+                        worker = worker || await Tesseract.createWorker('eng', 1);
+                        parts.push(await ocrImage(f, worker));
+                    } else if (k === 'pdf') {
+                        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+                        const pd = await pdfjsLib.getDocument({ data: await f.arrayBuffer() }).promise;
+                        for (let p = 1; p <= pd.numPages; p++) { const c = await (await pd.getPage(p)).getTextContent(); parts.push(c.items.map(x => x.str).join(' ')); }
+                    } else if (k === 'txt') {
+                        parts.push(await f.text());
+                    } else if (k === 'docx') {
+                        if (!window.mammoth) {
+                            await new Promise(ok => { let s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js'; s.onload = ok; document.head.appendChild(s); });
+                        }
+                        parts.push((await mammoth.extractRawText({ arrayBuffer: await f.arrayBuffer() })).value);
+                    }
+                }
+                storyText.value = parts.join('\n\n'); showToast('Xong!', 'success'); cleanBtn.click();
+            } catch (e) {
+                console.error(e); showToast('L峄梚 膽峄峜 file!', 'error');
+            } finally {
+                if (worker) await worker.terminate();
+                $('extractBtn').disabled = false; $('loadingStatus').classList.replace('flex', 'hidden');
+            }
+        });
+
+        
+// ================== V2: L脌M S岷燙H TH脭NG MINH ==================
+const DICT = new Set(`a an the and or but so if of to in on at by for with from as is are was were be been am do does did have has had will would can could should may might must not no yes it its he she we they you i me my your his her our their them him us this that these those there here what when where who why how which all any some many much more most very too also just only then than now up down out over under again once one two three four five six seven eight nine ten first said say says go goes went going gone come came get got make made take took see saw look looked like liked love loved want wanted know knew think thought give gave tell told ask asked find found work play played run ran walk walked eat ate drink sleep slept sit sat stand stood open closed help called call try tried feel felt keep kept let put big small little long short tall old new young good bad happy sad angry hungry tired scared brave kind nice funny pretty beautiful strong fast slow hot cold warm dark light bright day night morning evening time year today tomorrow yesterday home house room door window garden tree flower grass river sea sun moon star sky cloud rain snow wind mountain forest road town city school class friend friends mother father mom dad mum brother sister baby child children boy girl man woman people family king queen prince princess dragon monster giant fairy witch wizard magic story book page word words letter name water food bread milk apple cake candy fish bird dog cat mouse rabbit bear fox wolf lion tiger elephant monkey duck horse cow pig sheep frog turtle butterfly bee red blue green yellow orange pink purple black white brown gold silver head hand hands eyes eye face hair nose mouth ear ears arm leg legs foot feet heart voice smile laugh cry shout whisper jump fly swim climb fall hide hid seek wait stop start end finish begin began never always often sometimes every each other another because after before while during without into through about around away back behind near next between inside outside above below together alone everyone everything something nothing someone anyone both either neither same different important special secret treasure adventure journey dream wish hope moment suddenly finally quickly slowly quietly loudly lived lives live upon wonderful amazing great best better worse well oh hello goodbye thank thanks please sorry chapter title don't can't it's i'm i'll i've that's let's didn't isn't he's she's we're they're you're won't wasn't couldn't wouldn't there's what's who's`.split(/\s+/));
+const known = w => {
+    if (DICT.has(w)) return true;
+    return [w.replace(/'s$/, ''), w.replace(/ies$/, 'y'), w.replace(/ied$/, 'y'), w.replace(/(es|s|ed|d|ly|er|est|ing)$/, ''), w.replace(/ing$/, 'e'), w.replace(/ed$/, 'e'), w.replace(/(.)\1(ing|ed|er|est)$/, '$1')].some(x => x.length > 1 && DICT.has(x));
+};
+const plaus = w => {
+    if (w.length < 3 || w.length > 18) return false;
+    const v = (w.match(/[aeiouy]/g) || []).length / w.length;
+    return v >= .25 && v <= .65 && !/[^aeiouy']{4,}|(.)\1\1|[aeiou]{4,}|q(?!u)|[jqxz]{2}/i.test(w);
+};
+// 膽i峄僲 "gi峄憂g t峄� th岷璽": 1 = t峄� 膽i峄僴, .6 = c贸 v岷� l脿 t峄�/t锚n ri锚ng, 0 = r谩c, null = ch峄� d岷 c芒u
+function wscore(tok, first) {
+    const c = tok.replace(/^[^A-Za-z0-9']+|[^A-Za-z0-9']+$/g, '');
+    if (!c) return null;
+    if (/^\d+$/.test(c)) return .5;
+    if (/\d/.test(c)) return 0;
+    if (/[a-z][A-Z]/.test(c)) return 0;
+    const l = c.toLowerCase();
+    if (l.length === 1) return /^[ai]$/.test(l) ? .8 : 0;
+    if (known(l)) return 1;
+    if (!plaus(l)) return 0;
+    if (/^[A-Z]/.test(c) && !first) return .6;
+    return l.length >= 5 ? .6 : 0;
+}
+function smartClean(raw, keep) {
+    let junk = 0;
+    raw = raw.replace(/[鈥樷€檂麓]/g, "'").replace(/[鈥溾€漖/g, '"').replace(/(\w)-\n(\w)/g, '$1$2').replace(/(^|\s)[|lI](?=\s|$)/gm, '$1I').replace(/[^A-Za-z0-9.,!?'";:\-\s]/g, ' ');
+    const out = [];
+    raw.split('\n').forEach(line => {
+        const alpha = (line.match(/[A-Za-z]/g) || []).length, vis = line.replace(/\s/g, '').length;
+        if (!vis) return out.push('');
+        const toks = line.trim().split(/\s+/).map((t, i) => ({ t, s: wscore(t, i === 0) })).filter(x => x.s !== null);
+        if (!toks.length) return;
+        if (alpha / vis < .55 && toks.length > 1) { junk += toks.length; return; }
+        const avg = toks.reduce((a, x) => a + x.s, 0) / toks.length, good = toks.filter(x => x.s >= .6).length;
+        if (toks.length <= 2 ? !toks.every(x => x.s >= .6) : !(avg >= .5 && good >= 2)) { junk += toks.length; return; }
+        const kept = toks.filter(x => x.s > 0);
+        junk += toks.length - kept.length;
+        out.push(kept.map(x => x.t.replace(/^[^A-Za-z0-9'"]+(?=[A-Za-z0-9])/, '')).join(' '));
+    });
+    let t = out.join('\n');
+    if (!keep) t = t.replace(/\n[ \t]*\n/g, '\u0001').replace(/\n/g, ' ').replace(/\u0001+/g, '\n\n');
+    t = t.replace(/\s+([.,!?:;])/g, '$1').replace(/([.,!?:;])(?=[A-Za-z])/g, '$1 ').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim()
+        .replace(/(^|[.!?]\s+)([a-z])/g, (m, a, b) => a + b.toUpperCase()).replace(/\bi\b/g, 'I');
+    return { text: t, junk };
+}
+
+// ================== V2: OCR CH峄怤G H峄孉 TI岷綯 ==================
+async function prepImg(f) {
+    const b = await createImageBitmap(f);
+    const s = b.width < 1400 ? 1400 / b.width : (b.width > 2400 ? 2400 / b.width : 1), mx = b.width * .02, my = b.height * .02;
+    const cv = document.createElement('canvas'); cv.width = (b.width - 2 * mx) * s; cv.height = (b.height - 2 * my) * s;
+    const cx = cv.getContext('2d'); cx.drawImage(b, mx, my, b.width - 2 * mx, b.height - 2 * my, 0, 0, cv.width, cv.height);
+    const im = cx.getImageData(0, 0, cv.width, cv.height), d = im.data, h = new Array(256).fill(0);
+    for (let i = 0; i < d.length; i += 4) { const g = (d[i] * .3 + d[i + 1] * .59 + d[i + 2] * .11) | 0; d[i] = g; h[g]++; }
+    const N = d.length / 4; let sum = 0; for (let i = 0; i < 256; i++) sum += i * h[i];
+    let sB = 0, wB = 0, best = 0, th = 128;
+    for (let i = 0; i < 256; i++) { wB += h[i]; if (!wB) continue; const wF = N - wB; if (!wF) break; sB += i * h[i]; const v = wB * wF * Math.pow(sB / wB - (sum - sB) / wF, 2); if (v > best) { best = v; th = i; } }
+    for (let i = 0; i < d.length; i += 4) { const v = d[i] > th ? 255 : 0; d[i] = d[i + 1] = d[i + 2] = v; d[i + 3] = 255; }
+    cx.putImageData(im, 0, 0); return cv;
+}
+async function ocrImage(f, worker) {
+    const run = async src => {
+        const d = (await worker.recognize(src)).data, ws = (d.words || []).filter(w => w.bbox);
+        if (!d.lines || !ws.length) return d.text;
+        const hs = ws.map(w => w.bbox.y1 - w.bbox.y0).sort((a, b) => a - b), m = hs[hs.length >> 1];
+        return d.lines.map(l => l.words.filter(w => w.confidence >= 55 && w.text.trim() && (w.bbox.y1 - w.bbox.y0) > m * .4 && (w.bbox.y1 - w.bbox.y0) < m * 2.8).map(w => w.text).join(' ')).join('\n');
+    };
+    try {
+        let t = await run(await prepImg(f));
+        if ((t.match(/[A-Za-z]{3,}/g) || []).length < 8) t = await run(f);
+        return t;
+    } catch (e) { return (await worker.recognize(f)).data.text; }
+}
+
+
+// ================== 膼峄擨 GIAO DI峄哊 ==================
+        $('themeBtn').addEventListener('click', () => {
+            $('themePanel').innerHTML = THEMES.map(t => `
+                <button type="button" data-t="${t.id}" class="text-left rounded p-1 border btn-bounce ${t.id === document.documentElement.dataset.theme ? 'border-pink-500 bg-pink-100' : 'border-pink-200'}">
+                    <span class="flex h-3 rounded overflow-hidden mb-1">
+                        <i class="flex-1" style="background:${t.bg}"></i>
+                        <i class="flex-1" style="background:${t.primary}"></i>
+                        <i class="flex-1" style="background:${t.secondary}"></i>
+                    </span>
+                    <span class="text-[10px] font-black">${t.icon} ${t.name}</span>
+                </button>
+            `).join('');
+            $('themePanel').classList.toggle('hidden');
+        });
+
+        $('themePanel').addEventListener('click', e => {
+            const b = e.target.closest('[data-t]');
+            if (b) { applyTheme(b.dataset.t); $('themePanel').classList.add('hidden'); }
+        });
+
+        document.addEventListener('click', e => {
+            if (!e.target.closest('#themePanel,#themeBtn')) { $('themePanel').classList.add('hidden'); }
+        });
+    
+// ================== V3: B峄� SUNG / S峄珹 L峄朓 ==================
+const WIN = ['馃帀', '馃帄', '猸�', '馃弳', '馃'], OOPS = ['馃檲', '馃挮', '馃珷', '馃ぁ'];
+const sfx = (f, d = .12) => { try { const c = sfx.c || (sfx.c = new (window.AudioContext || window.webkitAudioContext)()), o = c.createOscillator(), g = c.createGain(); o.frequency.value = f; g.gain.value = .07; o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime + d); } catch (e) {} };
+const _burst = burst;
+burst = (x, y, l, n) => { if (l === WIN) { sfx(660); setTimeout(() => sfx(880), 120); } else if (l === OOPS) sfx(200, .3); _burst(x, y, l, n); };
+const LV = () => localStorage.getItem('magicLevel') || '1';
+
+// --- l瓢u / kh么i ph峄 ti岷縩 膽峄� nhi峄噈 v峄� (kh么ng m岷 khi t岷 l岷 trang) ---
+const SK = () => 'magicSess_' + currentKidId; let sessQ = null;
+function saveSess() { try { localStorage.setItem(SK(), JSON.stringify({ q: currentSharedQuest && currentSharedQuest.id, r: [...sessionTracker.readStories], s: sessionTracker.sentencesPassed, g: sessionTracker.gamesPlayed, c: sessionTracker.scoreEarned })); } catch (e) {} }
+function loadSess() { sessionTracker = { readStories: new Set(), sentencesPassed: 0, gamesPlayed: 0, scoreEarned: 0 }; try { const d = JSON.parse(localStorage.getItem(SK())); if (d && d.q === currentSharedQuest.id) sessionTracker = { readStories: new Set(d.r), sentencesPassed: d.s, gamesPlayed: d.g, scoreEarned: d.c }; } catch (e) {} }
+const _usu = updateSessionUI; updateSessionUI = () => { _usu(); saveSess(); };
+const _rq = renderQuestUI; renderQuestUI = () => { if (currentSharedQuest && sessQ !== currentSharedQuest.id) { sessQ = currentSharedQuest.id; loadSess(); } _rq(); };
+onSelectKidChanged = id => { localStorage.setItem('magicCurrentKid', id); currentKidId = id; sessQ = null; renderKidSelector(); loadLeaderboard(); renderQuestUI(); showToast('膼茫 chuy峄僴 b茅! 馃憢', 'success'); };
+function markRead() { sessionTracker.readStories.add(storyText.value.trim().slice(0, 30)); updateSessionUI(); burst(...ctr(), WIN, 10); talk('B茅 nghe xong c岷� b脿i r峄搃! Gi峄廼 qu谩! 馃摉馃帀'); }
+
+// --- t峄� ch岷 khi tr矛nh duy峄噒 kh么ng c贸 micro nh岷璶 gi峄峮g ---
+const _gsc = generateSentenceChallenge;
+generateSentenceChallenge = () => {
+    _gsc();
+    if (window.SpeechRecognition || window.webkitSpeechRecognition) return;
+    document.querySelectorAll('.sentence-item .flex.gap-1').forEach(d => {
+        const b = document.createElement('button'); b.textContent = '馃槏 B茅 膽峄峜 xong'; b.className = 'px-2 py-0.5 bg-pink-500 text-white text-[11px] font-black rounded-lg';
+        b.onclick = () => { b.disabled = true; b.textContent = '鉁�'; sessionTracker.sentencesPassed++; sessionTracker.scoreEarned += 5; updateSessionUI(); burst(...ctr(), WIN, 8); };
+        d.appendChild(b);
+    });
+};
+
+// --- l脿m s岷h + t岷 c芒u + t峄� v峄眓g ---
+cleanBtn.addEventListener('click', () => {
+    if (!storyText.value.trim()) return showToast('Ch瓢a c贸 ch峄� n脿o b茅 啤i!', 'warning');
+    const r = smartClean(storyText.value, $('keepLayout').checked);
+    if (!r.text) return showToast('M谩y kh么ng th岷 ch峄� ti岷縩g Anh n脿o 馃檲 Th峄� 岷h r玫 h啤n nh茅!', 'warning');
+    storyText.value = r.text;
+    showToast(r.junk ? `膼茫 膽u峄昳 ${r.junk} ch峄� ma ra kh峄廼 nh脿! 馃懟馃Ч` : 'S岷h b贸ng, kh么ng c贸 ch煤 ma n脿o! 鉁�', 'success');
+    const maxW = LV() === '1' ? 12 : 40;
+    allStorySentences = (r.text.match(/[^.!?\n]+[.!?]*/g) || []).map(s => s.trim()).filter(s => { const n = s.split(/\s+/).length; return n >= 4 && n <= maxW; });
+    generateSentenceChallenge(); extractVocabulary(r.text);
+    burst(innerWidth / 2, innerHeight / 3, ['馃懟', '馃挩', '馃Ч'], 10); navPulse('practice');
+    talk('Xong r峄搃! B茅 b岷 n煤t 馃棧锔� Luy峄噉 峄� d瓢峄沬 膽峄� h峄峜 t峄� v脿 膽峄峜 c芒u nh茅!');
+});
+
+const STOP = new Set('the and was were with that this they them then there their have has had for from but not are you his her she him its our out one all can will would could into over very just than when what where who why how said went came back down upon each been also some more most such only your about after before again under'.split(' '));
+const tmo = (u, ms = 4500) => { const c = new AbortController(); setTimeout(() => c.abort(), ms); return fetch(u, { signal: c.signal }).then(r => r.json()); };
+let vocOff = 0;
+async function extractVocabulary(text, off = 0) {
+    lastExtractedText = text; vocOff = off;
+    if (!off) {
+        const cnt = {}, minL = LV() === '1' ? 4 : 6;
+        (text.toLowerCase().match(/\b[a-z]{4,}\b/g) || []).forEach(w => { if (!STOP.has(w) && (LOCAL_DICTIONARY[w] || known(w) || plaus(w))) cnt[w] = (cnt[w] || 0) + 1; });
+        masterCandidatePool = Object.keys(cnt).filter(w => w.length >= minL || LOCAL_DICTIONARY[w]).sort((a, b) => (!!LOCAL_DICTIONARY[b] - !!LOCAL_DICTIONARY[a]) || b.length - a.length);
+    }
+    const ws = masterCandidatePool.slice(off, off + 12);
+    if (!ws.length) { vocabList.innerHTML = '<span class="italic text-purple-400 text-sm">H岷縯 t峄� kh贸 r峄搃! Th峄� b脿i kh谩c nh茅 馃帀</span>'; return; }
+    vocabList.innerHTML = '<span class="animate-pulse text-purple-500 text-sm">膼ang chu岷﹏ b峄� t峄� v峄眓g... 鈴�</span>';
+    const out = await Promise.all(ws.map(async w => {
+        const sm = text.match(new RegExp(`[^.?!\\n]*\\b${w}\\b[^.?!\\n]*[.?!]?`, 'i')), L = LOCAL_DICTIONARY[w];
+        let meaning = L ? L.m : '', pos = L ? L.p : '';
+        if (!meaning) try { const d = await tmo(`https://api.mymemory.translated.net/get?q=${w}&langpair=en|vi`), t = d && d.responseData && d.responseData.translatedText; if (t && !/MYMEMORY|QUERY|INVALID/i.test(t) && t.toLowerCase() !== w) meaning = t.toLowerCase(); } catch (e) {}
+        if (!pos) try { const p = (await tmo(`https://api.dictionaryapi.dev/api/v2/entries/en/${w}`, 3500))[0].meanings[0].partOfSpeech; pos = posMap[p] || p; } catch (e) {}
+        return { word: w, meaning: meaning || '(ch岷 膽峄� nghe)', pos: pos || 'T峄� v峄眓g', sentence: sm ? sm[0].trim() : '', ok: !!meaning };
+    }));
+    const good = out.filter(x => x.ok);
+    globalVocabData = good.length >= 4 ? good : out;
+    vocabList.innerHTML = out.map(i => `<div class="vocab-card px-3 py-2 bg-white border-2 border-purple-300 rounded-2xl shadow-sm cursor-pointer hover:bg-purple-100 flex flex-col items-center text-center select-none active:scale-95" onclick="playWordAudio('${i.word}', this)"><span class="text-purple-700 font-black text-base flex items-center gap-1">${i.word} <span class="speaker-icon">馃攰</span></span><span class="text-xs text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full mt-1 font-bold capitalize">${i.pos}</span><span class="text-sm text-slate-600 font-bold border-t border-purple-100 w-full mt-1 pt-0.5 capitalize">${i.meaning}</span></div>`).join('') + `<button class="w-full py-2 bg-purple-500 text-white font-black rounded-2xl" onclick="extractVocabulary(lastExtractedText, (vocOff + 12) >= masterCandidatePool.length ? 0 : vocOff + 12)">馃攧 膼峄昳 12 t峄� kh谩c</button>`;
+    talk('C贸 t峄� m峄沬 r峄搃! Ch岷 v脿o t峄玭g t峄� 膽峄� nghe 膽峄峜 nha! 馃攰');
+}
+
+// --- game: th锚m 膼峄� vui v脿o ph貌ng game, menu to d峄� b岷 ---
+function gQuiz() {
+    const qs = shuf(V()).slice(0, 5); let i = 0;
+    const nx = () => {
+        if (i >= qs.length) return fin();
+        const v = qs[i], t = v.sentence ? i % 3 : i % 2, P = V(); let ans, txt, o;
+        if (t === 0) { ans = v.meaning; txt = `Ngh末a c峄 <b>"${v.word}"</b> l脿 g矛?`; o = P.map(x => x.meaning); }
+        else if (t === 1) { ans = v.word; txt = `T峄� n脿o c贸 ngh末a l脿 <b>"${v.meaning}"</b>?`; o = P.map(x => x.word); }
+        else { ans = v.word; txt = `膼i峄乶 t峄�: <i>"${v.sentence.replace(new RegExp(`\\b${v.word}\\b`, 'gi'), '<b>[___]</b>')}"</i>`; o = P.map(x => x.word); }
+        o = shuf([ans, ...shuf([...new Set(o)].filter(x => x !== ans)).slice(0, 3)]);
+        area().innerHTML = `<div class="text-xs text-sky-500 font-bold">C芒u ${i + 1}/${qs.length} 鈥� ${G.score}膽</div><div class="my-2 text-base font-bold">${txt}</div><div class="grid grid-cols-2 gap-2">${o.map(x => `<button class="o bigopt capitalize">${x}</button>`).join('')}</div>`;
+        const bs = [...area().querySelectorAll('.o')];
+        bs.forEach((b, j) => b.onclick = () => {
+            bs.forEach(x => x.disabled = true); const ok = o[j] === ans; b.classList.add(ok ? 'bg-green-200' : 'bg-red-200');
+            if (!ok) bs[o.indexOf(ans)].classList.add('bg-green-200');
+            if (ok) { G.score += 10; burst(...ctr(), WIN, 10); } else burst(...ctr(), OOPS, 6);
+            i++; setTimeout(nx, 1100);
+        });
+    }; nx();
+}
+if ($('cardQuizSection')) $('cardQuizSection').remove();
+const GM = [['quiz', '鉂�', '膼峄� vui', '#f97316'], ['listen', '馃帶', 'Nghe 膽o谩n', '#0ea5e9'], ['flip', '馃儚', 'L岷璽 th岷�', '#8b5cf6'], ['scr', '馃敜', 'X岷縫 ch峄�', '#eab308'], ['speak', '馃帳', 'T岷璸 n贸i', '#ec4899'], ['speed', '鈿�', '膼ua t峄慶 膽峄�', '#10b981']];
+$('gameMenu').className = 'grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3';
+$('gameMenu').innerHTML = GM.map(g => `<button class="gtile" style="background:${g[3]}" onclick="playGame('${g[0]}')"><b>${g[1]}</b>${g[2]}</button>`).join('');
+window.playGame = k => {
+    if (V().length < 4) { showToast('Qua tab 馃摉 膼峄峜, ch峄峮 truy峄噉 r峄搃 b岷 "S岷h" 膽峄� l岷 t峄� v峄眓g nh茅!', 'warning'); return talk('M矛nh c岷 c贸 t峄� v峄眓g tr瓢峄沜 膽茫! B茅 quay l岷 tab 馃摉 膼峄峜 nha!'); }
+    clearInterval(GT); G.score = 0; G.k = k; ({ quiz: gQuiz, listen: gListen, flip: gFlip, speak: gSpeak, scr: gScr, speed: gSpeed })[k]();
+    area().scrollIntoView({ behavior: 'smooth', block: 'center' });
+};
+
+// --- thanh 膽i峄乽 h瓢峄沶g 4 tab + h瓢峄沶g d岷玭 t峄玭g b瓢峄沜 ---
+const TABS = { cardKidProfile: 'home', cardQuestArea: 'home', cardLeaderboard: 'home', cardChooseFile: 'read', cardReadingPanel: 'read', cardStoryLibrary: 'read', cardSentenceSection: 'practice', cardVocabSection: 'practice', cardGameSection: 'play' };
+const goRead = document.createElement('button'); goRead.id = 'goRead'; goRead.textContent = '馃殌 B岷痶 膽岷 h峄峜 n脿o!'; goRead.onclick = () => setTab('read'); $('cardLeaderboard').before(goRead); TABS.goRead = 'home';
+const guide = document.createElement('div'); guide.id = 'guide'; guide.innerHTML = '鈶� 馃摳 Ch峄峮 truy峄噉 鈫� 鈶� 馃Ч B岷 <b>S岷h</b> 鈫� 鈶� 馃帶 Nghe <b>膼峄峜 To</b> 鈫� 鈶� 馃棧锔� Luy峄噉 鈫� 鈶� 馃幃 Ch啤i'; $('cardChooseFile').before(guide); TABS.guide = 'read';
+function setTab(t) {
+    Object.entries(TABS).forEach(([id, tb]) => $(id).classList.toggle('hid', tb !== t));
+    document.querySelectorAll('#nav button').forEach(b => { b.classList.toggle('on', b.dataset.t === t); if (b.dataset.t === t) b.classList.remove('pulse'); });
+    document.body.dataset.tab = t; scrollTo({ top: 0 });
+}
+function navPulse(t) { const b = document.querySelector(`#nav button[data-t="${t}"]`); if (b && !b.classList.contains('on')) b.classList.add('pulse'); }
+document.querySelectorAll('#nav button').forEach(b => b.onclick = () => setTab(b.dataset.t));
+setTab('home');
+
+// --- chu峄梚 ng脿y h峄峜 + ch峄峮 c岷 膽峄� ---
+(function () {
+    const t = new Date().toDateString(), y = new Date(Date.now() - 864e5).toDateString(); let s = { d: '', n: 0 };
+    try { s = JSON.parse(localStorage.getItem('magicStreak')) || s; } catch (e) {}
+    if (s.d !== t) { s.n = s.d === y ? s.n + 1 : 1; s.d = t; try { localStorage.setItem('magicStreak', JSON.stringify(s)); } catch (e) {} }
+    $('streak').textContent = '馃敟 ' + s.n + ' ng脿y';
+    const lb = () => $('lvBtn').textContent = LV() === '1' ? '馃悾 C岷 1' : '馃 C岷 2';
+    $('lvBtn').onclick = () => { localStorage.setItem('magicLevel', LV() === '1' ? '2' : '1'); lb(); showToast(LV() === '1' ? 'C岷 1: t峄� ng岷痭, c芒u ng岷痭, d峄� h峄峜 馃悾' : 'C岷 2: t峄� d脿i h啤n, c芒u d脿i h啤n 馃', 'success'); };
+    lb();
+})();
+
+// bong b贸ng mascot kh么ng ch岷穘 n煤t b岷 v脿 t峄� 岷﹏ sau v脿i gi芒y
+talk = m => { const b = $('mb'); if (!b) return; b.textContent = m; b.style.opacity = 1; clearTimeout(mt); mt = setTimeout(() => { b.style.opacity = 0; }, 6000); };
+
+
+// ================== V3.1: NGHE HI峄俇 T峄狽G C脗U ==================
+const COLORS = ['red', 'blue', 'green', 'yellow', 'orange', 'pink', 'purple', 'black', 'white', 'brown', 'golden', 'gold', 'silver'];
+const NUMS = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10 };
+const C = { order: [], n: 0, s: '', qs: [], qi: 0, tries: 0, asked: 0, sum: 0, done: false };
+const cpEl = document.createElement('div');
+cpEl.id = 'cardComp'; cpEl.className = 'guide-card bg-white p-3 md:p-4 rounded-[1.5rem] shadow-lg border-4 border-cyan-300';
+cpEl.innerHTML = `<div class="flex justify-between items-center mb-2 gap-2"><h2 class="font-black text-cyan-700 text-base md:text-lg">馃憘 Nghe hi峄僽 t峄玭g c芒u</h2><span id="cpStat" class="text-xs font-black bg-cyan-100 text-cyan-800 px-2 py-1 rounded-full">Ch瓢a ch啤i</span></div><div id="cpArea" class="text-sm font-bold text-slate-700"><p class="text-slate-500 mb-2">B茅 nghe 1 c芒u r峄搃 tr岷� l峄漣 c芒u h峄廼 b岷眓g t峄� kh贸a ti岷縩g Anh. 膼煤ng th矛 膽瓢峄 膽i峄僲, sai th矛 th峄� l岷 ho岷穋 膽峄昳 c芒u h峄廼!</p><button id="cpStart" class="w-full py-3 bg-cyan-500 text-white font-black text-lg rounded-2xl btn-bounce">鈻讹笍 B岷痶 膽岷 nghe hi峄僽</button></div>`;
+$('cardReadingPanel').after(cpEl); TABS.cardComp = 'read'; cpEl.classList.toggle('hid', document.body.dataset.tab !== 'read');
+const cpSents = () => {
+    let a = allStorySentences.length ? allStorySentences : (storyText.value.match(/[^.!?\n]+[.!?]*/g) || []).map(s => s.trim()).filter(s => s.split(/\s+/).length >= 4);
+    return a;
+};
+const LX = x => new Set(x.split(' '));
+const PLACES = LX('forest village castle market house school garden river sea city town farm park kingdom mountain room shop home beach cave lake island kitchen field road bridge palace tower hill sky ocean world street church hospital library zoo yard barn pond meadow desert jungle cottage hut well'),
+    ANIMALS = LX('goose geese dog cat rabbit bear fox wolf lion tiger elephant monkey duck horse cow pig sheep frog turtle butterfly bee bird fish mouse mice dragon snake owl deer chicken hen rooster goat donkey squirrel crab whale dolphin shark parrot'),
+    JOBS = LX('farmer hunter teacher doctor king queen baker fisherman soldier driver cook nurse pilot miner merchant student prince princess knight wizard witch builder policeman painter singer dancer worker captain sailor shepherd woodcutter'),
+    TIMES = LX('morning afternoon evening night noon midnight today tomorrow yesterday day week month year monday tuesday wednesday thursday friday saturday sunday summer winter spring autumn weekend dawn sunset'),
+    ADJ = LX('big small little long short tall old new young good bad happy sad angry hungry tired scared brave kind nice funny pretty beautiful strong fast slow hot cold warm dark light bright greedy foolish clever rich poor golden shiny heavy wonderful terrible thirsty friendly lazy wise silly huge tiny gentle fierce lovely quiet noisy sweet sleepy lonely proud amazed'),
+    VB = LX('run jump eat play like love see look walk swim fly sing dance read write find make take give help want need live work climb cry laugh shout open close sleep sit stand hide catch carry visit cook paint draw wait'),
+    PEOPLE = LX('mother father mom dad mum brother sister grandma grandpa grandmother grandfather uncle aunt boy girl man woman baby child children friend people'),
+    NOTADV = LX('family only early belly jelly holy july lonely lovely friendly silly ugly lily'),
+    NOTVERB = LX('greed seed need speed breed indeed hundred bed red'),
+    DET = LX('the a an his her their its some my our your this that these those more many much any'),
+    PREP = LX('in at on to into from near under behind inside'),
+    IRR = { found: 'find', went: 'go', saw: 'see', ate: 'eat', took: 'take', gave: 'give', came: 'come', ran: 'run', made: 'make', told: 'tell', felt: 'feel', said: 'say', got: 'get', knew: 'know', thought: 'think', sat: 'sit', stood: 'stand', flew: 'fly', swam: 'swim', slept: 'sleep', woke: 'wake', met: 'meet', brought: 'bring', bought: 'buy', caught: 'catch', kept: 'keep', left: 'leave', lost: 'lose', heard: 'hear', began: 'begin', won: 'win', wrote: 'write', sang: 'sing', drew: 'draw', fell: 'fall', hid: 'hide', held: 'hold', built: 'build', taught: 'teach', spoke: 'speak' };
+const isCol = w => COLORS.includes(w) && !/^gold/.test(w);
+const inS = (S, w) => S.has(w) || S.has(w.replace(/(e)?s$/, ''));
+function genQs(s) {
+    const low = s.replace(/[^A-Za-z0-9' ]/g, ' ').split(/\s+/).filter(Boolean).map(x => x.toLowerCase()), qs = [];
+    const isAdj = w => ADJ.has(w) || (LOCAL_DICTIONARY[w] && LOCAL_DICTIONARY[w].p === 'T铆nh t峄�');
+    const isAdv = w => /ly$/.test(w) && w.length > 4 && !NOTADV.has(w);
+    const isVerb = w => !!IRR[w] || (/ed$/.test(w) && w.length > 3 && !isAdj(w) && !STOP.has(w) && !NOTVERB.has(w) && !inS(PLACES, w)) || VB.has(w) || VB.has(w.replace(/(e)?s$/, ''));
+    const vi = low.findIndex(isVerb);
+    if (vi >= 0) {
+        const v = low[vi], base = IRR[v] || v.replace(/ied$/, 'y').replace(/(.)\1ed$/, '$1').replace(/ed$/, ''), t = low[vi - 1];
+        const subj = vi > 0 && t.length >= 3 && !STOP.has(t) && !DET.has(t) && !isAdj(t) && !isAdv(t) && t !== 'time' ? t : null;
+        qs.push({ q: subj ? `馃弮 "${subj}" 膽茫 l脿m g矛? (tr岷� l峄漣 1 膽峄檔g t峄� ti岷縩g Anh)` : '馃弮 Nh芒n v岷璽 trong c芒u 膽茫 l脿m g矛? (1 膽峄檔g t峄� ti岷縩g Anh)', a: [...new Set([v, base, v.replace(/d$/, ''), v.replace(/s$/, '')])] });
+    }
+    const nouns = [];
+    low.forEach((w, i) => {
+        let j = -1;
+        if (DET.has(w)) { j = i + 1; while (j < low.length && (isAdj(low[j]) || isAdv(low[j]) || isCol(low[j]) || NUMS[low[j]])) j++; }
+        else if (PREP.has(w) && inS(PLACES, low[i + 1] || '')) j = i + 1;
+        const n = low[j]; if (n && n.length >= 3 && !STOP.has(n) && !DET.has(n) && !isVerb(n) && !isAdv(n) && n !== 'time' && !inS(TIMES, n) && !nouns.includes(n)) nouns.push(n);
+    });
+    const pl = nouns.filter(n => inS(PLACES, n)), an = nouns.filter(n => inS(ANIMALS, n)), jb = nouns.filter(n => inS(JOBS, n)), pp = nouns.filter(n => inS(PEOPLE, n) && !inS(JOBS, n)), ot = nouns.filter(n => !pl.includes(n) && !an.includes(n) && !jb.includes(n) && !pp.includes(n));
+    if (pl.length) qs.push({ q: '馃搷 S峄� vi峄嘽 trong c芒u x岷 ra 峄� 膽峄媋 膽i峄僲 n脿o? (1 t峄� ti岷縩g Anh)', a: pl });
+    if (an.length) qs.push({ q: '馃惥 C芒u nh岷痗 膽岷縩 con g矛? (con v岷璽 n脿o)', a: an });
+    if (jb.length) qs.push({ q: '馃懛 Nh芒n v岷璽 trong c芒u l脿m ngh峄� g矛 (ho岷穋 l脿 ai)?', a: jb });
+    if (pp.length) qs.push({ q: '馃 C芒u nh岷痗 膽岷縩 ai? (ng瓢峄漣 n脿o)', a: pp });
+    if (ot.length) qs.push({ q: '馃摝 C芒u nh岷痗 膽岷縩 c谩i g矛? (膽峄� v岷璽 n脿o)', a: ot });
+    const tm = low.filter(w => inS(TIMES, w)); if (tm.length) qs.push({ q: '鈴� Vi峄嘽 膽贸 x岷 ra khi n脿o / bao gi峄�? (1 t峄� ti岷縩g Anh)', a: tm });
+    const col = low.find(isCol); if (col) qs.push({ q: '馃帹 Trong c芒u c贸 m脿u g矛?', a: [col] });
+    low.forEach((w, i) => { if (isAdj(w) && !isCol(w)) { const n = low[i + 1], ok = n && !STOP.has(n) && !isVerb(n) && n.length >= 3; qs.push({ q: ok ? `鉁� "${n}" nh瓢 th岷� n脿o? (tr岷� l峄漣 1 t铆nh t峄�)` : '鉁� C芒u mi锚u t岷� s峄� v岷璽 / nh芒n v岷璽 nh瓢 th岷� n脿o? (1 t铆nh t峄�)', a: [w] }); } });
+    const av = low.filter(isAdv); if (av.length) qs.push({ q: '鈿� H脿nh 膽峄檔g di峄卬 ra nh瓢 th岷� n脿o? (1 tr岷g t峄�)', a: av });
+    const nm = low.find(x => NUMS[x] || /^\d+$/.test(x)); if (nm) qs.push({ q: '馃敘 Trong c芒u nh岷痗 膽岷縩 s峄� m岷? (tr岷� l峄漣 b岷眓g ch峄� ho岷穋 s峄�)', a: NUMS[nm] ? [nm, String(NUMS[nm])] : [nm] });
+    if (!qs.length) {
+        const cands = low.filter(x => x.length >= 4 && !STOP.has(x) && !/^\d/.test(x)).sort((a, b) => b.length - a.length);
+        if (cands.length) { const k = cands[0]; qs.push({ q: `鉁忥笍 Nghe v脿 膽i峄乶 t峄� c貌n thi岷縰: "${s.replace(new RegExp('\\b' + k + '\\b', 'i'), '_____')}"`, a: [k] }); }
+    }
+    return qs;
+}
+const cpOk = (cands, ans) => cands.some(t => { const n = t.toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/); return ans.some(x => n.some(w => w === x || w.replace(/(es|s)$/, '') === x.replace(/(es|s)$/, ''))); });
+const cpLevel = () => { const p = C.asked ? Math.round(C.sum / C.asked * 100) : 0; return { p, t: p >= 80 ? '馃専 R岷 t峄憈' : p >= 50 ? '馃憤 Kh谩' : '馃挭 C岷 nghe th锚m' }; };
+function cpStat() { const l = cpLevel(); $('cpStat').textContent = C.asked ? `Hi峄僽 ${l.p}% (${C.asked} c芒u) ${l.t}` : 'Ch瓢a ch啤i'; }
+function cpNextSentence() {
+    const all = cpSents(); if (!all.length) return showToast('Ch峄峮 truy峄噉 v脿 b岷 "S岷h" tr瓢峄沜 nh茅!', 'warning');
+    if (!C.order.length || C.src !== all) { C.src = all; C.order = shuf(all.map((_, i) => i)); C.n = 0; }
+    C.s = all[C.order[C.n++ % C.order.length]]; C.qs = shuf(genQs(C.s)); C.qi = 0; C.tries = 0; C.done = false; cpShow();
+}
+let cpRec = null, cpTimer = null;
+function cpStopRec() {
+    clearTimeout(cpTimer);
+    if (cpRec) { const r = cpRec; cpRec = null; r.onresult = r.onerror = r.onend = r.onaudiostart = null; try { r.abort(); } catch (e) {} }
+    const m = $('cpMic'); if (m) { m.textContent = '馃帳'; m.classList.remove('bg-red-500'); m.classList.add('bg-pink-500'); }
+}
+function cpListen() {
+    const SRx = window.SpeechRecognition || window.webkitSpeechRecognition, m = $('cpMic'), fb = $('cpFb');
+    if (cpRec) { try { cpRec.stop(); } catch (e) { cpStopRec(); } return; }   // b岷 l岷 n峄痑 = d峄玭g & ch岷 ph岷 膽茫 nghe
+    if (C.done) return;
+    stopAudio();                                                              // t岷痶 loa 膽峄� mic kh么ng thu ti岷縩g m谩y 膽峄峜
+    fb.textContent = '鈴� Ch峄� x铆u...'; m.textContent = '鈴癸笍'; m.classList.replace('bg-pink-500', 'bg-red-500');
+    const r = new SRx(); cpRec = r; r.lang = 'en-US'; r.interimResults = true; r.maxAlternatives = 3; r.continuous = false;
+    let fin = null, interim = '', err = '';
+    r.onaudiostart = () => { if (cpRec === r) fb.innerHTML = '<span class="text-pink-600 animate-pulse">馃帳 B茅 n贸i 膽i! (b岷 鈴癸笍 膽峄� d峄玭g)</span>'; };
+    r.onresult = e => { const res = e.results[e.results.length - 1]; if (res.isFinal) fin = [...res].map(a => a.transcript); else interim = res[0].transcript; $('cpIn').value = fin ? fin[0] : interim; };
+    r.onerror = e => { err = e.error; };
+    r.onend = () => {
+        if (cpRec !== r) return; cpStopRec(); const c = fin || (interim ? [interim] : null);
+        if (c) cpCheck(c); else fb.textContent = /not-allowed|service/.test(err) ? 'B茅 cho ph茅p d霉ng micro r峄搃 b岷 馃帳 l岷 nh茅!' : 'Ch瓢a nghe th岷 b茅 n贸i 馃檳 B岷 馃帳 th峄� l岷 nh茅!';
+    };
+    cpTimer = setTimeout(() => { try { r.stop(); } catch (e) {} }, 9000);
+    setTimeout(() => { if (cpRec !== r) return; try { r.start(); } catch (e) { cpStopRec(); fb.textContent = 'Micro 膽ang b岷璶, b岷 馃帳 l岷 nh茅!'; } }, 200);
+}
+function cpShow() {
+    cpStopRec();
+    const q = C.qs[C.qi], SRx = window.SpeechRecognition || window.webkitSpeechRecognition;
+    $('cpArea').innerHTML = `<div class="text-center mb-2"><button id="cpPlay" class="text-4xl py-2 px-5 bg-amber-100 border-2 border-amber-300 rounded-2xl btn-bounce">馃攰</button><div class="text-xs text-slate-500">Ch岷 loa 膽峄� nghe l岷 c芒u</div><button id="cpPeek" class="text-xs text-cyan-700 underline mt-1">馃憖 Xem ch峄� (n岷縰 nghe ch瓢a r玫)</button><p id="cpTxt" class="hidden italic bg-slate-50 rounded-xl p-2 mt-1">"${C.s}"</p></div><div class="bg-cyan-50 border-2 border-cyan-200 rounded-2xl p-3 mb-2 text-base">${q.q}</div><div class="flex gap-2 mb-2"><input id="cpIn" autocomplete="off" placeholder="B茅 tr岷� l峄漣 峄� 膽芒y..." class="flex-1 min-w-0 border-2 border-cyan-300 rounded-xl px-3 py-2 text-base font-bold outline-none focus:border-cyan-500">${SRx ? '<button id="cpMic" class="px-3 bg-pink-500 text-white rounded-xl text-xl">馃帳</button>' : ''}<button id="cpGo" class="px-4 bg-green-500 text-white font-black rounded-xl">鉁�</button></div><div id="cpFb" class="min-h-[2rem] font-black mb-2"></div><div id="cpRow" class="grid grid-cols-2 gap-2"><button id="cpChg" class="py-2 bg-purple-100 text-purple-700 font-black rounded-xl">馃攢 膼峄昳 c芒u h峄廼</button><button id="cpSkip" class="py-2 bg-slate-100 text-slate-700 font-black rounded-xl">鈴笍 C芒u kh谩c</button></div>`;
+    const play = () => { cpStopRec(); playSentenceSample(encodeURIComponent(C.s)); };
+    $('cpPlay').onclick = play; $('cpPeek').onclick = () => $('cpTxt').classList.toggle('hidden');
+    $('cpGo').onclick = () => cpCheck([$('cpIn').value]); $('cpIn').onkeydown = e => { if (e.key === 'Enter') cpCheck([$('cpIn').value]); };
+    if (SRx) $('cpMic').onclick = cpListen;
+    $('cpChg').onclick = () => { if (C.qs.length > 1) { C.qi = (C.qi + 1) % C.qs.length; C.tries = 0; cpShow(); } else cpNextSentence(); };
+    $('cpSkip').onclick = cpNextSentence; setTimeout(play, 300); talk('Nghe th岷璽 k峄� r峄搃 tr岷� l峄漣 nh茅 b茅! 馃憘');
+}
+function cpCheck(cands) {
+    if (C.done) return; const q = C.qs[C.qi]; if (!cands.join('').trim()) return showToast('B茅 nh岷璸 ho岷穋 n贸i c芒u tr岷� l峄漣 nh茅!', 'warning');
+    const fb = $('cpFb'), next = (label = '鉃★笍 C芒u ti岷縫 theo') => { C.done = true; $('cpRow').innerHTML = `<button id="cpNext" class="col-span-2 py-3 bg-cyan-500 text-white font-black rounded-xl text-base">${label}</button>`; $('cpNext').onclick = cpNextSentence; $('cpIn').disabled = true; cpStat(); };
+    if (cpOk(cands, q.a)) {
+        const pts = [10, 5, 2][C.tries], w = [1, .5, .25][C.tries]; C.asked++; C.sum += w; sessionTracker.scoreEarned += pts; updateSessionUI();
+        fb.innerHTML = `<span class="text-green-600">馃帀 膼煤ng r峄搃! "${q.a[0]}" +${pts}膽 ${C.tries ? '' : '(hi峄僽 ngay l岷 膽岷!)'}</span>`; burst(...ctr(), WIN, 12); talk('B茅 nghe hi峄僽 gi峄廼 qu谩! 馃憦'); next();
+    } else {
+        C.tries++;
+        if (C.tries >= 3) { C.asked++; fb.innerHTML = `<span class="text-amber-600">膼谩p 谩n l脿 "<b>${q.a[0]}</b>". B茅 nghe l岷 c芒u r峄搃 sang c芒u m峄沬 nh茅! 馃挭</span>`; burst(...ctr(), OOPS, 6); next(); }
+        else { const hint = C.tries === 2 ? ` G峄 媒: b岷痶 膽岷 b岷眓g ch峄� "${q.a[0][0]}", c贸 ${q.a[0].length} ch峄� c谩i.` : ''; fb.innerHTML = `<span class="text-red-500">Ch瓢a 膽煤ng r峄搃 馃檲 B茅 nghe l岷 r峄搃 th峄� l岷, ho岷穋 膽峄昳 c芒u h峄廼 kh谩c nha!${hint}</span>`; burst(...ctr(), OOPS, 5); $('cpIn').select(); }
+    }
+}
+$('cpStart').onclick = cpNextSentence;
+
+        // KH峄濱 膼峄楴G H峄� TH峄怤G AN TO脌N
         document.addEventListener('DOMContentLoaded', () => {
             syncKidsFromCloud();
             fetchStories();
         });
     </script>
-<script>
-// ================== HÀM TẠO CÂU HỎI ĐỌC HIỂU ĐÃ ĐƯỢC TINH CHỈNH HOÀN TOÀN ==================
-const FOOD_FRUITS = LX('fruit fruits apple apples watermelon watermelons grape grapes banana bananas orange oranges strawberry strawberries berry berries juice juices salad salads seed seeds vitamin vitamins food bread cake candy milk rice egg eggs cheese meat carrot vegetable vegetables soup pie cookie cookies');
-
-function genQs(s) {
-    const rawTokens = s.split(/\s+/).filter(Boolean);
-    const low = rawTokens.map(w => w.toLowerCase().replace(/[^a-z0-9']/g, '')).filter(Boolean);
-    const qs = [];
-    
-    // 1. Con vật (Animals)
-    const foundAnimals = low.filter(w => inS(ANIMALS, w));
-    if (foundAnimals.length) {
-        qs.push({
-            q: '🐾 Câu này nhắc đến con vật nào? (1 từ tiếng Anh)',
-            a: foundAnimals
-        });
-    }
-
-    // 2. Hoa quả / Món ăn / Dưỡng chất (Food & Fruits)
-    const foundFood = low.filter(w => inS(FOOD_FRUITS, w));
-    if (foundFood.length) {
-        qs.push({
-            q: '🍎 Câu này nhắc đến loại quả, món ăn hay dưỡng chất nào?',
-            a: foundFood
-        });
-    }
-
-    // 3. Nghề nghiệp / Nhân vật (Jobs)
-    const foundJobs = low.filter(w => inS(JOBS, w));
-    if (foundJobs.length) {
-        qs.push({
-            q: '👷 Câu này nhắc đến nghề nghiệp hoặc nhân vật nào?',
-            a: foundJobs
-        });
-    }
-
-    // 4. Con người / Gia đình (People)
-    const foundPeople = low.filter(w => inS(PEOPLE, w) && !inS(JOBS, w));
-    if (foundPeople.length) {
-        qs.push({
-            q: '🧑 Câu này nhắc đến ai trong gia đình hoặc bạn bè?',
-            a: foundPeople
-        });
-    }
-
-    // 5. Địa điểm (Places)
-    const foundPlaces = low.filter(w => inS(PLACES, w));
-    if (foundPlaces.length) {
-        qs.push({
-            q: '📍 Sự việc diễn ra ở địa điểm nào? (1 từ tiếng Anh)',
-            a: foundPlaces
-        });
-    }
-
-    // 6. Thời gian (Times)
-    const foundTimes = low.filter(w => inS(TIMES, w));
-    if (foundTimes.length) {
-        qs.push({
-            q: '⏰ Sự việc xảy ra khi nào / vào buổi nào? (1 từ tiếng Anh)',
-            a: foundTimes
-        });
-    }
-
-    // 7. Màu sắc (Colors)
-    const foundColors = low.filter(w => isCol(w));
-    if (foundColors.length) {
-        qs.push({
-            q: '🎨 Trong câu có nhắc đến màu sắc nào?',
-            a: foundColors
-        });
-    }
-
-    // 8. Số lượng / Số đếm (Numbers)
-    const foundNums = low.filter(w => NUMS[w] || /^\d+$/.test(w));
-    if (foundNums.length) {
-        const n = foundNums[0];
-        qs.push({
-            q: '🔢 Trong câu nhắc đến số lượng mấy? (trả lời bằng chữ hoặc số)',
-            a: NUMS[n] ? [n, String(NUMS[n])] : [n]
-        });
-    }
-
-    // 9. Đặc điểm / Tính từ (Adjectives) - SỬA LỖI HỎI NGƯỢC!
-    const foundAdj = low.filter(w => (ADJ.has(w) || (LOCAL_DICTIONARY[w] && LOCAL_DICTIONARY[w].p === 'Tính từ')) && !isCol(w) && !STOP.has(w));
-    if (foundAdj.length) {
-        const firstNoun = low.find(w => foundFood.includes(w) || foundAnimals.includes(w) || foundJobs.includes(w) || foundPeople.includes(w)) || '';
-        const subjectTxt = firstNoun ? `"${firstNoun}"` : 'sự vật / nhân vật';
-        qs.push({
-            q: `✨ Từ nào miêu tả tính chất, đặc điểm hoặc mùi vị của ${subjectTxt}?`,
-            a: foundAdj
-        });
-    }
-
-    // 10. Hành động / Động từ (Verbs) - LOẠI BỎ TỪ "LIKE" KHI LÀ GIỚI TỪ VÍ DỤ
-    const EXCLUDED_VERBS = new Set(['is', 'are', 'was', 'were', 'be', 'been', 'have', 'had', 'has', 'can', 'could', 'will', 'would', 'do', 'does', 'did']);
-    const realVerbs = low.filter((w, idx) => {
-        if (EXCLUDED_VERBS.has(w)) return false;
-        if (w === 'like') {
-            // "like watermelons", ", like grapes" là giới từ ví dụ, không phải động từ
-            const prev = low[idx - 1] || '';
-            if (rawTokens[idx-1] && rawTokens[idx-1].includes(',')) return false;
-            if (prev === 'others' || prev === 'inside' || prev === 'things' || prev === 'something') return false;
-        }
-        return !!IRR[w] || VB.has(w) || (/ed$/.test(w) && w.length > 3 && !foundAdj.includes(w) && !STOP.has(w));
-    });
-
-    if (realVerbs.length) {
-        const v = realVerbs[0];
-        const base = IRR[v] || v.replace(/ied$/, 'y').replace(/(.)\1ed$/, '$1').replace(/ed$/, '');
-        qs.push({
-            q: '🏃 Hành động chính được nhắc đến trong câu là gì? (1 động từ tiếng Anh)',
-            a: [...new Set([v, base, v.replace(/d$/, ''), v.replace(/s$/, '')])]
-        });
-    }
-
-    // 11. Câu hỏi điền từ vào chỗ trống (Cloze test) - TỰ NHIÊN, DỄ HIỂU VÀ CHUẨN XÁC 100%
-    const keywords = low.filter(w => w.length >= 4 && !STOP.has(w) && !EXCLUDED_VERBS.has(w)).sort((a,b) => b.length - a.length);
-    if (keywords.length) {
-        const key1 = keywords[0];
-        const cloze1 = s.replace(new RegExp(`\\b${key1}\\b`, 'i'), '_____');
-        if (cloze1 !== s) {
-            qs.push({
-                q: `✏️ Điền từ còn thiếu vào chỗ trống: "${cloze1}"`,
-                a: [key1]
-            });
-        }
-
-        if (keywords.length > 1) {
-            const key2 = keywords[1];
-            const cloze2 = s.replace(new RegExp(`\\b${key2}\\b`, 'i'), '_____');
-            if (cloze2 !== s) {
-                qs.push({
-                    q: `✏️ Từ nào được nhắc đến ở chỗ trống: "${cloze2}"?`,
-                    a: [key2]
-                });
-            }
-        }
-    }
-
-    return qs;
-}
-</script>
 </body>
 </html>
