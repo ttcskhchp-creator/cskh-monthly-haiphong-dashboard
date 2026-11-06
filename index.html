@@ -179,7 +179,10 @@
 
             <!-- Khung Từ vựng -->
             <div class="p-3 md:p-4 bg-purple-50 border-2 border-purple-200 rounded-[1.5rem] relative transition-all duration-500" id="vocabContainer">
-                <h3 class="font-black text-purple-600 mb-2 flex items-center text-sm md:text-base"><span class="mr-1">📚</span> Từ vựng Thông Minh:</h3>
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="font-black text-purple-600 text-sm md:text-base flex items-center"><span class="mr-1">📚</span> Từ vựng Thông Minh:</h3>
+                    <span id="rotationIndicator" class="text-[10px] font-bold text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full border border-purple-200 hidden">Vòng 1/5</span>
+                </div>
                 <div id="vocabList" class="flex flex-wrap gap-2 text-xs font-bold text-purple-700 transition-all duration-500">
                     <span class="italic font-normal text-purple-400 text-[10px]">Bấm "Làm sạch" để máy tìm từ khó!</span>
                 </div>
@@ -218,6 +221,13 @@
         let toastTimeout;
         let globalVocabData = [];
         const posMap = { 'noun': 'Danh từ', 'verb': 'Động từ', 'adjective': 'Tính từ', 'adverb': 'Trạng từ', 'pronoun': 'Đại từ', 'preposition': 'Giới từ', 'conjunction': 'Liên từ' };
+
+        // ================== BIẾN QUẢN LÝ XOAY VÒNG 30% TỪ VỰNG (5 LẦN QUAY LẠI CŨ) ==================
+        let lastExtractedText = "";     // Nhận diện nếu văn bản thay đổi
+        let masterCandidatePool = [];   // Danh sách toàn bộ từ khó tiềm năng
+        let initialBaseWords = [];      // Danh sách từ gốc của lần 1
+        let currentDisplayWords = [];   // Danh sách từ đang hiển thị
+        let rotationCycle = 0;          // Bộ đếm từ 0 -> 4 (tổng 5 lần)
 
         // ================== LEADERBOARD ==================
         const avatars = [
@@ -492,7 +502,7 @@
             toastTimeout = setTimeout(() => { toastMessage.style.opacity = '0'; toastMessage.style.transform = 'translate(-50%, 0)'; }, 3000);
         }
 
-        // ================== OCR QUÉT FILE ĐÃ SỬA CHUẨN XÁC ==================
+        // ================== OCR QUÉT FILE ==================
         const $ = id => document.getElementById(id);
         let files = [], active = 0;
 
@@ -590,7 +600,7 @@
             extractVocabulary(text);
         });
 
-        // ================== TỪ VỰNG THÔNG MINH ==================
+        // ================== TỪ VỰNG THÔNG MINH (XOAY VÒNG 30% TỪ MỚI - 5 LẦN QUAY LẠI CŨ) ==================
         async function extractVocabulary(text) {
             const stopWords = [
                 'the', 'and', 'to', 'of', 'in', 'is', 'that', 'it', 'on', 'you', 'this', 'for', 
@@ -601,30 +611,92 @@
                 'would', 'into', 'has', 'more', 'will', 'been', 'then', 'them', 'him'
             ];
 
-            let allTokens = text.toLowerCase().match(/\b[a-z]{3,}\b/g) || [];
-            let complexWords = allTokens.filter(w => !stopWords.includes(w));
-            let counts = {};
-            complexWords.forEach(w => counts[w] = (counts[w] || 0) + 1);
+            // Nếu đổi nội dung bài mới -> Khởi tạo lại toàn bộ chu kỳ
+            if (text !== lastExtractedText) {
+                lastExtractedText = text;
+                rotationCycle = 0;
+                masterCandidatePool = [];
+                initialBaseWords = [];
+                currentDisplayWords = [];
+            }
+
+            // Nếu chưa có masterCandidatePool thì tiến hành lọc ứng viên từ văn bản
+            if (!masterCandidatePool.length) {
+                let allTokens = text.toLowerCase().match(/\b[a-z]{3,}\b/g) || [];
+                let complexWords = allTokens.filter(w => !stopWords.includes(w));
+                let counts = {};
+                complexWords.forEach(w => counts[w] = (counts[w] || 0) + 1);
+
+                // Lấy tối đa 35 từ dài và tiềm năng nhất để làm kho xoay vòng
+                masterCandidatePool = Object.keys(counts)
+                    .filter(w => w.length >= 4)
+                    .sort((a, b) => b.length - a.length)
+                    .slice(0, 35);
+            }
 
             const totalWordsInStory = (text.trim().match(/\s+/g) || []).length + 1;
             let targetCount = 15;
             if (totalWordsInStory > 120) targetCount = 20;
             else if (totalWordsInStory > 60) targetCount = 18;
 
-            let unique = Object.keys(counts)
-                .filter(w => w.length >= 4)
-                .sort((a, b) => b.length - a.length)
-                .slice(0, targetCount);
+            if (masterCandidatePool.length <= targetCount) {
+                targetCount = masterCandidatePool.length;
+            }
 
-            if (!unique.length) { 
+            if (!masterCandidatePool.length) { 
                 vocabList.innerHTML = '<span class="italic text-purple-400">Không có từ khó!</span>'; 
+                $('rotationIndicator').classList.add('hidden');
                 return; 
             }
 
-            vocabList.innerHTML = `<span class="italic text-purple-500 animate-pulse">Đang chuẩn bị ${unique.length} từ vựng... ⏳</span>`;
+            // TÍNH TOÁN DANH SÁCH TỪ CHO LẦN NÀY
+            let selectedWords = [];
+
+            if (rotationCycle === 0) {
+                // Lần 1: Lấy nhóm từ chuẩn ban đầu
+                initialBaseWords = masterCandidatePool.slice(0, targetCount);
+                selectedWords = [...initialBaseWords];
+                currentDisplayWords = [...selectedWords];
+            } else {
+                // Lần 2, 3, 4, 5: Giữ lại 70% từ hiện tại và thay thế 30% bằng từ mới trong kho
+                const replaceCount = Math.max(1, Math.round(targetCount * 0.3)); // 30% số từ
+                const keepCount = targetCount - replaceCount;                     // 70% số từ
+
+                // Xáo trộn nhẹ nhóm đang có để giữ lại ngẫu nhiên 70%
+                let shuffledCurrent = [...currentDisplayWords].sort(() => Math.random() - 0.5);
+                let keptWords = shuffledCurrent.slice(0, keepCount);
+
+                // Tìm các từ trong kho dự phòng chưa nằm trong nhóm giữ lại
+                let remainingPool = masterCandidatePool.filter(w => !keptWords.includes(w));
+
+                if (remainingPool.length >= replaceCount) {
+                    // Xáo trộn kho dự phòng và bốc ra đúng 30% từ mới
+                    let newWords = remainingPool.sort(() => Math.random() - 0.5).slice(0, replaceCount);
+                    selectedWords = [...keptWords, ...newWords];
+                } else {
+                    // Nếu kho ít từ, lấy bổ sung từ danh sách gốc
+                    selectedWords = [...keptWords, ...remainingPool];
+                    while (selectedWords.length < targetCount && masterCandidatePool.length > selectedWords.length) {
+                        let addWord = masterCandidatePool.find(w => !selectedWords.includes(w));
+                        if (addWord) selectedWords.push(addWord);
+                        else break;
+                    }
+                }
+                currentDisplayWords = [...selectedWords];
+            }
+
+            // Cập nhật nhãn hiển thị vòng quay (Vòng 1 -> 5)
+            const rotBadge = $('rotationIndicator');
+            rotBadge.textContent = `Vòng ${rotationCycle + 1}/5 (Thay 30% từ mới)`;
+            rotBadge.classList.remove('hidden');
+
+            // Tăng biến đếm vòng quay (Sau 5 lần: 0, 1, 2, 3, 4 sẽ quay về 0 tức như cũ)
+            rotationCycle = (rotationCycle + 1) % 5;
+
+            vocabList.innerHTML = `<span class="italic text-purple-500 animate-pulse">Đang nạp ${selectedWords.length} từ vựng... ⏳</span>`;
             globalVocabData = [];
 
-            const fetchPromises = unique.map(async (word) => {
+            const fetchPromises = selectedWords.map(async (word) => {
                 let sm = text.match(new RegExp(`[^.?!]*\\b${word.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}\\b[^.?!]*[.?!]`, 'i'));
                 let meaning = word;
                 let posText = "Từ vựng";
