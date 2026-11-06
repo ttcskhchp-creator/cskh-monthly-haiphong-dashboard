@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Magic Reader by Daddy JERRY </title>
+    <title>Magic Story Reader by Daddy Dũng</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Tesseract.js -->
@@ -15,15 +15,12 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
     // ===== GIAO DIỆN THEMES =====
-    const HUES = ['pink','blue','indigo','purple','orange'];
+    const HUES = ['pink','blue','indigo','purple','orange', 'teal'];
     const T = (id,icon,name,dark,bg,card,ink,...c) => ({id,icon,name,dark,bg,card,ink,c});
     const THEMES = [
-        T('candy','🍬','Kẹo Hồng',0,'#fdf2f8','#ffffff','#1e293b','#ec4899','#3b82f6','#6366f1','#a855f7','#f97316'),
-        T('ocean','🌊','Đại Dương',0,'#e8f6ff','#ffffff','#0f2a3d','#0891b2','#2563eb','#4f46e5','#0d9488','#0284c7'),
-        T('forest','🌿','Rừng Xanh',0,'#eef8ea','#ffffff','#1b2e1f','#16a34a','#0f766e','#4d7c0f','#a16207','#c2410c'),
-        T('sunset','🌅','Hoàng Hôn',0,'#fff3e6','#fffaf5','#3b1d0f','#ea580c','#dc2626','#c026d3','#db2777','#d97706'),
-        T('night','🌙','Đêm Sao',1,'#0f172a','#1e293b','#e2e8f0','#db2777','#3b82f6','#6366f1','#a855f7','#ea580c'),
-        T('rainbow','🌈','Cầu Vồng',0,'#fffbe6','#ffffff','#1f2937','#ef4444','#2563eb','#16a34a','#9333ea','#f97316')
+        T('candy','🍬','Kẹo Hồng',0,'#fdf2f8','#ffffff','#1e293b','#ec4899','#3b82f6','#6366f1','#a855f7','#f97316','#0d9488'),
+        T('ocean','🌊','Đại Dương',0,'#e8f6ff','#ffffff','#0f2a3d','#0891b2','#2563eb','#4f46e5','#0d9488','#0284c7','#0f766e'),
+        T('forest','🌿','Rừng Xanh',0,'#eef8ea','#ffffff','#1b2e1f','#16a34a','#0f766e','#4d7c0f','#a16207','#c2410c','#059669')
     ];
     function applyTheme(id) {
         const t = THEMES.find(x => x.id === id) || THEMES[0], s = document.documentElement.style;
@@ -61,7 +58,7 @@
         .blur-active { filter: blur(8px); pointer-events: none; user-select: none; transition: filter 0.5s ease; }
         #storyText { white-space: pre-wrap; tab-size: 4; }
         #dropZone.drag { border-color: var(--pink-500); background: var(--pink-50); }
-        label.bg-green-100, label.bg-red-100 { color: #1f2937; }
+        .avatar-selected { border-color: var(--orange-500) !important; background-color: var(--orange-100) !important; transform: scale(1.1); }
     </style>
 </head>
 <body class="p-2 md:p-6 flex flex-col items-center">
@@ -69,7 +66,7 @@
     <!-- Chọn giao diện -->
     <div class="w-full max-w-7xl flex justify-end relative z-40 mb-2">
         <button id="themeBtn" type="button" class="bg-card text-pink-600 border-2 border-pink-300 px-3 py-1.5 md:px-4 md:py-2 rounded-full font-black shadow btn-bounce text-sm md:text-base">🎨 Giao diện</button>
-        <div id="themePanel" class="hidden absolute right-0 top-full mt-2 w-[min(92vw,36rem)] bg-card border-4 border-pink-300 rounded-2xl shadow-xl p-3 grid grid-cols-2 sm:grid-cols-3 gap-2"></div>
+        <div id="themePanel" class="hidden absolute right-0 top-full mt-2 w-[min(92vw,20rem)] bg-card border-4 border-pink-300 rounded-2xl shadow-xl p-3 grid grid-cols-2 gap-2"></div>
     </div>
 
     <!-- Header -->
@@ -88,6 +85,19 @@
         
         <!-- Cột Trái: Ảnh & Quét & Lưu trữ -->
         <div class="lg:col-span-5 flex flex-col gap-4">
+            
+            <!-- Khu vực Bảng Xếp Hạng -->
+            <div class="bg-teal-50 p-4 rounded-[1.5rem] shadow-lg border-4 border-teal-300 flex flex-col">
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="text-lg font-black text-teal-600 flex items-center"><span class="mr-2">🏆</span> Bảng Điểm</h2>
+                    <button onclick="resetLeaderboard()" class="text-xs bg-red-400 text-white px-2 py-1 rounded-lg font-bold hover:bg-red-500">Làm mới</button>
+                </div>
+                <div id="leaderboardList" class="flex flex-wrap gap-2 justify-center">
+                    <p class="text-teal-500 text-xs font-bold italic">Chưa có ai ghi điểm cả! Bé chơi ngay nào!</p>
+                </div>
+            </div>
+
+            <!-- Chọn Truyện -->
             <div class="bg-card p-4 md:p-6 rounded-[1.5rem] shadow-lg border-4 border-pink-300 flex flex-col">
                 <h2 class="text-lg md:text-xl font-black text-pink-600 mb-3 flex items-center">
                     <span class="text-2xl mr-2">📸</span> 1. Chọn truyện
@@ -112,7 +122,7 @@
             </div>
 
             <!-- Khung Kho Truyện -->
-            <div class="bg-indigo-50 p-4 md:p-6 rounded-[1.5rem] shadow-lg border-4 border-indigo-300 flex flex-col max-h-[300px]">
+            <div class="bg-indigo-50 p-4 md:p-6 rounded-[1.5rem] shadow-lg border-4 border-indigo-300 flex flex-col max-h-[250px]">
                 <div class="flex justify-between items-center mb-3">
                     <h2 class="text-lg font-black text-indigo-600 flex items-center"><span class="text-xl mr-2">☁️</span> Kho Truyện</h2>
                     <button onclick="saveToCloud()" class="bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-sm font-bold btn-bounce shadow-sm hover:bg-indigo-600">💾 Lưu Bài</button>
@@ -130,7 +140,7 @@
                     <h2 class="text-lg md:text-xl font-black text-blue-600 flex items-center"><span class="text-2xl mr-2">📝</span> 2. Luyện nghe & Đọc</h2>
                     <div class="flex gap-1.5">
                         <button onclick="exportToWord()" class="bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg shadow-sm btn-bounce hover:bg-blue-200 text-sm font-bold">🖨️ In Word</button>
-                        <button onclick="exportToMP3()" class="bg-green-100 text-green-700 px-3 py-1.5 rounded-lg shadow-sm btn-bounce hover:bg-green-200 text-sm font-bold">🎵 Tải MP3</button>
+                        <button onclick="exportToMP3()" id="btnMp3" class="bg-green-100 text-green-700 px-3 py-1.5 rounded-lg shadow-sm btn-bounce hover:bg-green-200 text-sm font-bold">🎵 Tải MP3</button>
                     </div>
                 </div>
                 
@@ -184,7 +194,7 @@
     </footer>
 
     <script>
-        // ================== CÁC BIẾN TOÀN CỤC ==================
+        // ================== BIẾN TOÀN CỤC & TỪ ĐIỂN ==================
         const storyText = document.getElementById('storyText');
         const vocabContainer = document.getElementById('vocabContainer');
         const vocabList = document.getElementById('vocabList');
@@ -192,32 +202,70 @@
         const toastMessage = document.getElementById('toastMessage');
         const cleanBtn = document.getElementById('cleanBtn');
         const speedSlider = document.getElementById('speedSlider');
-        let currentImageFile = null;
         let toastTimeout;
         let globalVocabData = []; 
-        let childName = "";
-        let childAge = "";
-
-        // ================== TỪ ĐIỂN TỪ LOẠI (POS MAP) ==================
+        
         const posMap = {
             'noun': 'Danh từ', 'verb': 'Động từ', 'adjective': 'Tính từ', 'adverb': 'Trạng từ',
             'pronoun': 'Đại từ', 'preposition': 'Giới từ', 'conjunction': 'Liên từ', 'interjection': 'Thán từ'
         };
 
+        // ================== LEADERBOARD (BẢNG XẾP HẠNG) ==================
+        const avatars = [
+            { id: 'princess', icon: '👸', name: 'Công Chúa' },
+            { id: 'knight', icon: '🤺', name: 'Hiệp Sĩ' },
+            { id: 'king', icon: '🤴', name: 'Nhà Vua' },
+            { id: 'dragon', icon: '🐉', name: 'Rồng' },
+            { id: 'dino', icon: '🦖', name: 'Khủng Long' },
+            { id: 'tiger', icon: '🐯', name: 'Hổ Con' },
+            { id: 'rabbit', icon: '🐰', name: 'Thỏ Trắng' },
+            { id: 'turtle', icon: '🐢', name: 'Rùa Nhỏ' }
+        ];
+        
+        let currentPlayer = null; 
+        
+        function loadLeaderboard() {
+            let data = JSON.parse(localStorage.getItem('magicLeaderboard') || '{}');
+            let board = document.getElementById('leaderboardList');
+            let sorted = Object.entries(data).sort((a,b) => b[1] - a[1]);
+            
+            if(sorted.length === 0) {
+                board.innerHTML = '<p class="text-teal-500 text-xs font-bold italic">Chưa có ai ghi điểm cả! Bé chơi ngay nào!</p>';
+                return;
+            }
+
+            board.innerHTML = sorted.map(([id, score], i) => {
+                let avt = avatars.find(a => a.id === id);
+                let rank = i === 0 ? '🥇' : (i === 1 ? '🥈' : (i === 2 ? '🥉' : '🎗️'));
+                return `<div class="bg-white px-2 py-1 rounded-lg shadow-sm border border-teal-200 flex items-center gap-1">
+                    <span class="text-lg">${rank}</span>
+                    <span class="text-2xl">${avt.icon}</span>
+                    <span class="text-teal-800 font-black text-sm">${score}đ</span>
+                </div>`;
+            }).join('');
+        }
+        
+        window.resetLeaderboard = function() {
+            if(confirm('Xóa sạch điểm của tất cả mọi người?')) {
+                localStorage.removeItem('magicLeaderboard');
+                loadLeaderboard();
+                showToast('Đã xóa bảng điểm!', 'success');
+            }
+        }
+        loadLeaderboard();
+
         // ================== SUPABASE DATABASE ==================
         const SUPABASE_URL = 'https://xmecpfeujkvidwmqprzd.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_wK5FXrtBK7qPdmJ5fS1aag_gJ3Gdv3G';
         let db = null;
-        try { db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch (e) { console.warn('Supabase lỗi:', e); }
+        try { db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch (e) { console.warn('Supabase lỗi'); }
 
         async function fetchStories() {
             try {
                 let { data: stories, error } = await db.from('saved_stories').select('*').order('created_at', { ascending: false });
                 const listEl = document.getElementById('storyList');
-                if (error) throw error;
-                if (!stories || stories.length === 0) {
-                    listEl.innerHTML = '<p class="text-indigo-400 font-bold text-xs italic text-center">Chưa có bài nào được lưu.</p>';
-                    return;
+                if (error || !stories || stories.length === 0) {
+                    listEl.innerHTML = '<p class="text-indigo-400 font-bold text-xs italic text-center">Chưa có bài nào được lưu.</p>'; return;
                 }
                 listEl.innerHTML = stories.map(story => `
                     <div class="bg-card p-2 rounded-lg border border-indigo-100 flex justify-between items-center shadow-sm">
@@ -232,24 +280,19 @@
         }
 
         async function saveToCloud() {
-            let text = storyText.value.trim();
-            if (!text) return showToast('Chưa có truyện để lưu!', 'warning');
+            let text = storyText.value.trim(); if (!text) return showToast('Chưa có truyện để lưu!', 'warning');
             showToast('Đang lưu vào kho...', 'success');
             let title = text.substring(0, 25).replace(/\n/g, ' ') + '...';
             try {
-                const { error } = await db.from('saved_stories').insert([{ title: title, content: text }]);
-                if (error) throw error;
-                showToast('Đã lưu truyện thành công! ☁️', 'success');
-                fetchStories();
+                await db.from('saved_stories').insert([{ title, content: text }]);
+                showToast('Đã lưu truyện thành công! ☁️', 'success'); fetchStories();
             } catch (err) { showToast('Lưu thất bại', 'error'); }
         }
 
         async function loadStory(id) {
             try {
-                let { data, error } = await db.from('saved_stories').select('content').eq('id', id).single();
-                if (error) throw error;
-                storyText.value = data.content;
-                showToast('Đã tải truyện cũ! Bấm "Làm sạch chữ" để chơi game nhé.', 'success');
+                let { data } = await db.from('saved_stories').select('content').eq('id', id).single();
+                storyText.value = data.content; showToast('Đã tải truyện cũ!', 'success');
             } catch (err) {}
         }
 
@@ -259,58 +302,91 @@
         }
         setTimeout(fetchStories, 1000);
 
-        // ================== XUẤT OFFLINE (WORD & MP3 FULL) ==================
+        // ================== XUẤT OFFLINE (WORD & MP3 KHÔNG BỊ LỖI 404) ==================
         function exportToWord() {
-            const text = storyText.value.trim();
-            if (!text) return showToast('Chưa có truyện để in!', 'warning');
-            const wordHtml = `
-            <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+            const text = storyText.value.trim(); if (!text) return showToast('Chưa có truyện để in!', 'warning');
+            const wordHtml = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
             <head><meta charset='utf-8'><title>Magic Story</title></head>
             <body style="font-family: 'Comic Sans MS', sans-serif; background-color: #fdf2f8; padding: 40px; border: 5px solid #fbcfe8; border-radius: 20px;">
-                <div style="text-align: center; margin-bottom: 30px;">
-                    <h1 style="color: #ec4899; font-size: 24pt; margin: 0;">🌟 MAGIC STORY READER 🌟</h1>
-                    <p style="color: #3b82f6; font-size: 12pt; font-weight: bold;">Phát triển bởi Daddy Dũng Đẹp Zai</p>
-                </div>
+                <div style="text-align: center; margin-bottom: 30px;"><h1 style="color: #ec4899; font-size: 24pt; margin: 0;">🌟 MAGIC STORY READER 🌟</h1><p style="color: #3b82f6; font-size: 12pt; font-weight: bold;">Phát triển bởi Daddy Dũng Đẹp Zai</p></div>
                 <div style="background-color: #ffffff; padding: 20px; border-radius: 15px; border: 2px dashed #bfdbfe;">
-                    <div>${text.split('\n').map(l => `<p style="margin:0;font-size:16pt;line-height:1.8;font-weight:bold;color:#1e3a8a;">${esc(l).replace(/^ +/, m => '&nbsp;'.repeat(m.length)) || '&nbsp;'}</p>`).join('')}</div>
+                    <div>${text.split('\n').map(l => `<p style="margin:0;font-size:16pt;line-height:1.8;font-weight:bold;color:#1e3a8a;">${String(l).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])).replace(/^ +/, m => '&nbsp;'.repeat(m.length)) || '&nbsp;'}</p>`).join('')}</div>
                 </div>
-            </body>
-            </html>`;
+            </body></html>`;
             const blob = new Blob(['\ufeff', wordHtml], { type: 'application/msword' });
             const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-            a.download = `Truyen_Cua_Be_${new Date().getTime()}.doc`;
-            a.click(); showToast('Đã tải xuống file Word A4! 🖨️', 'success');
+            a.download = `Truyen_Cua_Be_${new Date().getTime()}.doc`; a.click(); showToast('Đã tải xuống file Word A4! 🖨️', 'success');
         }
 
         async function exportToMP3() {
             const text = storyText.value.trim();
             if (!text) return showToast('Chưa có truyện để xuất MP3!', 'warning');
-            showToast('Đang tạo Audio Full Bài... Bé chờ chút xíu nha! ⏳', 'success');
+            
+            const btn = document.getElementById('btnMp3');
+            btn.innerHTML = '⏳ Đang tải...'; btn.disabled = true;
+            showToast('Đang tạo Audio... Xin đừng đóng web! ⏳', 'success');
             
             let chunks = text.match(/[^.!?\n]+[.!?\n]*/g) || [text];
             chunks = chunks.map(c => c.trim()).filter(c => c.length > 0);
-            let blobs = [];
             
+            let audioBuffers = [];
+            let AudioContext = window.AudioContext || window.webkitAudioContext;
+            let audioCtx = new AudioContext();
+
             try {
                 for(let i=0; i<chunks.length; i++) {
                     let url = `https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=en&q=${encodeURIComponent(chunks[i])}`;
+                    // Dùng proxy mạnh hơn để tránh CORS khi fetch ArrayBuffer
                     let proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+                    
                     let res = await fetch(proxyUrl);
-                    if(!res.ok) throw new Error('Proxy lỗi');
-                    let blob = await res.blob();
-                    blobs.push(blob);
+                    if(!res.ok) throw new Error('Network');
+                    
+                    let arrayBuffer = await res.arrayBuffer();
+                    let audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+                    audioBuffers.push(audioBuffer);
                 }
-                let finalBlob = new Blob(blobs, { type: 'audio/mpeg' });
-                const a = document.createElement('a'); 
-                a.href = URL.createObjectURL(finalBlob);
-                a.download = `Audio_Doc_Truyen_${new Date().getTime()}.mp3`;
+
+                // Gộp Audio Buffers (WAV format)
+                let totalLength = audioBuffers.reduce((sum, buffer) => sum + buffer.length, 0);
+                let finalBuffer = audioCtx.createBuffer(1, totalLength, audioCtx.sampleRate);
+                let offset = 0;
+                audioBuffers.forEach(buffer => {
+                    finalBuffer.copyToChannel(buffer.getChannelData(0), 0, offset);
+                    offset += buffer.length;
+                });
+
+                // Chuyển Buffer thành file WAV tải xuống
+                const wavBlob = bufferToWav(finalBuffer, totalLength);
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(wavBlob);
+                a.download = `Audio_Doc_Truyen_${new Date().getTime()}.wav`;
                 a.click();
-                showToast('Đã ghép nối & tải xong Audio MP3 Full bài! 🎵', 'success');
+                showToast('Đã tải xong file Âm thanh chất lượng cao! 🎵', 'success');
             } catch(e) {
+                console.error(e);
                 showToast('Mở link nghe tạm thời do lỗi kết nối mạng... 🎵', 'warning');
                 let chunk = text.substring(0, 200); 
                 window.open(`https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=en&q=${encodeURIComponent(chunk)}`, '_blank');
+            } finally {
+                btn.innerHTML = '🎵 Tải MP3'; btn.disabled = false;
             }
+        }
+        
+        // Hàm phụ trợ tạo WAV từ AudioBuffer
+        function bufferToWav(abuffer, len) {
+            let numOfChan = abuffer.numberOfChannels, length = len * numOfChan * 2 + 44, buffer = new ArrayBuffer(length), view = new DataView(buffer), channels = [], i, sample, offset = 0, pos = 0;
+            setUint32(0x46464952); setUint32(length - 8); setUint32(0x45564157); setUint32(0x20746d66); setUint32(16); setUint16(1); setUint16(numOfChan);
+            setUint32(abuffer.sampleRate); setUint32(abuffer.sampleRate * 2 * numOfChan); setUint16(numOfChan * 2); setUint16(16); setUint32(0x61746164); setUint32(length - pos - 4);
+            for(i=0; i<abuffer.numberOfChannels; i++) channels.push(abuffer.getChannelData(i));
+            while(pos < length) {
+                for(i=0; i<numOfChan; i++) {
+                    sample = Math.max(-1, Math.min(1, channels[i][offset])); sample = (0.5 + sample < 0 ? sample * 32768 : sample * 32767)|0; view.setInt16(pos, sample, true); pos += 2;
+                } offset++;
+            }
+            return new Blob([buffer], {type: "audio/wav"});
+            function setUint16(data) { view.setUint16(pos, data, true); pos += 2; }
+            function setUint32(data) { view.setUint32(pos, data, true); pos += 4; }
         }
 
         // ================== HIỆU ỨNG GIAO DIỆN & MARQUEE ==================
@@ -328,26 +404,11 @@
             toastTimeout = setTimeout(() => { toastMessage.style.opacity = '0'; toastMessage.style.transform = 'translate(-50%, 0)'; }, 3000);
         }
 
-        // ================== FILE & TESSERACT OCR ==================
+        // ================== TESSERACT OCR ==================
         const $ = id => document.getElementById(id);
-        const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-        const LIBS = {
-            pdfjsLib: ['https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js'],
-            mammoth: ['https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js'],
-            Tesseract: ['https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js']
-        };
-        async function need(g) {
-            if (!window[g]) {
-                for (const url of LIBS[g]) {
-                    try { await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = url; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); } catch (e) {}
-                    if (window[g]) break;
-                }
-            }
-            if (g === 'pdfjsLib') pdfjsLib.GlobalWorkerOptions.workerSrc = LIBS.pdfjsLib[0].replace('pdf.min.js', 'pdf.worker.min.js');
-        }
-        
         const ICON = { img: '🖼️', pdf: '📕', docx: '📘', txt: '📄', html: '📄' };
         let files = [], active = 0, pvToken = 0, pvUrl = null;
+        
         function kind(f) {
             const n = f.name.toLowerCase();
             if (f.type.startsWith('image/') || /\.(jpe?g|png)$/.test(n)) return 'img';
@@ -367,7 +428,7 @@
         
         function renderFiles() {
             $('fileChips').innerHTML = files.map((f, i) => `<span class="inline-flex items-center rounded-full border-2 ${i === active ? 'border-pink-500 bg-pink-100' : 'border-pink-200 bg-card'} text-xs font-bold text-pink-700 overflow-hidden max-w-full">
-                <button type="button" onclick="pickFile(${i})" class="px-2 py-1 truncate max-w-[120px]">${ICON[kind(f)]} ${esc(f.name)}</button>
+                <button type="button" onclick="pickFile(${i})" class="px-2 py-1 truncate max-w-[120px]">${ICON[kind(f)]} ${f.name}</button>
                 <button type="button" onclick="removeFile(${i})" class="px-1.5 py-1 hover:bg-pink-200">✕</button></span>`).join('');
             showPreview(files[active]);
         }
@@ -378,14 +439,14 @@
             box.innerHTML = ''; $('placeholderText').classList.toggle('hidden', !!f); info.classList.toggle('hidden', !f);
             if (!f) return;
             info.textContent = '⏳ Đang mở...';
-            const k = kind(f); let el;
             try {
-                if (k === 'img') {
-                    el = new Image(); pvUrl = URL.createObjectURL(f);
+                if (kind(f) === 'img') {
+                    let el = new Image(); pvUrl = URL.createObjectURL(f);
                     await new Promise(ok => { el.onload = ok; el.src = pvUrl; });
                     el.className = 'max-w-full max-h-[200px] object-contain rounded-xl';
-                } else { el = document.createElement('p'); el.textContent = "📄 Đã nạp file văn bản"; el.className = "text-slate-500 font-bold"; }
-                if (tok === pvToken) { box.append(el); info.textContent = `${f.name}`; }
+                    if (tok === pvToken) box.append(el);
+                } else { if (tok === pvToken) box.innerHTML = "<p class='text-slate-500 font-bold'>📄 Đã nạp file văn bản</p>"; }
+                if (tok === pvToken) info.textContent = `${f.name}`;
             } catch (e) {}
         }
         
@@ -401,88 +462,67 @@
                     const f = files[i], k = kind(f);
                     st.textContent = `Đang đọc file ${i + 1}...`;
                     if (k === 'img') {
-                        await need('Tesseract');
+                        if (!window.Tesseract) await new Promise(ok => { let s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js'; s.onload = ok; document.head.appendChild(s); });
                         worker = worker || await Tesseract.createWorker('eng', 1);
                         let res = await worker.recognize(f); parts.push(res.data.text);
                     } else if (k === 'txt') { parts.push(await f.text());
-                    } else if (k === 'docx') { await need('mammoth'); parts.push((await mammoth.extractRawText({ arrayBuffer: await f.arrayBuffer() })).value); }
+                    } else if (k === 'docx') { 
+                        if (!window.mammoth) await new Promise(ok => { let s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js'; s.onload = ok; document.head.appendChild(s); });
+                        parts.push((await mammoth.extractRawText({ arrayBuffer: await f.arrayBuffer() })).value); 
+                    }
                 }
-                const text = parts.join('\n\n');
-                if (!text) throw new Error('Không có chữ!');
-                storyText.value = text;
-                showToast('Xong rồi!', 'success'); cleanBtn.click();
+                const text = parts.join('\n\n'); if (!text) throw new Error();
+                storyText.value = text; showToast('Xong rồi!', 'success'); cleanBtn.click();
             } catch (e) { showToast('Lỗi đọc file!', 'error'); } 
             finally { if (worker) await worker.terminate(); btn.disabled = false; load.classList.replace('flex', 'hidden'); }
         });
 
-        // ================== XÓA RÁC OCR NÂNG CAO ==================
+        // ================== XÓA RÁC OCR TUYỆT ĐỐI (REGEX MẠNH) ==================
         cleanBtn.addEventListener('click', () => {
             let text = storyText.value;
             if (!text.trim()) return showToast('Khung chữ trống!', 'warning');
             const keep = $('keepLayout').checked;
 
-            // 1. Danh sách cho phép các từ 1-2 ký tự thông dụng trong tiếng Anh
-            const validShortWords = [
-                'a', 'i', 'is', 'it', 'to', 'do', 'in', 'on', 'as', 'at', 'be', 'he', 'we', 'me', 'my', 'by', 'so', 'go', 'no', 'of', 'or', 'if', 'up', 'us', 'am', 'an'
-            ];
-            
-            // 2. Danh sách chặn cứng các từ rác do OCR sinh ra
-            const blacklist = ['te', 'wa', 'ni', 'el', 'od', 'yi', 'bud', 'py', 'oy', 'eo', 'ott', 'onin', 'osun', 'ose', 'om', 'ga', 'sy', 'nf', 'qj', 'fo'];
+            // Loại bỏ hoàn toàn các ký tự lạ, giữ lại chữ, số và dấu câu thông thường
+            text = text.replace(/[^a-zA-Z0-9.,!?'";:\- \n]/g, ' ');
+
+            const validShort = ['a', 'i', 'is', 'it', 'to', 'do', 'in', 'on', 'as', 'at', 'be', 'he', 'we', 'me', 'my', 'by', 'so', 'go', 'no', 'of', 'or', 'if', 'up', 'us', 'am', 'an'];
+            const blacklist = ['te', 'wa', 'ni', 'el', 'od', 'yi', 'bud', 'py', 'oy', 'eo', 'ott', 'onin', 'osun', 'ose', 'om', 'ga', 'sy', 'nf', 'qj', 'fo', 'ens', 'ees'];
 
             let lines = text.split('\n');
             let cleanLines = lines.map(line => {
                 let words = line.split(/\s+/);
-                let filteredWords = words.filter(word => {
-                    let cleanWord = word.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+                let filtered = words.filter(word => {
+                    let clean = word.replace(/[^a-zA-Z]/g, '').toLowerCase();
+                    if (!clean) return /^[.,!?]+$/.test(word); // Giữ dấu câu
                     
-                    // Giữ dấu câu
-                    if (!cleanWord) return /^[.,!?]+$/.test(word);
-                    
-                    // Lọc số đứng lẻ
-                    if (/^\d+$/.test(cleanWord)) return false;
-                    
-                    // Lọc rác số dính chữ
-                    if (/\d/.test(cleanWord) && /[a-z]/i.test(cleanWord)) return false;
-                    
-                    // Lọc từ 1-2 ký tự không nằm trong danh sách hợp lệ
-                    if (cleanWord.length <= 2 && !validShortWords.includes(cleanWord)) return false;
-                    
-                    // Lọc từ không có nguyên âm (nếu độ dài > 2)
-                    if (cleanWord.length > 2 && !/[aeiouy]/.test(cleanWord)) return false;
-                    
-                    // Lọc blacklist
-                    if (blacklist.includes(cleanWord)) return false;
+                    if (clean.length === 1 && !['a', 'i'].includes(clean)) return false; // Dọn rác 1 ký tự (như I. dính dấu câu cũng bị lọc)
+                    if (clean.length === 2 && !validShort.includes(clean)) return false; // Dọn rác 2 ký tự (như as, do sai ngữ cảnh)
+                    if (clean.length >= 3 && !/[aeiouy]/.test(clean)) return false; // Dọn rác không nguyên âm
+                    if (blacklist.includes(clean)) return false; // Dọn blacklist (ens, ees)
                     
                     return true;
                 });
-                return filteredWords.join(' ');
+                return filtered.join(' ');
             });
 
             text = cleanLines.join('\n');
-
             if (!keep) {
-                text = text.replace(/\n[ \t]*\n/g, ' __PARAGRAPH_BREAK__ ');
-                text = text.replace(/\n/g, ' ');
-                text = text.replace(/ __PARAGRAPH_BREAK__ /g, '\n\n');
+                text = text.replace(/\n[ \t]*\n/g, ' \u0001 ').replace(/\n/g, ' ').replace(/ ?\u0001 ?/g, '\n\n');
             }
 
-            text = text.replace(/\s+([.,!?:;])/g, '$1'); 
-            text = text.replace(/([.,!?:;])(?=[a-zA-Z])/g, '$1 '); 
-            text = text.replace(/^[.,!?:;\s]+|[.,!?:;\s]+$/g, ''); 
-            text = text.replace(/ +/g, ' '); 
-
+            text = text.replace(/\s+([.,!?:;])/g, '$1').replace(/([.,!?:;])(?=[a-zA-Z])/g, '$1 ').replace(/^[.,!?:;\s]+|[.,!?:;\s]+$/g, '').replace(/ +/g, ' '); 
             text = text.toLowerCase().replace(/(^\s*[a-z]|[.!?]\s*[a-z])/g, c => c.toUpperCase()).replace(/\b(i)\b/g, 'I');
             
             storyText.value = text;
-            showToast('Đã lọc rác mạnh mẽ! ✨', 'success');
+            showToast('Đã làm sạch văn bản chuẩn xác!', 'success');
             vocabList.classList.remove('blur-active');
             extractVocabulary(text);
         });
 
-        // ================== TỪ VỰNG THÔNG MINH & GAME ==================
+        // ================== TỪ VỰNG & GAME VỚI AVATAR ==================
         async function extractVocabulary(text) {
             const stopWords = ['the', 'and', 'to', 'of', 'in', 'is', 'that', 'it', 'on', 'you', 'this', 'for', 'but', 'with', 'are', 'have', 'be', 'at', 'or', 'as', 'was', 'so', 'if', 'out', 'not', 'he', 'she', 'we', 'they', 'his', 'her', 'my', 'your', 'what', 'when', 'why', 'how', 'can'];
-            
             let words = text.toLowerCase().match(/\b[a-z]{3,}\b/g) || [];
             let complexWords = words.filter(w => !stopWords.includes(w));
             
@@ -491,8 +531,7 @@
             
             if (uniqueWords.length === 0) {
                 vocabList.innerHTML = '<span class="italic text-purple-400">Chưa tìm thấy từ khó!</span>';
-                quizContainer.innerHTML = '<span class="italic text-orange-400">Truyện ngắn quá!</span>';
-                return;
+                quizContainer.innerHTML = '<span class="italic text-orange-400">Truyện ngắn quá!</span>'; return;
             }
             
             vocabList.innerHTML = '<span class="italic text-purple-500 animate-pulse">Đang tra từ điển... ⏳</span>';
@@ -502,69 +541,66 @@
                 try {
                     let safeWord = word.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
                     let sentenceMatch = text.match(new RegExp(`[^.?!]*\\b${safeWord}\\b[^.?!]*[.?!]`, 'i'));
-                    let extractedSentence = sentenceMatch ? sentenceMatch[0].trim() : '';
-
+                    
                     let posText = "Từ vựng"; 
                     try {
                         let dictRes = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
                         let dictData = await dictRes.json();
                         if(dictData && dictData[0] && dictData[0].meanings[0]) {
-                            let enPos = dictData[0].meanings[0].partOfSpeech.toLowerCase();
-                            posText = posMap[enPos] || enPos;
+                            let enPos = dictData[0].meanings[0].partOfSpeech.toLowerCase(); posText = posMap[enPos] || enPos;
                         }
                     } catch(e) {}
 
                     let res = await fetch(`https://api.mymemory.translated.net/get?q=${word}&langpair=en|vi`);
-                    let data = await res.json();
-                    let meaning = data.responseData.translatedText.toLowerCase();
+                    let data = await res.json(); let meaning = data.responseData.translatedText.toLowerCase();
 
-                    globalVocabData.push({ word: word, meaning: meaning, pos: posText, sentence: extractedSentence });
+                    globalVocabData.push({ word: word, meaning: meaning, pos: posText, sentence: sentenceMatch ? sentenceMatch[0].trim() : '' });
 
-                    resultHTML += `<div class="group px-3 py-2 bg-card border-2 border-purple-300 rounded-xl shadow-sm cursor-pointer hover:bg-purple-100 transition-all flex flex-col items-center justify-center text-center" onclick="playWordAudio('${word}')">
+                    resultHTML += `<div class="group px-3 py-2 bg-card border-2 border-purple-300 rounded-xl shadow-sm cursor-pointer hover:bg-purple-100 flex flex-col items-center justify-center text-center" onclick="playWordAudio('${word}')">
                         <span class="text-purple-700 font-black text-base md:text-lg">${word} 🔊</span>
                         <span class="text-[10px] md:text-xs text-white bg-purple-500 px-2 py-0.5 rounded-full mt-1 mb-1 capitalize">${posText}</span>
                         <span class="text-xs md:text-sm text-slate-500 font-bold border-t border-purple-100 w-full pt-1 capitalize">${meaning}</span>
                     </div>`;
                 } catch (e) {}
             }
-            vocabList.innerHTML = resultHTML;
-            setupQuizForm();
+            vocabList.innerHTML = resultHTML; setupQuizForm();
         }
 
         function setupQuizForm() {
             if(globalVocabData.length < 2) return;
+            let avatarHTML = avatars.map(a => `
+                <button onclick="selectAvatar('${a.id}', this)" class="avatar-btn flex flex-col items-center p-2 border-2 border-slate-200 rounded-xl hover:bg-slate-100 transition-all">
+                    <span class="text-3xl">${a.icon}</span><span class="text-xs font-bold text-slate-600">${a.name}</span>
+                </button>
+            `).join('');
+
             quizContainer.innerHTML = `
                 <div class="bg-card p-3 rounded-xl border border-orange-200 text-center shadow-sm">
-                    <p class="text-orange-600 text-sm md:text-base font-black mb-3">Thông tin của bé (có thể bỏ qua)</p>
-                    <input type="text" id="inputName" placeholder="Tên bé là gì?" class="w-full mb-2 p-2 border-2 border-orange-200 rounded-lg text-sm outline-none focus:border-orange-500" value="${childName}">
-                    <input type="number" id="inputAge" placeholder="Tuổi?" class="w-full mb-3 p-2 border-2 border-orange-200 rounded-lg text-sm outline-none focus:border-orange-500" value="${childAge}">
-                    <div class="flex gap-2">
-                        <button onclick="startQuizEngine(true)" class="flex-1 py-2 bg-slate-200 text-slate-700 font-bold text-sm rounded-lg hover:bg-slate-300">⏭️ Bỏ Qua</button>
-                        <button onclick="startQuizEngine(false)" class="flex-1 py-2 bg-orange-500 text-white font-black text-sm rounded-lg btn-bounce hover:bg-orange-600">🎮 Chơi Ngay!</button>
-                    </div>
+                    <p class="text-orange-600 text-sm md:text-base font-black mb-2">Chọn nhân vật của bé để chơi nào!</p>
+                    <div class="grid grid-cols-4 gap-2 mb-4">${avatarHTML}</div>
+                    <button onclick="startQuizEngine()" class="w-full py-2.5 bg-orange-500 text-white font-black text-sm rounded-xl btn-bounce hover:bg-orange-600">🎮 Chơi Ngay!</button>
                 </div>
             `;
         }
 
-        window.startQuizEngine = function(skip) {
-            if (!skip) {
-                let n = document.getElementById('inputName').value.trim();
-                let a = document.getElementById('inputAge').value.trim();
-                if(!n) return showToast('Vui lòng nhập tên hoặc bấm Bỏ qua!', 'warning');
-                childName = n; childAge = a;
-            } else { childName = "Bé Ngoan"; childAge = ""; }
-            
+        window.selectAvatar = function(id, btnElement) {
+            currentPlayer = avatars.find(a => a.id === id);
+            document.querySelectorAll('.avatar-btn').forEach(b => b.classList.remove('avatar-selected'));
+            btnElement.classList.add('avatar-selected');
+        }
+
+        window.startQuizEngine = function() {
+            if(!currentPlayer) return showToast('Bé nhớ chọn 1 nhân vật nhé!', 'warning');
             vocabList.classList.add('blur-active');
-            showToast(`Cố lên nha ${childName}!`, 'success');
+            showToast(`Chào ${currentPlayer.name}! Bắt đầu thôi!`, 'success');
             generateQuiz();
         }
 
         window.generateQuiz = function() {
             let shuffledVocab = [...globalVocabData].sort(() => Math.random() - 0.5).slice(0, 3); 
-            let allMeanings = globalVocabData.map(v => v.meaning);
-            let allEnglishWords = globalVocabData.map(v => v.word);
+            let allMeanings = globalVocabData.map(v => v.meaning); let allEnglishWords = globalVocabData.map(v => v.word);
             
-            let quizHTML = `<p class="text-orange-700 text-sm md:text-base mb-3 text-center">Người chơi: <b>${childName}</b> 🌟</p>`;
+            let quizHTML = `<div class="flex items-center justify-center gap-2 mb-4 bg-orange-100 p-2 rounded-xl border border-orange-200"><span class="text-2xl">${currentPlayer.icon}</span><p class="text-orange-700 text-sm md:text-base font-bold">Lượt chơi của: ${currentPlayer.name}</p></div>`;
             
             shuffledVocab.forEach((q, index) => {
                 let typeOptions = q.sentence ? [0, 1, 2] : [0, 1];
@@ -572,30 +608,15 @@
                 let options = []; let correctAnswer = ""; let questionText = "";
 
                 if (qType === 0) {
-                    correctAnswer = q.meaning;
-                    questionText = `Nghĩa của từ <b>"${q.word}"</b> là gì?`;
-                    options.push(correctAnswer);
-                    while(options.length < 3) {
-                        let rw = allMeanings[Math.floor(Math.random() * allMeanings.length)];
-                        if(!options.includes(rw)) options.push(rw);
-                    }
+                    correctAnswer = q.meaning; questionText = `Nghĩa của từ <b>"${q.word}"</b> là gì?`; options.push(correctAnswer);
+                    while(options.length < 3) { let rw = allMeanings[Math.floor(Math.random() * allMeanings.length)]; if(!options.includes(rw)) options.push(rw); }
                 } else if (qType === 1) {
-                    correctAnswer = q.word;
-                    questionText = `Từ nào có nghĩa là <b>"${q.meaning}"</b>?`;
-                    options.push(correctAnswer);
-                    while(options.length < 3) {
-                        let rw = allEnglishWords[Math.floor(Math.random() * allEnglishWords.length)];
-                        if(!options.includes(rw)) options.push(rw);
-                    }
+                    correctAnswer = q.word; questionText = `Từ nào có nghĩa là <b>"${q.meaning}"</b>?`; options.push(correctAnswer);
+                    while(options.length < 3) { let rw = allEnglishWords[Math.floor(Math.random() * allEnglishWords.length)]; if(!options.includes(rw)) options.push(rw); }
                 } else {
-                    correctAnswer = q.word;
-                    let maskedSentence = q.sentence.replace(new RegExp(`\\b${q.word}\\b`, 'gi'), `<b>[___ ${q.pos}]</b>`);
-                    questionText = `Điền từ thích hợp vào câu: <br><i class="text-sm font-normal text-slate-500">"${maskedSentence}"</i>`;
-                    options.push(correctAnswer);
-                    while(options.length < 3) {
-                        let rw = allEnglishWords[Math.floor(Math.random() * allEnglishWords.length)];
-                        if(!options.includes(rw)) options.push(rw);
-                    }
+                    correctAnswer = q.word; let maskedSentence = q.sentence.replace(new RegExp(`\\b${q.word}\\b`, 'gi'), `<b>[___]</b>`);
+                    questionText = `Điền từ vào câu: <br><i class="text-sm font-normal text-slate-500">"${maskedSentence}"</i>`; options.push(correctAnswer);
+                    while(options.length < 3) { let rw = allEnglishWords[Math.floor(Math.random() * allEnglishWords.length)]; if(!options.includes(rw)) options.push(rw); }
                 }
                 
                 options.sort(() => Math.random() - 0.5);
@@ -609,8 +630,8 @@
             
             quizHTML += `<div class="flex gap-2 mt-2">
                 <button id="submitQuizBtn" class="flex-1 py-2.5 bg-orange-500 text-white text-sm font-black rounded-xl active:bg-orange-600 shadow-sm" onclick="checkQuiz()">✅ Chấm Điểm</button>
-                <button id="replayQuizBtn" class="flex-1 py-2.5 bg-sky-500 text-white text-sm font-black rounded-xl active:bg-sky-600 shadow-sm" onclick="generateQuiz()">🔄 Chơi Lại</button>
-            </div><div id="quizResult" class="mt-3 p-3 bg-green-100 border-2 border-green-400 rounded-xl text-center text-sm md:text-base font-black text-green-800 hidden"></div>`;
+                <button id="replayQuizBtn" class="flex-1 py-2.5 bg-sky-500 text-white text-sm font-black rounded-xl active:bg-sky-600 shadow-sm" onclick="setupQuizForm()">🔄 Đổi Nhân Vật</button>
+            </div><div id="quizResult" class="mt-3 p-3 bg-green-100 border-2 border-green-400 rounded-xl text-center flex flex-col items-center gap-1 hidden"></div>`;
             
             quizContainer.innerHTML = quizHTML;
         };
@@ -623,7 +644,7 @@
                 q.querySelectorAll('label').forEach(l => { l.classList.remove('bg-green-100', 'border-green-400', 'bg-red-100', 'border-red-400'); l.classList.add('bg-card'); });
                 if(selected) {
                     let parent = selected.parentElement;
-                    if(selected.value === correctAnswer) { score++; parent.classList.replace('bg-card', 'bg-green-100'); parent.classList.add('border-green-400'); } 
+                    if(selected.value === correctAnswer) { score += 10; parent.classList.replace('bg-card', 'bg-green-100'); parent.classList.add('border-green-400'); } 
                     else {
                         parent.classList.replace('bg-card', 'bg-red-100'); parent.classList.add('border-red-400');
                         let correctInput = q.querySelector(`input[value="${correctAnswer}"]`);
@@ -631,8 +652,16 @@
                     }
                 }
             });
+            
             vocabList.classList.remove('blur-active');
-            let resMsg = score === questions.length ? `🎉 Xuất sắc! 100 điểm cho ${childName}!` : `👍 Bé đúng ${score}/${questions.length} câu. Cố lên nhé!`;
+            
+            // Cập nhật điểm lên Leaderboard
+            let boardData = JSON.parse(localStorage.getItem('magicLeaderboard') || '{}');
+            boardData[currentPlayer.id] = (boardData[currentPlayer.id] || 0) + score;
+            localStorage.setItem('magicLeaderboard', JSON.stringify(boardData));
+            loadLeaderboard();
+
+            let resMsg = `<span class="text-3xl">${currentPlayer.icon}</span><span class="text-sm md:text-base font-black text-green-800">${currentPlayer.name} ghi được +${score} điểm!</span><button onclick="generateQuiz()" class="mt-2 text-xs bg-orange-400 text-white px-3 py-1 rounded-full font-bold">Chơi tiếp kiếm điểm</button>`;
             let resDiv = document.getElementById('quizResult'); resDiv.innerHTML = resMsg; resDiv.classList.remove('hidden');
         };
 
