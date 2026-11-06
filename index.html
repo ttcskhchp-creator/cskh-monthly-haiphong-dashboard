@@ -64,6 +64,23 @@
         #storyText { white-space: pre-wrap; tab-size: 4; }
         #dropZone.drag { border-color: #ec4899; background: #fdf2f8; }
         .avatar-selected { border-color: #f97316 !important; background-color: #ffedd5 !important; transform: scale(1.1); }
+        /* ===== v2: hiệu ứng, hình chìm, mascot ===== */
+        header,main,footer{position:relative;z-index:1}
+        #wm{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+        #wm i{position:absolute;font-style:normal;opacity:.13;animation:fl 9s ease-in-out infinite alternate}
+        @keyframes fl{to{margin-top:-18px}}
+        main>div>div.bg-white{background-color:rgba(255,255,255,.86)!important}
+        main>div>div.bg-teal-50{background-color:rgba(240,253,250,.86)!important}
+        main>div>div.bg-indigo-50{background-color:rgba(238,242,255,.86)!important}
+        main>div>div.bg-purple-50{background-color:rgba(250,245,255,.86)!important}
+        main>div>div.bg-orange-50{background-color:rgba(255,247,237,.86)!important}
+        main>div>div.bg-sky-50{background-color:rgba(240,249,255,.86)!important}
+        .fx{position:fixed;z-index:60;pointer-events:none;font-size:22px;line-height:1}
+        .wiggle{animation:wg .5s}
+        @keyframes wg{0%,100%{transform:rotate(0)}20%{transform:rotate(-8deg) scale(1.1)}40%{transform:rotate(8deg)}60%{transform:rotate(-5deg)}80%{transform:rotate(5deg)}}
+        #mascot{position:fixed;right:8px;bottom:8px;z-index:45;text-align:right;pointer-events:none}
+        #me{font-size:40px;cursor:pointer;pointer-events:auto;display:inline-block;animation:fl 2s ease-in-out infinite alternate;user-select:none}
+        #mb{display:inline-block;max-width:190px;background:#fff;border:2px solid var(--primary,#ec4899);border-radius:14px;padding:4px 8px;font-size:11px;font-weight:800;opacity:0;transition:opacity .3s;margin-bottom:2px}
     </style>
 </head>
 <body class="p-2 md:p-6 flex flex-col items-center">
@@ -175,6 +192,11 @@
                 <div id="quizContainer" class="text-slate-700 font-bold text-xs md:text-sm">
                     <span class="italic font-normal text-orange-400 text-[10px]">Quét chữ xong bé sẽ được chơi ở đây!</span>
                 </div>
+            </div>
+            <div class="p-3 md:p-4 bg-sky-50 border-2 border-sky-200 rounded-[1.5rem]" id="gameHub">
+                <h3 class="font-black text-sky-600 mb-2 text-sm md:text-base">🕹️ Phòng Game Từ Vựng</h3>
+                <div id="gameMenu" class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 mb-2"></div>
+                <div id="gameArea" class="bg-white/80 rounded-xl p-2 text-xs font-bold text-slate-700 min-h-[60px]"><span class="italic font-normal text-sky-400 text-[10px]">Bấm "Sạch" để lấy từ vựng, rồi chọn trò chơi nhé! 🎮</span></div>
             </div>
         </div>
     </main>
@@ -517,7 +539,7 @@
                             await new Promise(ok => { let s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js'; s.onload = ok; document.head.appendChild(s); });
                         }
                         worker = worker || await Tesseract.createWorker('eng', 1);
-                        let res = await worker.recognize(f); parts.push(res.data.text);
+                        parts.push(await ocrImage(f, worker));
                     } else if (k === 'txt') {
                         parts.push(await f.text());
                     } else if (k === 'docx') {
@@ -534,39 +556,6 @@
                 if (worker) await worker.terminate();
                 $('extractBtn').disabled = false; $('loadingStatus').classList.replace('flex', 'hidden');
             }
-        });
-
-        // ================== LỌC RÁC OCR ==================
-        cleanBtn.addEventListener('click', () => {
-            let text = storyText.value;
-            if (!text.trim()) return showToast('Trống!', 'warning');
-            const keep = $('keepLayout').checked;
-            text = text.replace(/[^a-zA-Z0-9.,!?'";:\- \n]/g, ' ');
-
-            const validShort = ['a', 'i', 'is', 'it', 'to', 'do', 'in', 'on', 'as', 'at', 'be', 'he', 'we', 'me', 'my', 'by', 'so', 'go', 'no', 'of', 'or', 'if', 'up', 'us', 'am', 'an'];
-            const blacklist = ['te', 'wa', 'ni', 'el', 'od', 'yi', 'bud', 'py', 'oy', 'eo', 'ott', 'onin', 'osun', 'ose', 'om', 'ga', 'sy', 'nf', 'qj', 'fo', 'ens', 'ees'];
-
-            let cleanLines = text.split('\n').map(line =>
-                line.split(/\s+/).filter(word => {
-                    let clean = word.replace(/[^a-zA-Z]/g, '').toLowerCase();
-                    if (!clean) return /^[.,!?]+$/.test(word);
-                    if (clean.length === 1 && !['a', 'i'].includes(clean)) return false;
-                    if (clean.length === 2 && !validShort.includes(clean)) return false;
-                    if (clean.length >= 3 && !/[aeiouy]/.test(clean)) return false;
-                    if (blacklist.includes(clean)) return false;
-                    return true;
-                }).join(' ')
-            );
-
-            text = cleanLines.join('\n');
-            if (!keep) {
-                text = text.replace(/\n[ \t]*\n/g, ' \u0001 ').replace(/\n/g, ' ').replace(/ ?\u0001 ?/g, '\n\n');
-            }
-            text = text.replace(/\s+([.,!?:;])/g, '$1').replace(/([.,!?:;])(?=[a-zA-Z])/g, '$1 ').replace(/^[.,!?:;\s]+|[.,!?:;\s]+$/g, '').replace(/ +/g, ' ');
-            text = text.toLowerCase().replace(/(^\s*[a-z]|[.!?]\s*[a-z])/g, c => c.toUpperCase()).replace(/\b(i)\b/g, 'I');
-            storyText.value = text;
-            showToast('Đã lọc sạch rác!', 'success');
-            extractVocabulary(text);
         });
 
         // ================== TỪ VỰNG THÔNG MINH ==================
@@ -591,7 +580,7 @@
             else if (totalWordsInStory > 60) targetCount = 18;
 
             let unique = Object.keys(counts)
-                .filter(w => w.length >= 4)
+                .filter(w => w.length >= 4 && (known(w) || plaus(w)))
                 .sort((a, b) => b.length - a.length)
                 .slice(0, targetCount);
 
@@ -652,6 +641,7 @@
 
             vocabList.innerHTML = html;
             setupQuizForm();
+            $('gameArea').innerHTML = '<span class="italic font-normal text-sky-400 text-[10px]">Chọn một trò chơi ở trên nhé! 🎮</span>';
         }
 
         function setupQuizForm() {
@@ -798,5 +788,249 @@
             if (!e.target.closest('#themePanel,#themeBtn')) { $('themePanel').classList.add('hidden'); }
         });
     </script>
+<div id="mascot"><div id="mb"></div><br><span id="me">🦄</span></div>
+<script>
+// ================== V2: LÀM SẠCH THÔNG MINH ==================
+const DICT = new Set(`a an the and or but so if of to in on at by for with from as is are was were be been am do does did have has had will would can could should may might must not no yes it its he she we they you i me my your his her our their them him us this that these those there here what when where who why how which all any some many much more most very too also just only then than now up down out over under again once one two three four five six seven eight nine ten first said say says go goes went going gone come came get got make made take took see saw look looked like liked love loved want wanted know knew think thought give gave tell told ask asked find found work play played run ran walk walked eat ate drink sleep slept sit sat stand stood open closed help called call try tried feel felt keep kept let put big small little long short tall old new young good bad happy sad angry hungry tired scared brave kind nice funny pretty beautiful strong fast slow hot cold warm dark light bright day night morning evening time year today tomorrow yesterday home house room door window garden tree flower grass river sea sun moon star sky cloud rain snow wind mountain forest road town city school class friend friends mother father mom dad mum brother sister baby child children boy girl man woman people family king queen prince princess dragon monster giant fairy witch wizard magic story book page word words letter name water food bread milk apple cake candy fish bird dog cat mouse rabbit bear fox wolf lion tiger elephant monkey duck horse cow pig sheep frog turtle butterfly bee red blue green yellow orange pink purple black white brown gold silver head hand hands eyes eye face hair nose mouth ear ears arm leg legs foot feet heart voice smile laugh cry shout whisper jump fly swim climb fall hide hid seek wait stop start end finish begin began never always often sometimes every each other another because after before while during without into through about around away back behind near next between inside outside above below together alone everyone everything something nothing someone anyone both either neither same different important special secret treasure adventure journey dream wish hope moment suddenly finally quickly slowly quietly loudly lived lives live upon wonderful amazing great best better worse well oh hello goodbye thank thanks please sorry chapter title don't can't it's i'm i'll i've that's let's didn't isn't he's she's we're they're you're won't wasn't couldn't wouldn't there's what's who's`.split(/\s+/));
+const known = w => {
+    if (DICT.has(w)) return true;
+    return [w.replace(/'s$/, ''), w.replace(/ies$/, 'y'), w.replace(/ied$/, 'y'), w.replace(/(es|s|ed|d|ly|er|est|ing)$/, ''), w.replace(/ing$/, 'e'), w.replace(/ed$/, 'e'), w.replace(/(.)\1(ing|ed|er|est)$/, '$1')].some(x => x.length > 1 && DICT.has(x));
+};
+const plaus = w => {
+    if (w.length < 3 || w.length > 18) return false;
+    const v = (w.match(/[aeiouy]/g) || []).length / w.length;
+    return v >= .25 && v <= .65 && !/[^aeiouy']{4,}|(.)\1\1|[aeiou]{4,}|q(?!u)|[jqxz]{2}/i.test(w);
+};
+// điểm "giống từ thật": 1 = từ điển, .6 = có vẻ là từ/tên riêng, 0 = rác, null = chỉ dấu câu
+function wscore(tok, first) {
+    const c = tok.replace(/^[^A-Za-z0-9']+|[^A-Za-z0-9']+$/g, '');
+    if (!c) return null;
+    if (/^\d+$/.test(c)) return .5;
+    if (/\d/.test(c)) return 0;
+    if (/[a-z][A-Z]/.test(c)) return 0;
+    const l = c.toLowerCase();
+    if (l.length === 1) return /^[ai]$/.test(l) ? .8 : 0;
+    if (known(l)) return 1;
+    if (!plaus(l)) return 0;
+    if (/^[A-Z]/.test(c) && !first) return .6;
+    return l.length >= 6 ? .6 : 0;
+}
+function smartClean(raw, keep) {
+    let junk = 0;
+    raw = raw.replace(/[‘’`´]/g, "'").replace(/[“”]/g, '"').replace(/(\w)-\n(\w)/g, '$1$2').replace(/(^|\s)[|lI](?=\s|$)/gm, '$1I').replace(/[^A-Za-z0-9.,!?'";:\-\s]/g, ' ');
+    const out = [];
+    raw.split('\n').forEach(line => {
+        const alpha = (line.match(/[A-Za-z]/g) || []).length, vis = line.replace(/\s/g, '').length;
+        if (!vis) return out.push('');
+        const toks = line.trim().split(/\s+/).map((t, i) => ({ t, s: wscore(t, i === 0) })).filter(x => x.s !== null);
+        if (!toks.length) return;
+        if (alpha / vis < .55 && toks.length > 1) { junk += toks.length; return; }
+        const avg = toks.reduce((a, x) => a + x.s, 0) / toks.length, good = toks.filter(x => x.s >= .6).length;
+        if (toks.length <= 2 ? !toks.every(x => x.s >= .6) : !(avg >= .5 && good >= 2)) { junk += toks.length; return; }
+        const kept = toks.filter(x => x.s > 0);
+        junk += toks.length - kept.length;
+        out.push(kept.map(x => x.t.replace(/^[^A-Za-z0-9'"]+(?=[A-Za-z0-9])/, '')).join(' '));
+    });
+    let t = out.join('\n');
+    if (!keep) t = t.replace(/\n[ \t]*\n/g, '\u0001').replace(/\n/g, ' ').replace(/\u0001+/g, '\n\n');
+    t = t.replace(/\s+([.,!?:;])/g, '$1').replace(/([.,!?:;])(?=[A-Za-z])/g, '$1 ').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim()
+        .replace(/(^|[.!?]\s+)([a-z])/g, (m, a, b) => a + b.toUpperCase()).replace(/\bi\b/g, 'I');
+    return { text: t, junk };
+}
+cleanBtn.addEventListener('click', () => {
+    if (!storyText.value.trim()) return showToast('Trống!', 'warning');
+    const r = smartClean(storyText.value, $('keepLayout').checked);
+    if (!r.text) return showToast('Máy không thấy chữ tiếng Anh nào cả 🙈 Thử ảnh rõ hơn nhé!', 'warning');
+    storyText.value = r.text;
+    showToast(r.junk ? `Đã đuổi ${r.junk} chữ ma ra khỏi nhà! 👻🧹` : 'Sạch bóng, không có chú ma nào! ✨', 'success');
+    extractVocabulary(r.text);
+});
+
+// ================== V2: OCR CHỐNG HỌA TIẾT ==================
+async function prepImg(f) {
+    const b = await createImageBitmap(f);
+    const s = b.width < 1400 ? 1400 / b.width : (b.width > 2400 ? 2400 / b.width : 1), mx = b.width * .02, my = b.height * .02;
+    const cv = document.createElement('canvas'); cv.width = (b.width - 2 * mx) * s; cv.height = (b.height - 2 * my) * s;
+    const cx = cv.getContext('2d'); cx.drawImage(b, mx, my, b.width - 2 * mx, b.height - 2 * my, 0, 0, cv.width, cv.height);
+    const im = cx.getImageData(0, 0, cv.width, cv.height), d = im.data, h = new Array(256).fill(0);
+    for (let i = 0; i < d.length; i += 4) { const g = (d[i] * .3 + d[i + 1] * .59 + d[i + 2] * .11) | 0; d[i] = g; h[g]++; }
+    const N = d.length / 4; let sum = 0; for (let i = 0; i < 256; i++) sum += i * h[i];
+    let sB = 0, wB = 0, best = 0, th = 128;
+    for (let i = 0; i < 256; i++) { wB += h[i]; if (!wB) continue; const wF = N - wB; if (!wF) break; sB += i * h[i]; const v = wB * wF * Math.pow(sB / wB - (sum - sB) / wF, 2); if (v > best) { best = v; th = i; } }
+    for (let i = 0; i < d.length; i += 4) { const v = d[i] > th ? 255 : 0; d[i] = d[i + 1] = d[i + 2] = v; d[i + 3] = 255; }
+    cx.putImageData(im, 0, 0); return cv;
+}
+async function ocrImage(f, worker) {
+    const run = async src => {
+        const d = (await worker.recognize(src)).data, ws = (d.words || []).filter(w => w.bbox);
+        if (!d.lines || !ws.length) return d.text;
+        const hs = ws.map(w => w.bbox.y1 - w.bbox.y0).sort((a, b) => a - b), m = hs[hs.length >> 1];
+        return d.lines.map(l => l.words.filter(w => w.confidence >= 55 && w.text.trim() && (w.bbox.y1 - w.bbox.y0) > m * .4 && (w.bbox.y1 - w.bbox.y0) < m * 2.8).map(w => w.text).join(' ')).join('\n');
+    };
+    try {
+        let t = await run(await prepImg(f));
+        if ((t.match(/[A-Za-z]{3,}/g) || []).length < 8) t = await run(f);
+        return t;
+    } catch (e) { return (await worker.recognize(f)).data.text; }
+}
+
+// ================== V2: HÌNH CHÌM THEO CHỦ ĐỀ ==================
+const WM = { candy: ['🍭', '🧁', '🦄', '🌈', '⭐', '🍩', '🎀', '🧸'], ocean: ['🐠', '🐙', '🐳', '🐚', '⚓', '🦀', '🐬', '🫧'], forest: ['🌲', '🦊', '🦉', '🍄', '🐿️', '🦋', '🌻', '🐻'] };
+const SKIN = { candy: '🦄', ocean: '🐙', forest: '🦊' };
+const curTheme = () => document.documentElement.dataset.theme || 'candy';
+function wm() {
+    let l = $('wm'); if (!l) { l = document.createElement('div'); l.id = 'wm'; document.body.prepend(l); }
+    const L = WM[curTheme()] || WM.candy;
+    l.innerHTML = Array.from({ length: 18 }, (_, i) => `<i style="left:${(i % 6) * 17 + Math.random() * 8}%;top:${((i / 6) | 0) * 34 + Math.random() * 14}%;font-size:${48 + Math.random() * 60}px;transform:rotate(${Math.random() * 60 - 30}deg);animation-delay:${-Math.random() * 8}s">${L[i % L.length]}</i>`).join('');
+    const me = $('me'); if (me) me.textContent = SKIN[curTheme()] || '🦄';
+}
+const _at = applyTheme; applyTheme = id => { _at(id); wm(); };
+wm();
+
+// ================== V2: HIỆU ỨNG HÀI HƯỚC + MASCOT ==================
+const pick = a => a[Math.random() * a.length | 0];
+const wig = e => { e.classList.remove('wiggle'); void e.offsetWidth; e.classList.add('wiggle'); };
+function burst(x, y, list, n = 8) {
+    for (let i = 0; i < n; i++) {
+        const e = document.createElement('span'); e.className = 'fx'; e.textContent = pick(list); e.style.left = x + 'px'; e.style.top = y + 'px'; document.body.appendChild(e);
+        const a = Math.random() * 6.28, d = 40 + Math.random() * 80;
+        e.animate([{ transform: 'translate(-50%,-50%) scale(.5)', opacity: 1 }, { transform: `translate(calc(-50% + ${Math.cos(a) * d}px),calc(-50% + ${Math.sin(a) * d - 40}px)) scale(1.4) rotate(${Math.random() * 360}deg)`, opacity: 0 }], { duration: 900 + Math.random() * 500, easing: 'ease-out' }).onfinish = () => e.remove();
+    }
+}
+const FUN = ['🎉', '⭐', '🌈', '🎈', '✨', '🤪', '🐣', '🍕'], OOPS = ['🙈', '💫', '🫠', '🤡'], WIN = ['🎉', '🎊', '⭐', '🏆', '🦄'];
+let mt; function talk(m) { const b = $('mb'); b.textContent = m; b.style.opacity = 1; clearTimeout(mt); mt = setTimeout(() => b.style.opacity = 0, 3800); }
+const MSG = {
+    playBtn: ['Mở loa lên! Hàng xóm sắp nghe bé đọc tiếng Anh rồi 📢', 'Tai thỏ vểnh lên, nghe nào 🐰'],
+    stopBtn: ['Phanh kít kít! 🛑', 'Suỵt… yên lặng như tờ 🤫'],
+    cleanBtn: ['Chổi thần quét sạch chữ ma! 🧹👻', 'Ma OCR: "Tôi bị đuổi oan!" 😭'],
+    extractBtn: ['Soi chữ bằng kính lúp siêu cấp 🔍', 'Đang đọc... đừng làm rung ảnh nha 📸'],
+    playCursorBtn: ['Chỉ đâu đọc đó, như phép thuật 🪄'], btnMp3: ['Đang đóng gói giọng nói vào hộp 🎁']
+};
+const JOKES = ['Học xong nhớ ăn cơm nha 🍚', 'Từ nào khó? Tui cũng không biết, tui là con thú mà 🙈', 'Ngáp một cái rồi học tiếp nào 🥱', 'Bé giỏi tới mức ma OCR cũng vỗ tay 👻👏', 'Bí mật: tiếng Anh dễ hơn bé nghĩ đó 🤫'];
+document.addEventListener('click', e => {
+    const b = e.target.closest('button'), v = e.target.closest('.vocab-card'), r = b && b.getBoundingClientRect();
+    const x = e.clientX || (r ? r.left + r.width / 2 : 0), y = e.clientY || (r ? r.top : 0);
+    if (!x && !y) return;
+    if (v) burst(x, y, ['🔊', '🎵', '⭐'], 5);
+    else if (b && !b.closest('#gameArea')) { burst(x, y, FUN, 7); wig(b); if (MSG[b.id] && Math.random() < .8) talk(pick(MSG[b.id])); }
+    else if (!b) burst(x, y, ['✨', '⭐'], 2);
+});
+$('me').onclick = () => { wig($('me')); talk(pick(JOKES)); burst(innerWidth - 40, innerHeight - 50, FUN, 6); };
+setInterval(() => { if (!document.hidden) talk(pick(JOKES)); }, 35000);
+setInterval(() => { if (isStoryPlaying) { const r = $('playBtn').getBoundingClientRect(); burst(r.left + r.width / 2, r.top, ['🎵', '🎶', '😎'], 2); } }, 900);
+$('cleanBtn').addEventListener('click', () => {
+    const br = document.createElement('div'); br.className = 'fx'; br.style.cssText = 'font-size:60px;top:40vh;left:0'; br.textContent = '🧹'; document.body.appendChild(br);
+    br.animate([{ transform: 'translateX(-10vw) rotate(-20deg)' }, { transform: 'translateX(110vw) rotate(20deg)' }], { duration: 1200, easing: 'ease-in' }).onfinish = () => br.remove();
+    for (let i = 1; i < 6; i++) setTimeout(() => burst(innerWidth * i / 6, innerHeight * .4, ['👻', '💨', '🕸️'], 3), i * 180);
+});
+const _cq = window.checkQuiz;
+window.checkQuiz = function () {
+    _cq(); const m = (($('quizResult') || {}).textContent || '').match(/\+(\d+)/), s = m ? +m[1] : 0;
+    burst(innerWidth / 2, innerHeight / 2, s >= 30 ? WIN : OOPS, 16); talk(s >= 30 ? 'Siêu quá! Bé là thiên tài 🧠✨' : 'Không sao, lần sau gỡ lại nha 💪');
+};
+
+// ================== V2: PHÒNG GAME ==================
+const G = { score: 0, k: '' }; let GT;
+const V = () => globalVocabData.filter(v => v.word);
+const shuf = a => [...a].sort(() => Math.random() - .5);
+const spk = w => playWordAudio(w);
+const area = () => $('gameArea');
+const ctr = () => [innerWidth / 2, innerHeight / 2];
+function award(n) {
+    if (!n) return; const p = currentPlayer || avatars[0], d = JSON.parse(localStorage.getItem('magicLeaderboard') || '{}');
+    d[p.id] = (d[p.id] || 0) + n; localStorage.setItem('magicLeaderboard', JSON.stringify(d)); loadLeaderboard();
+}
+function fin() {
+    clearInterval(GT); award(G.score); const p = currentPlayer || avatars[0];
+    area().innerHTML = `<div class="text-center"><div class="text-4xl">${G.score >= 40 ? '🏆' : '🎖️'}</div><div class="text-base font-black text-green-600">${p.icon} +${G.score} điểm!</div><div class="text-[10px] mb-1">${G.score >= 40 ? 'Đỉnh của chóp! 🚀' : 'Cũng ổn đó, chơi lại cho đỉnh hơn nhé! 😆'}</div><button class="px-3 py-1 bg-sky-500 text-white rounded-lg" onclick="playGame(G.k)">🔄 Chơi lại</button></div>`;
+    burst(...ctr(), WIN, 24); talk(G.score >= 40 ? 'Bé ơi, tui xin chữ ký! ✍️' : 'Hòa vốn rồi, tiếp nào! 😎');
+}
+const GAMES = [['listen', '🎧', 'Nghe đoán từ'], ['flip', '🃏', 'Lật thẻ nhớ'], ['speak', '🎤', 'Tập phát âm'], ['scr', '🔤', 'Xếp chữ'], ['speed', '⚡', 'Đua tốc độ']];
+$('gameMenu').innerHTML = GAMES.map(g => `<button class="py-1.5 bg-sky-500 text-white rounded-lg text-[11px] font-black btn-bounce" onclick="playGame('${g[0]}')">${g[1]} ${g[2]}</button>`).join('');
+window.playGame = k => {
+    if (V().length < 4) return showToast('Bấm "Sạch" để lấy từ vựng trước nhé!', 'warning');
+    clearInterval(GT); G.score = 0; G.k = k; ({ listen: gListen, flip: gFlip, speak: gSpeak, scr: gScr, speed: gSpeed })[k]();
+};
+function judge(btns, ok, ansBtn) {
+    btns.forEach(b => b.disabled = true);
+    if (ok) { G.score += 10; burst(...ctr(), WIN, 10); } else { burst(...ctr(), OOPS, 6); talk(pick(['Ối! Hụt rồi 🙈', 'Gần đúng… theo kiểu của rùa 🐢'])); }
+}
+function gListen() {
+    const qs = shuf(V()).slice(0, 6); let i = 0;
+    const nx = () => {
+        if (i >= qs.length) return fin();
+        const v = qs[i], mean = i % 2, pool = V(), ans = mean ? v.meaning : v.word;
+        const o = shuf([...new Set([ans, ...shuf(pool.filter(x => x !== v)).slice(0, 3).map(x => mean ? x.meaning : x.word)])]);
+        area().innerHTML = `<div class="text-[10px] text-sky-500">Câu ${i + 1}/${qs.length} • ${G.score}đ</div><div class="text-center mb-2"><button class="text-4xl btn-bounce" onclick="spk('${v.word}')">🔊</button><div class="text-[10px]">Nghe và chọn ${mean ? 'nghĩa' : 'từ'} đúng</div></div><div class="grid grid-cols-2 gap-1.5">${o.map(x => `<button class="o py-1.5 bg-slate-50 border-2 border-sky-200 rounded-lg capitalize">${x}</button>`).join('')}</div>`;
+        spk(v.word); const bs = [...area().querySelectorAll('.o')];
+        bs.forEach((b, j) => b.onclick = () => {
+            const ok = o[j] === ans; judge(bs, ok); b.classList.add(ok ? 'bg-green-200' : 'bg-red-200');
+            if (!ok) bs[o.indexOf(ans)].classList.add('bg-green-200');
+            i++; setTimeout(nx, 1200);
+        });
+    }; nx();
+}
+function gSpeed() {
+    let t = 30; const pool = V(), el = area();
+    const nx = () => {
+        const v = pick(pool), o = shuf([v, ...shuf(pool.filter(x => x !== v)).slice(0, 2)]);
+        el.innerHTML = `<div class="flex justify-between text-[10px] text-sky-600"><span>⏱️ <b id="tm">${t}</b>s</span><span>${G.score}đ</span></div><div class="text-center text-xl font-black my-2">${v.word}</div><div class="grid gap-1.5">${o.map(x => `<button class="o py-1.5 bg-slate-50 border-2 border-sky-200 rounded-lg capitalize">${x.meaning}</button>`).join('')}</div>`;
+        el.querySelectorAll('.o').forEach((b, j) => b.onclick = () => { if (o[j] === v) { G.score += 10; burst(...ctr(), FUN, 5); } else { t = Math.max(0, t - 3); wig(el); } nx(); });
+    };
+    GT = setInterval(() => { t--; const e = $('tm'); if (e) e.textContent = t; if (t <= 0) fin(); }, 1000); nx();
+}
+function gFlip() {
+    const vs = shuf(V()).slice(0, 6), cs = shuf(vs.flatMap((v, k) => [{ k, t: v.word, en: 1 }, { k, t: v.meaning }]));
+    let sel = [], lock = false, done = 0, moves = 0;
+    area().innerHTML = `<div id="mv" class="text-[10px] text-sky-600 mb-1">Lượt: 0</div><div class="grid grid-cols-4 gap-1.5">${cs.map((c, i) => `<button class="cd h-14 rounded-lg bg-sky-300 text-white text-[10px] font-black leading-tight px-0.5 capitalize">❓</button>`).join('')}</div>`;
+    const OPEN = 'bg-white text-sky-700 border-2 border-sky-300';
+    area().querySelectorAll('.cd').forEach((b, i) => b.onclick = () => {
+        const c = cs[i]; if (lock || b.dataset.o) return; b.dataset.o = 1; b.textContent = c.t; b.className = b.className.replace('bg-sky-300', OPEN);
+        if (c.en) spk(c.t); sel.push([b, c]); if (sel.length < 2) return;
+        moves++; $('mv').textContent = 'Lượt: ' + moves; const [[b1, c1], [b2, c2]] = sel; sel = [];
+        if (c1.k === c2.k) {
+            done++; [b1, b2].forEach(x => x.className = x.className.replace('bg-white', 'bg-green-200')); burst(...ctr(), FUN, 6);
+            if (done === vs.length) { G.score = Math.max(10, 100 - moves * 5); setTimeout(fin, 700); }
+        } else { lock = true; setTimeout(() => { [b1, b2].forEach(x => { delete x.dataset.o; x.textContent = '❓'; x.className = x.className.replace(OPEN, 'bg-sky-300'); }); lock = false; }, 900); }
+    });
+}
+function gScr() {
+    const pl = V().filter(v => v.word.length <= 9), vs = shuf(pl.length >= 3 ? pl : V()).slice(0, 5); let i = 0, pk = [];
+    const nx = () => {
+        if (i >= vs.length) return fin(); const v = vs[i], L = shuf(v.word.split('').map(c => ({ c }))); pk = [];
+        const r = () => {
+            area().innerHTML = `<div class="text-[10px] text-sky-500">Câu ${i + 1}/${vs.length} • ${G.score}đ</div><div class="text-center my-1">Nghĩa: <b class="text-purple-600 capitalize">${v.meaning}</b> <button onclick="spk('${v.word}')">🔊</button></div><div class="flex justify-center gap-1 mb-2 min-h-[2.2rem]">${v.word.split('').map((_, k) => `<span class="w-7 h-8 border-b-4 border-sky-300 text-center text-lg uppercase">${pk[k] ? pk[k].c : ''}</span>`).join('')}</div><div class="flex flex-wrap justify-center gap-1">${L.map(l => `<button class="lt w-8 h-8 rounded-lg bg-yellow-300 text-yellow-900 font-black uppercase ${pk.includes(l) ? 'opacity-30' : ''}">${l.c}</button>`).join('')}<button id="un" class="px-2 rounded-lg bg-red-200">⌫</button></div>`;
+            area().querySelectorAll('.lt').forEach((b, j) => b.onclick = () => {
+                const l = L[j]; if (pk.includes(l)) return; pk.push(l); r();
+                if (pk.length === v.word.length) {
+                    if (pk.map(x => x.c).join('') === v.word) { G.score += 10; spk(v.word); burst(...ctr(), FUN, 10); i++; setTimeout(nx, 1100); }
+                    else { wig(area()); talk('Chữ nhảy loạn xạ rồi! 🤪'); setTimeout(() => { pk = []; r(); }, 700); }
+                }
+            });
+            $('un').onclick = () => { pk.pop(); r(); };
+        }; r();
+    }; nx();
+}
+function gSpeak() {
+    const vs = shuf(V()).slice(0, 5), SR = window.SpeechRecognition || window.webkitSpeechRecognition; let i = 0;
+    const nx = () => {
+        if (i >= vs.length) return fin(); const v = vs[i];
+        area().innerHTML = `<div class="text-center"><div class="text-[10px] text-sky-500">Câu ${i + 1}/${vs.length} • ${G.score}đ</div><div class="text-2xl font-black text-purple-700">${v.word}</div><div class="text-[11px] capitalize text-slate-500 mb-2">${v.meaning}</div><button onclick="spk('${v.word}')" class="px-3 py-1.5 bg-cyan-500 text-white rounded-lg">🔊 Nghe mẫu</button> ${SR ? '<button id="mic" class="px-3 py-1.5 bg-pink-500 text-white rounded-lg">🎤 Bé đọc</button>' : ''} <button id="sk" class="px-2 py-1.5 bg-slate-200 rounded-lg">⏭️</button><div id="sr" class="mt-2 min-h-[1.5rem]"></div>${SR ? '' : '<div class="mt-1">Bé đọc theo rồi tự chấm nhé:</div><div class="flex justify-center gap-3 mt-1 text-3xl"><button class="sf" data-p="2">😖</button><button class="sf" data-p="6">😐</button><button class="sf" data-p="10">😍</button></div>'}</div>`;
+        const go = p => { G.score += p; i++; setTimeout(nx, 1300); };
+        $('sk').onclick = () => go(0);
+        area().querySelectorAll('.sf').forEach(b => b.onclick = () => { burst(...ctr(), +b.dataset.p > 5 ? FUN : OOPS, 6); go(+b.dataset.p); });
+        if (SR) $('mic').onclick = () => {
+            const r = new SR(); r.lang = 'en-US'; r.maxAlternatives = 5; $('sr').textContent = '👂 Đang nghe...';
+            r.onresult = e => {
+                const al = [...e.results[0]].map(a => a.transcript.toLowerCase().trim()), ok = al.some(a => a.split(/\s+/).includes(v.word));
+                $('sr').innerHTML = ok ? '🎉 Chuẩn luôn!' : `🤔 Máy nghe là "${al[0]}" — thử lại nhé!`;
+                if (ok) { burst(...ctr(), WIN, 12); go(10); } else wig(area());
+            };
+            r.onerror = () => $('sr').textContent = 'Không nghe thấy gì 🙉 (nhớ cho phép micro nhé)'; r.start();
+        };
+    }; nx();
+}
+
+</script>
 </body>
 </html>
