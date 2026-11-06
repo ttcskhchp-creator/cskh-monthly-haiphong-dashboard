@@ -2213,13 +2213,38 @@ function cpNextSentence() {
     if (!C.order.length || C.src !== all) { C.src = all; C.order = shuf(all.map((_, i) => i)); C.n = 0; }
     C.s = all[C.order[C.n++ % C.order.length]]; C.qs = shuf(genQs(C.s)); C.qi = 0; C.tries = 0; C.done = false; cpShow();
 }
+let cpRec = null, cpTimer = null;
+function cpStopRec() {
+    clearTimeout(cpTimer);
+    if (cpRec) { const r = cpRec; cpRec = null; r.onresult = r.onerror = r.onend = r.onaudiostart = null; try { r.abort(); } catch (e) {} }
+    const m = $('cpMic'); if (m) { m.textContent = '🎤'; m.classList.remove('bg-red-500'); m.classList.add('bg-pink-500'); }
+}
+function cpListen() {
+    const SRx = window.SpeechRecognition || window.webkitSpeechRecognition, m = $('cpMic'), fb = $('cpFb');
+    if (cpRec) { try { cpRec.stop(); } catch (e) { cpStopRec(); } return; }   // bấm lần nữa = dừng & chấm phần đã nghe
+    if (C.done) return;
+    stopAudio();                                                              // tắt loa để mic không thu tiếng máy đọc
+    fb.textContent = '⏳ Chờ xíu...'; m.textContent = '⏹️'; m.classList.replace('bg-pink-500', 'bg-red-500');
+    const r = new SRx(); cpRec = r; r.lang = 'en-US'; r.interimResults = true; r.maxAlternatives = 3; r.continuous = false;
+    let fin = null, interim = '', err = '';
+    r.onaudiostart = () => { if (cpRec === r) fb.innerHTML = '<span class="text-pink-600 animate-pulse">🎤 Bé nói đi! (bấm ⏹️ để dừng)</span>'; };
+    r.onresult = e => { const res = e.results[e.results.length - 1]; if (res.isFinal) fin = [...res].map(a => a.transcript); else interim = res[0].transcript; $('cpIn').value = fin ? fin[0] : interim; };
+    r.onerror = e => { err = e.error; };
+    r.onend = () => {
+        if (cpRec !== r) return; cpStopRec(); const c = fin || (interim ? [interim] : null);
+        if (c) cpCheck(c); else fb.textContent = /not-allowed|service/.test(err) ? 'Bé cho phép dùng micro rồi bấm 🎤 lại nhé!' : 'Chưa nghe thấy bé nói 🙉 Bấm 🎤 thử lại nhé!';
+    };
+    cpTimer = setTimeout(() => { try { r.stop(); } catch (e) {} }, 9000);
+    setTimeout(() => { if (cpRec !== r) return; try { r.start(); } catch (e) { cpStopRec(); fb.textContent = 'Micro đang bận, bấm 🎤 lại nhé!'; } }, 200);
+}
 function cpShow() {
+    cpStopRec();
     const q = C.qs[C.qi], SRx = window.SpeechRecognition || window.webkitSpeechRecognition;
     $('cpArea').innerHTML = `<div class="text-center mb-2"><button id="cpPlay" class="text-4xl py-2 px-5 bg-amber-100 border-2 border-amber-300 rounded-2xl btn-bounce">🔊</button><div class="text-xs text-slate-500">Chạm loa để nghe lại câu</div><button id="cpPeek" class="text-xs text-cyan-700 underline mt-1">👀 Xem chữ (nếu nghe chưa rõ)</button><p id="cpTxt" class="hidden italic bg-slate-50 rounded-xl p-2 mt-1">"${C.s}"</p></div><div class="bg-cyan-50 border-2 border-cyan-200 rounded-2xl p-3 mb-2 text-base">${q.q}</div><div class="flex gap-2 mb-2"><input id="cpIn" autocomplete="off" placeholder="Bé trả lời ở đây..." class="flex-1 min-w-0 border-2 border-cyan-300 rounded-xl px-3 py-2 text-base font-bold outline-none focus:border-cyan-500">${SRx ? '<button id="cpMic" class="px-3 bg-pink-500 text-white rounded-xl text-xl">🎤</button>' : ''}<button id="cpGo" class="px-4 bg-green-500 text-white font-black rounded-xl">✅</button></div><div id="cpFb" class="min-h-[2rem] font-black mb-2"></div><div id="cpRow" class="grid grid-cols-2 gap-2"><button id="cpChg" class="py-2 bg-purple-100 text-purple-700 font-black rounded-xl">🔀 Đổi câu hỏi</button><button id="cpSkip" class="py-2 bg-slate-100 text-slate-700 font-black rounded-xl">⏭️ Câu khác</button></div>`;
-    const play = () => playSentenceSample(encodeURIComponent(C.s));
+    const play = () => { cpStopRec(); playSentenceSample(encodeURIComponent(C.s)); };
     $('cpPlay').onclick = play; $('cpPeek').onclick = () => $('cpTxt').classList.toggle('hidden');
     $('cpGo').onclick = () => cpCheck([$('cpIn').value]); $('cpIn').onkeydown = e => { if (e.key === 'Enter') cpCheck([$('cpIn').value]); };
-    if (SRx) $('cpMic').onclick = () => { const r = new SRx(); r.lang = 'en-US'; r.maxAlternatives = 3; $('cpFb').textContent = '👂 Đang nghe bé...'; r.onresult = e => { const al = [...e.results[0]].map(a => a.transcript); $('cpIn').value = al[0]; cpCheck(al); }; r.onerror = () => $('cpFb').textContent = 'Không nghe rõ, bé thử lại nhé!'; r.start(); };
+    if (SRx) $('cpMic').onclick = cpListen;
     $('cpChg').onclick = () => { if (C.qs.length > 1) { C.qi = (C.qi + 1) % C.qs.length; C.tries = 0; cpShow(); } else cpNextSentence(); };
     $('cpSkip').onclick = cpNextSentence; setTimeout(play, 300); talk('Nghe thật kỹ rồi trả lời nhé bé! 👂');
 }
