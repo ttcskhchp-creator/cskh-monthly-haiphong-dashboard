@@ -2193,16 +2193,54 @@ const cpSents = () => {
     let a = allStorySentences.length ? allStorySentences : (storyText.value.match(/[^.!?\n]+[.!?]*/g) || []).map(s => s.trim()).filter(s => s.split(/\s+/).length >= 4);
     return a;
 };
+const LX = x => new Set(x.split(' '));
+const PLACES = LX('forest village castle market house school garden river sea city town farm park kingdom mountain room shop home beach cave lake island kitchen field road bridge palace tower hill sky ocean world street church hospital library zoo yard barn pond meadow desert jungle cottage hut well'),
+    ANIMALS = LX('goose geese dog cat rabbit bear fox wolf lion tiger elephant monkey duck horse cow pig sheep frog turtle butterfly bee bird fish mouse mice dragon snake owl deer chicken hen rooster goat donkey squirrel crab whale dolphin shark parrot'),
+    JOBS = LX('farmer hunter teacher doctor king queen baker fisherman soldier driver cook nurse pilot miner merchant student prince princess knight wizard witch builder policeman painter singer dancer worker captain sailor shepherd woodcutter'),
+    TIMES = LX('morning afternoon evening night noon midnight today tomorrow yesterday day week month year monday tuesday wednesday thursday friday saturday sunday summer winter spring autumn weekend dawn sunset'),
+    ADJ = LX('big small little long short tall old new young good bad happy sad angry hungry tired scared brave kind nice funny pretty beautiful strong fast slow hot cold warm dark light bright greedy foolish clever rich poor golden shiny heavy wonderful terrible thirsty friendly lazy wise silly huge tiny gentle fierce lovely quiet noisy sweet sleepy lonely proud amazed'),
+    VB = LX('run jump eat play like love see look walk swim fly sing dance read write find make take give help want need live work climb cry laugh shout open close sleep sit stand hide catch carry visit cook paint draw wait'),
+    PEOPLE = LX('mother father mom dad mum brother sister grandma grandpa grandmother grandfather uncle aunt boy girl man woman baby child children friend people'),
+    NOTADV = LX('family only early belly jelly holy july lonely lovely friendly silly ugly lily'),
+    NOTVERB = LX('greed seed need speed breed indeed hundred bed red'),
+    DET = LX('the a an his her their its some my our your this that these those more many much any'),
+    PREP = LX('in at on to into from near under behind inside'),
+    IRR = { found: 'find', went: 'go', saw: 'see', ate: 'eat', took: 'take', gave: 'give', came: 'come', ran: 'run', made: 'make', told: 'tell', felt: 'feel', said: 'say', got: 'get', knew: 'know', thought: 'think', sat: 'sit', stood: 'stand', flew: 'fly', swam: 'swim', slept: 'sleep', woke: 'wake', met: 'meet', brought: 'bring', bought: 'buy', caught: 'catch', kept: 'keep', left: 'leave', lost: 'lose', heard: 'hear', began: 'begin', won: 'win', wrote: 'write', sang: 'sing', drew: 'draw', fell: 'fall', hid: 'hide', held: 'hold', built: 'build', taught: 'teach', spoke: 'speak' };
+const isCol = w => COLORS.includes(w) && !/^gold/.test(w);
+const inS = (S, w) => S.has(w) || S.has(w.replace(/(e)?s$/, ''));
 function genQs(s) {
-    const qs = [], low = s.toLowerCase().replace(/[^a-z0-9' ]/g, ' ').split(/\s+/).filter(Boolean);
-    const wm = s.match(/\b(?:in|at|on|to|into|from|near|under|behind|inside)\s+(?:the|a|an|his|her|their)?\s*([A-Za-z]{3,})/i);
-    if (wm && !STOP.has(wm[1].toLowerCase())) qs.push({ q: '📍 Câu này nói về nơi nào? (trả lời 1 từ tiếng Anh)', a: [wm[1].toLowerCase()] });
-    const col = low.find(x => COLORS.includes(x)); if (col) qs.push({ q: '🎨 Trong câu có màu gì?', a: [col] });
+    const low = s.replace(/[^A-Za-z0-9' ]/g, ' ').split(/\s+/).filter(Boolean).map(x => x.toLowerCase()), qs = [];
+    const isAdj = w => ADJ.has(w) || (LOCAL_DICTIONARY[w] && LOCAL_DICTIONARY[w].p === 'Tính từ');
+    const isAdv = w => /ly$/.test(w) && w.length > 4 && !NOTADV.has(w);
+    const isVerb = w => !!IRR[w] || (/ed$/.test(w) && w.length > 3 && !isAdj(w) && !STOP.has(w) && !NOTVERB.has(w) && !inS(PLACES, w)) || VB.has(w) || VB.has(w.replace(/(e)?s$/, ''));
+    const vi = low.findIndex(isVerb);
+    if (vi >= 0) {
+        const v = low[vi], base = IRR[v] || v.replace(/ied$/, 'y').replace(/(.)\1ed$/, '$1').replace(/ed$/, ''), t = low[vi - 1];
+        const subj = vi > 0 && t.length >= 3 && !STOP.has(t) && !DET.has(t) && !isAdj(t) && !isAdv(t) && t !== 'time' ? t : null;
+        qs.push({ q: subj ? `🏃 "${subj}" đã làm gì? (trả lời 1 động từ tiếng Anh)` : '🏃 Nhân vật trong câu đã làm gì? (1 động từ tiếng Anh)', a: [...new Set([v, base, v.replace(/d$/, ''), v.replace(/s$/, '')])] });
+    }
+    const nouns = [];
+    low.forEach((w, i) => {
+        let j = -1;
+        if (DET.has(w)) { j = i + 1; while (j < low.length && (isAdj(low[j]) || isAdv(low[j]) || isCol(low[j]) || NUMS[low[j]])) j++; }
+        else if (PREP.has(w) && inS(PLACES, low[i + 1] || '')) j = i + 1;
+        const n = low[j]; if (n && n.length >= 3 && !STOP.has(n) && !DET.has(n) && !isVerb(n) && !isAdv(n) && n !== 'time' && !inS(TIMES, n) && !nouns.includes(n)) nouns.push(n);
+    });
+    const pl = nouns.filter(n => inS(PLACES, n)), an = nouns.filter(n => inS(ANIMALS, n)), jb = nouns.filter(n => inS(JOBS, n)), pp = nouns.filter(n => inS(PEOPLE, n) && !inS(JOBS, n)), ot = nouns.filter(n => !pl.includes(n) && !an.includes(n) && !jb.includes(n) && !pp.includes(n));
+    if (pl.length) qs.push({ q: '📍 Sự việc trong câu xảy ra ở địa điểm nào? (1 từ tiếng Anh)', a: pl });
+    if (an.length) qs.push({ q: '🐾 Câu nhắc đến con gì? (con vật nào)', a: an });
+    if (jb.length) qs.push({ q: '👷 Nhân vật trong câu làm nghề gì (hoặc là ai)?', a: jb });
+    if (pp.length) qs.push({ q: '🧑 Câu nhắc đến ai? (người nào)', a: pp });
+    if (ot.length) qs.push({ q: '📦 Câu nhắc đến cái gì? (đồ vật nào)', a: ot });
+    const tm = low.filter(w => inS(TIMES, w)); if (tm.length) qs.push({ q: '⏰ Việc đó xảy ra khi nào / bao giờ? (1 từ tiếng Anh)', a: tm });
+    const col = low.find(isCol); if (col) qs.push({ q: '🎨 Trong câu có màu gì?', a: [col] });
+    low.forEach((w, i) => { if (isAdj(w) && !isCol(w)) { const n = low[i + 1], ok = n && !STOP.has(n) && !isVerb(n) && n.length >= 3; qs.push({ q: ok ? `✨ "${n}" như thế nào? (trả lời 1 tính từ)` : '✨ Câu miêu tả sự vật / nhân vật như thế nào? (1 tính từ)', a: [w] }); } });
+    const av = low.filter(isAdv); if (av.length) qs.push({ q: '⚡ Hành động diễn ra như thế nào? (1 trạng từ)', a: av });
     const nm = low.find(x => NUMS[x] || /^\d+$/.test(x)); if (nm) qs.push({ q: '🔢 Trong câu nhắc đến số mấy? (trả lời bằng chữ hoặc số)', a: NUMS[nm] ? [nm, String(NUMS[nm])] : [nm] });
-    const who = s.match(/^(?:the|a|an)\s+([A-Za-z]{3,})(?:\s+([A-Za-z]{3,}))?/i) || s.match(/^([A-Z][a-z]{2,})\b/);
-    if (who && !STOP.has(who[1].toLowerCase())) { const w1 = who[1].toLowerCase(), w2 = who[2] && who[2].toLowerCase(); qs.push({ q: '👀 Ai (hoặc con gì) làm việc trong câu? (1 từ tiếng Anh)', a: w2 && !STOP.has(w2) && !/ed$/.test(w2) ? [w2, w1] : [w1] }); }
-    const cands = low.filter(x => x.length >= 4 && !STOP.has(x) && !/^\d/.test(x)).sort((a, b) => (!!LOCAL_DICTIONARY[b] - !!LOCAL_DICTIONARY[a]) || b.length - a.length);
-    if (cands.length) { const k = cands[0]; qs.push({ q: `✏️ Nghe và điền từ còn thiếu: "${s.replace(new RegExp('\\b' + k + '\\b', 'i'), '_____')}"`, a: [k] }); }
+    if (!qs.length) {
+        const cands = low.filter(x => x.length >= 4 && !STOP.has(x) && !/^\d/.test(x)).sort((a, b) => b.length - a.length);
+        if (cands.length) { const k = cands[0]; qs.push({ q: `✏️ Nghe và điền từ còn thiếu: "${s.replace(new RegExp('\\b' + k + '\\b', 'i'), '_____')}"`, a: [k] }); }
+    }
     return qs;
 }
 const cpOk = (cands, ans) => cands.some(t => { const n = t.toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/); return ans.some(x => n.some(w => w === x || w.replace(/(es|s)$/, '') === x.replace(/(es|s)$/, ''))); });
