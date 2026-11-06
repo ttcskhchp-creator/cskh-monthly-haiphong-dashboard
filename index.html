@@ -270,7 +270,7 @@
                 showToast('Đã lưu truyện thành công! ☁️', 'success');
                 fetchStories();
             } catch (err) {
-                showToast('Lưu thất bại! (Kiểm tra lại cấu hình bảng)', 'error');
+                console.error(err); showToast('Lưu thất bại: ' + (err.message || 'kiểm tra lại cấu hình bảng'), 'error');
             }
         }
 
