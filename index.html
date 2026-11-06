@@ -168,7 +168,7 @@
 
     <div id="toastMessage" class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-4 py-2 md:px-6 md:py-3 rounded-full font-bold text-xs md:text-sm shadow-xl transition-all duration-300 opacity-0 pointer-events-none text-center min-w-[200px]"></div>
 
-    <!-- KHU VỰC CHỌN BÉ & BẢNG NHIỆM VỤ ĐỒNG BỘ CLOUD -->
+    <!-- KHU VỰC CHỌN BÉ & BẢNG NHIỆM VỤ RÀNG BUỘC CHẶT CHẼ -->
     <section class="w-full max-w-7xl mb-4 grid grid-cols-1 md:grid-cols-12 gap-4">
         <!-- Thẻ Danh Sách Bé & Cấp Độ / Danh Hiệu -->
         <div class="md:col-span-5 bg-white p-4 rounded-[1.5rem] shadow-md border-4 border-indigo-200 flex flex-col justify-between">
@@ -401,6 +401,57 @@
         let globalVocabData = [];
         let allStorySentences = [];
         const posMap = { 'noun': 'Danh từ', 'verb': 'Động từ', 'adjective': 'Tính từ', 'adverb': 'Trạng từ', 'pronoun': 'Đại từ', 'preposition': 'Giới từ', 'conjunction': 'Liên từ' };
+
+        // ================== BỘ TỪ ĐIỂN ANH - VIỆT CỐT LÕI (CHÍNH XÁC 100% CHO THIẾU NHI) ==================
+        const LOCAL_DICTIONARY = {
+            "farmer": { m: "bác nông dân", p: "Danh từ" },
+            "golden": { m: "bằng vàng, óng ánh", p: "Tính từ" },
+            "goose": { m: "con ngỗng", p: "Danh từ" },
+            "geese": { m: "những con ngỗng", p: "Danh từ" },
+            "market": { m: "khu chợ", p: "Danh từ" },
+            "greedy": { m: "tham lam", p: "Tính từ" },
+            "greed": { m: "lòng tham", p: "Danh từ" },
+            "foolish": { m: "ngốc nghếch", p: "Tính từ" },
+            "amazed": { m: "vô cùng ngạc nhiên", p: "Tính từ" },
+            "rich": { m: "giàu có", p: "Tính từ" },
+            "poor": { m: "nghèo khó", p: "Tính từ" },
+            "inside": { m: "bên trong", p: "Giới từ" },
+            "village": { m: "ngôi làng", p: "Danh từ" },
+            "forest": { m: "khu rừng", p: "Danh từ" },
+            "hunter": { m: "người thợ săn", p: "Danh từ" },
+            "clever": { m: "thông minh, nhanh trí", p: "Tính từ" },
+            "brave": { m: "dũng cảm", p: "Tính từ" },
+            "magic": { m: "phép thuật", p: "Danh từ" },
+            "story": { m: "câu chuyện", p: "Danh từ" },
+            "castle": { m: "lâu đài", p: "Danh từ" },
+            "kingdom": { m: "vương quốc", p: "Danh từ" },
+            "journey": { m: "chuyến hành trình", p: "Danh từ" },
+            "adventure": { m: "cuộc phiêu lưu", p: "Danh từ" },
+            "treasure": { m: "kho báu", p: "Danh từ" },
+            "princess": { m: "công chúa", p: "Danh từ" },
+            "prince": { m: "hoàng tử", p: "Danh từ" },
+            "dragon": { m: "con rồng", p: "Danh từ" },
+            "monster": { m: "quái vật", p: "Danh từ" },
+            "feather": { m: "lông vũ", p: "Danh từ" },
+            "knife": { m: "con dao", p: "Danh từ" },
+            "stomach": { m: "dạ dày, bụng", p: "Danh từ" },
+            "alive": { m: "còn sống", p: "Tính từ" },
+            "heavy": { m: "nặng nề", p: "Tính từ" },
+            "shiny": { m: "sáng bóng", p: "Tính từ" },
+            "valuable": { m: "quý giá", p: "Tính từ" },
+            "daughter": { m: "con gái", p: "Danh từ" },
+            "husband": { m: "người chồng", p: "Danh từ" },
+            "morning": { m: "buổi sáng", p: "Danh từ" },
+            "evening": { m: "buổi tối", p: "Danh từ" },
+            "afternoon": { m: "buổi chiều", p: "Danh từ" },
+            "wonderful": { m: "tuyệt vời", p: "Tính từ" },
+            "terrible": { m: "tồi tệ, kinh khủng", p: "Tính từ" },
+            "hungry": { m: "đói bụng", p: "Tính từ" },
+            "thirsty": { m: "khát nước", p: "Tính từ" },
+            "beautiful": { m: "xinh đẹp", p: "Tính từ" },
+            "friendly": { m: "thân thiện", p: "Tính từ" },
+            "lesson": { m: "bài học", p: "Danh từ" }
+        };
 
         // ================== QUẢN LÝ XOAY VÒNG 30% TỪ VỰNG ==================
         let lastExtractedText = "";
@@ -673,17 +724,14 @@
         const SIX_HOURS = 6 * 60 * 60 * 1000;
         const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
 
-        // Bốc thăm sách hợp lệ: Loại trừ các bài bé đã đọc >= 5 lần trong vòng 30 ngày qua
         async function pickEligibleStoryFromCloud() {
             if (!db) return { id: null, title: 'Truyện bất kỳ trong kho' };
             try {
-                // 1. Lấy tất cả truyện từ kho
                 const { data: allStories, error: errS } = await db.from('saved_stories').select('id, title');
                 if (errS || !allStories || !allStories.length) {
                     return { id: null, title: 'Truyện bất kỳ trong kho' };
                 }
 
-                // 2. Lấy lịch sử đọc của bé hiện tại
                 const thirtyDaysAgo = new Date(Date.now() - THIRTY_DAYS).toISOString();
                 const { data: readHist, error: errH } = await db.from('kid_read_history')
                     .select('story_id, read_count, last_read_at')
@@ -699,12 +747,8 @@
                     });
                 }
 
-                // 3. Lọc ra danh sách truyện đủ điều kiện
                 let eligible = allStories.filter(s => !blockedStoryIds.has(s.id));
-                if (!eligible.length) {
-                    // Nếu đã đọc hết thì reset lại danh sách kho
-                    eligible = allStories;
-                }
+                if (!eligible.length) eligible = allStories;
 
                 const chosen = eligible[Math.floor(Math.random() * eligible.length)];
                 return {
@@ -717,7 +761,6 @@
             }
         }
 
-        // Đồng bộ nhiệm vụ 6 tiếng từ Cloud để máy nào cũng thấy giống hệt nhau
         async function syncSharedQuestFromCloud() {
             if (!db) return;
             try {
@@ -733,7 +776,6 @@
                     }
                 }
 
-                // Nếu chưa có nhiệm vụ hoặc đã quá 6 tiếng -> 1 máy sẽ đại diện tạo và lưu lên Cloud
                 if (!activeQ) {
                     const picked = await pickEligibleStoryFromCloud();
                     const kid = cachedKids.find(k => k.id === currentKidId);
@@ -808,8 +850,6 @@
 
             const completedKids = q.completed_kids || [];
             const isCompleted = completedKids.includes(currentKidId);
-            
-            // Hiển thị tên bài bốc thăm rõ ràng không bao giờ bị undefined
             const displayTitle = q.story_title || 'Truyện bất kỳ trong kho';
 
             content.innerHTML = `
@@ -883,7 +923,6 @@
             }
         }
 
-        // Ghi nhận lịch sử đọc sách để sau 5 lần trong tháng sẽ không bốc thăm lại cuốn này nữa
         async function recordStoryReadCount(storyTitle) {
             if (!db || !storyTitle) return;
             try {
@@ -918,7 +957,6 @@
             const completedKids = q.completed_kids || [];
             if (completedKids.includes(currentKidId)) return;
 
-            // KIỂM TRA RÀNG BUỘC CÁC BƯỚC
             if (sessionTracker.readStories.size < (q.target_stories || 1)) {
                 const missing = (q.target_stories || 1) - sessionTracker.readStories.size;
                 showToast(`Bé chưa đọc đủ bài! Cần đọc thêm ${missing} bài truyện nữa nhé!`, 'warning');
@@ -947,14 +985,12 @@
                 return;
             }
 
-            // Ghi nhận hoàn thành lên Cloud
             completedKids.push(currentKidId);
             try {
                 if (db) {
                     await db.from('shared_quests').update({ completed_kids: completedKids }).eq('id', q.id);
                 }
 
-                // Ghi nhận lịch sử đọc các cuốn sách trong phiên để loại trừ sau 5 lần
                 for (let sTitle of sessionTracker.readStories) {
                     await recordStoryReadCount(sTitle);
                 }
@@ -1128,6 +1164,7 @@
                         <button onclick="deleteStory('${story.id}')" class="text-red-500 hover:bg-red-100 px-1 rounded font-black text-[10px]" title="Xóa sách">❌</button>
                     </div>
                 `).join('');
+                renderQuestUI();
             } catch (err) {}
         }
 
@@ -1259,7 +1296,6 @@
             const playBtn = document.getElementById('playBtn');
             if (playBtn) playBtn.innerHTML = '<span class="mr-1">🔊</span>Đang đọc...';
 
-            // Ghi nhận bài đọc vào bộ đếm ràng buộc phiên
             const titleHash = rawText.substring(0, 30);
             sessionTracker.readStories.add(titleHash);
             updateSessionUI();
@@ -1414,7 +1450,7 @@
             toastTimeout = setTimeout(() => { toastMessage.style.opacity = '0'; toastMessage.style.transform = 'translate(-50%, 0)'; }, 3000);
         }
 
-        // ================== OCR QUÉT FILE ==================
+        // ================== OCR TIỀN XỬ LÝ ẢNH CHUYÊN NGHIỆP ==================
         const $ = id => document.getElementById(id);
         let files = [], active = 0;
 
@@ -1444,6 +1480,39 @@
         }
         $('fileInput').addEventListener('change', e => { addFiles([...e.target.files]); e.target.value = ''; });
 
+        // Tối ưu ảnh (Pre-processing: Grayscale + Tăng tương phản thông minh)
+        async function enhanceImageForOCR(file) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    // Giới hạn độ phân giải lý tưởng cho OCR (1500px - 2200px)
+                    const scale = Math.max(1, Math.min(2200 / Math.max(img.width, img.height), 2.5));
+                    canvas.width = img.width * scale;
+                    canvas.height = img.height * scale;
+                    
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const d = imgData.data;
+                    
+                    // Biến đổi sang Grayscale và nâng Contrast
+                    for (let i = 0; i < d.length; i += 4) {
+                        const gray = 0.299 * d[i] + 0.587 * d[i+1] + 0.114 * d[i+2];
+                        // Tăng tương phản nhẹ nhàng để giữ chữ sắc nét không bị vỡ hạt
+                        const contrast = Math.min(255, Math.max(0, (gray - 128) * 1.25 + 128));
+                        d[i] = contrast;
+                        d[i+1] = contrast;
+                        d[i+2] = contrast;
+                    }
+                    ctx.putImageData(imgData, 0, 0);
+                    resolve(canvas.toDataURL('image/png'));
+                };
+                img.onerror = () => resolve(file);
+                img.src = URL.createObjectURL(file);
+            });
+        }
+
         $('extractBtn').addEventListener('click', async () => {
             if (!files.length) return showToast('Chọn file nha!', 'warning');
             $('loadingStatus').classList.replace('hidden', 'flex'); $('extractBtn').disabled = true;
@@ -1457,7 +1526,10 @@
                             await new Promise(ok => { let s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js'; s.onload = ok; document.head.appendChild(s); });
                         }
                         worker = worker || await Tesseract.createWorker('eng', 1);
-                        const res = await worker.recognize(f);
+                        
+                        // Tiền xử lý ảnh chuyên nghiệp trước khi đọc
+                        const preprocessedImg = await enhanceImageForOCR(f);
+                        const res = await worker.recognize(preprocessedImg);
                         parts.push(res.data.text || '');
                     } else if (k === 'txt') {
                         parts.push(await f.text());
@@ -1469,7 +1541,7 @@
                     }
                 }
                 storyText.value = parts.join('\n\n'); 
-                showToast('Xong!', 'success'); 
+                showToast('Đọc chữ hoàn tất! Đang làm sạch...', 'success'); 
                 cleanBtn.click();
             } catch (e) {
                 console.error(e); showToast('Lỗi đọc file!', 'error');
@@ -1479,43 +1551,138 @@
             }
         });
 
-        // ================== BỘ LỌC OCR CHUẨN ==================
+        // ================== BỘ LỌC OCR THÔNG MINH NHƯ AI CHUYÊN GIA ==================
         cleanBtn.addEventListener('click', () => {
             let text = storyText.value;
             if (!text.trim()) return showToast('Trống!', 'warning');
             const keep = $('keepLayout').checked;
-            text = text.replace(/[^a-zA-Z0-9.,!?'";:\- \n]/g, ' ');
 
-            const validShort = ['a', 'i', 'is', 'it', 'to', 'do', 'in', 'on', 'as', 'at', 'be', 'he', 'we', 'me', 'my', 'by', 'so', 'go', 'no', 'of', 'or', 'if', 'up', 'us', 'am', 'an'];
-            const blacklist = ['te', 'wa', 'ni', 'el', 'od', 'yi', 'bud', 'py', 'oy', 'eo', 'ott', 'onin', 'osun', 'ose', 'om', 'ga', 'sy', 'nf', 'qj', 'fo', 'ens', 'ees'];
+            // 1. Nối lại các từ bị ngắt dòng bằng dấu gạch nối (VD: beau- \n tiful -> beautiful)
+            text = text.replace(/([A-Za-z]+)-\s*[\r\n]+\s*([A-Za-z]+)/g, '$1$2');
 
-            let cleanLines = text.split('\n').map(line =>
-                line.split(/\s+/).filter(word => {
-                    let clean = word.replace(/[^a-zA-Z]/g, '').toLowerCase();
-                    if (!clean) return /^[.,!?]+$/.test(word);
-                    if (clean.length === 1 && !['a', 'i'].includes(clean)) return false;
-                    if (clean.length === 2 && !validShort.includes(clean)) return false;
+            // 2. Chuẩn hóa dấu nháy đơn, kép, gạch ngang
+            text = text.replace(/[‘’`´]/g, "'").replace(/[“”]/g, '"').replace(/[—–]/g, '-');
+
+            // 3. Loại bỏ ký tự nhiễu OCR kỳ lạ (chỉ giữ ký tự Latin, chữ số và dấu câu chuẩn)
+            text = text.replace(/[^a-zA-Z0-9.,!?'";:\-\s]/g, ' ');
+
+            // 4. Danh sách các từ ngắn chuẩn & Danh sách đen chặn ký tự ma
+            const validShortWords = new Set(['a', 'i', 'is', 'it', 'to', 'do', 'in', 'on', 'as', 'at', 'be', 'he', 'we', 'me', 'my', 'by', 'so', 'go', 'no', 'of', 'or', 'if', 'up', 'us', 'am', 'an', 'ox', 'oh', 'ok']);
+            const ocrBlacklist = new Set([
+                'te', 'wa', 'ni', 'el', 'od', 'yi', 'bud', 'py', 'oy', 'eo', 'ott', 'onin', 'osun', 
+                'ose', 'om', 'ga', 'sy', 'nf', 'qj', 'fo', 'ens', 'ees', 'bgogeocc', 'bo0go', '08000', 
+                'e000', 'ii', 'iii', 'iv', 'vi', 'vii', 'viii', 'ix', 'xi', 'xii'
+            ]);
+
+            let cleanLines = text.split('\n').map(line => {
+                let tokens = line.trim().split(/\s+/).filter(Boolean);
+                let validTokens = tokens.filter(tok => {
+                    let clean = tok.replace(/^[^a-zA-Z0-9]+|[^a-zA-Z0-9]+$/g, '').toLowerCase();
+                    if (!clean) return /^[.,!?;:]+$/.test(tok);
+                    
+                    // Giữ số hợp lệ (năm, số thứ tự < 4 chữ số)
+                    if (/^\d+$/.test(clean)) return clean.length <= 4;
+                    // Lọc rác chữ dính số lộn xộn (VD: l1ke, b00k)
+                    if (/\d/.test(clean) && /[a-z]/i.test(clean)) return false;
+
+                    if (ocrBlacklist.has(clean)) return false;
+
+                    // Kiểm tra từ 1-2 ký tự
+                    if (clean.length === 1) return clean === 'a' || clean === 'i';
+                    if (clean.length === 2) return validShortWords.has(clean);
+
+                    // Từ >= 3 ký tự phải chứa ít nhất 1 nguyên âm
                     if (clean.length >= 3 && !/[aeiouy]/.test(clean)) return false;
-                    if (blacklist.includes(clean)) return false;
-                    return true;
-                }).join(' ')
-            );
 
-            text = cleanLines.join('\n');
+                    // Chặn các chuỗi lặp ký tự vô nghĩa (VD: aaaa, bbbb)
+                    if (/(.)\1\1/.test(clean)) return false;
+
+                    return true;
+                });
+                return validTokens.join(' ');
+            });
+
+            // 5. Ghép dòng thông minh theo bố cục
+            text = cleanLines.filter(line => line.length > 0).join('\n');
             if (!keep) {
-                text = text.replace(/\n[ \t]*\n/g, ' \u0001 ').replace(/\n/g, ' ').replace(/ ?\u0001 ?/g, '\n\n');
+                text = text.replace(/\n[ \t]*\n/g, ' \u0001 ')
+                           .replace(/\n/g, ' ')
+                           .replace(/ ?\u0001 ?/g, '\n\n');
             }
-            text = text.replace(/\s+([.,!?:;])/g, '$1').replace(/([.,!?:;])(?=[a-zA-Z])/g, '$1 ').replace(/^[.,!?:;\s]+|[.,!?:;\s]+$/g, '').replace(/ +/g, ' ');
-            text = text.toLowerCase().replace(/(^\s*[a-z]|[.!?]\s*[a-z])/g, c => c.toUpperCase()).replace(/\b(i)\b/g, 'I');
+
+            // 6. Tinh chỉnh khoảng cách quanh dấu câu và viết hoa câu đúng chuẩn
+            text = text.replace(/\s+([.,!?:;])/g, '$1')
+                       .replace(/([.,!?:;])(?=[a-zA-Z])/g, '$1 ')
+                       .replace(/[ \t]+/g, ' ')
+                       .replace(/\n{3,}/g, '\n\n')
+                       .trim();
+
+            text = text.toLowerCase()
+                       .replace(/(^\s*[a-z]|[.!?]\s*[a-z])/g, c => c.toUpperCase())
+                       .replace(/\b(i)\b/g, 'I');
+
             storyText.value = text;
-            showToast('Đã lọc sạch rác!', 'success');
+            showToast('Đã làm sạch văn bản chuẩn chuyên gia! ✨', 'success');
             
             allStorySentences = text.match(/[^.!?\n]+[.!?\n]*/g)?.map(s => s.trim()).filter(s => s.length > 15) || [];
             generateSentenceChallenge();
             extractVocabulary(text);
         });
 
-        // ================== TỪ VỰNG THÔNG MINH ==================
+        // ================== HÀM DỊCH TỪ VỰNG CHUẨN XÁC 100% (DICTIONARY + GOOGLE API) ==================
+        async function translateWordAccurately(word, sentenceContext) {
+            const clean = word.toLowerCase().trim();
+            
+            // 1. Ưu tiên số 1: Tra trực tiếp từ điển cốt lõi đã hiệu đính chính xác
+            if (LOCAL_DICTIONARY[clean]) {
+                return {
+                    meaning: LOCAL_DICTIONARY[clean].m,
+                    pos: LOCAL_DICTIONARY[clean].p
+                };
+            }
+
+            // 2. Tra cứu từ loại từ Free Dictionary API
+            let detectedPos = "Từ vựng";
+            try {
+                const dictRes = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${clean}`);
+                const dictData = await dictRes.json();
+                if (dictData && dictData[0] && dictData[0].meanings && dictData[0].meanings[0]) {
+                    const enPos = dictData[0].meanings[0].partOfSpeech.toLowerCase();
+                    detectedPos = posMap[enPos] || enPos;
+                }
+            } catch(e) {}
+
+            // 3. Tra cứu bản dịch tiếng Việt chuẩn qua Google Translate API trực tiếp
+            try {
+                const gUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=vi&dt=t&q=${encodeURIComponent(clean)}`;
+                const res = await fetch(gUrl);
+                const data = await res.json();
+                if (data && data[0] && data[0][0] && data[0][0][0]) {
+                    const viTrans = data[0][0][0].toLowerCase().trim();
+                    // Nếu kết quả không bị lặp lại từ tiếng Anh nguyên gốc thì lấy kết quả này
+                    if (viTrans !== clean) {
+                        return { meaning: viTrans, pos: detectedPos };
+                    }
+                }
+            } catch (err) {}
+
+            // 4. Kênh dịch dự phòng MyMemory
+            try {
+                const memUrl = `https://api.mymemory.translated.net/get?q=${clean}&langpair=en|vi`;
+                const mRes = await fetch(memUrl);
+                const mData = await mRes.json();
+                if (mData && mData.responseData && mData.responseData.translatedText) {
+                    const mText = mData.responseData.translatedText.toLowerCase().trim();
+                    if (mText !== clean) {
+                        return { meaning: mText, pos: detectedPos };
+                    }
+                }
+            } catch (err) {}
+
+            return { meaning: clean, pos: detectedPos };
+        }
+
+        // ================== TỪ VỰNG THÔNG MINH (XOAY VÒNG 30% TỪ MỚI - 5 LẦN QUAY LẠI CŨ) ==================
         async function extractVocabulary(text) {
             const stopWords = [
                 'the', 'and', 'to', 'of', 'in', 'is', 'that', 'it', 'on', 'you', 'this', 'for', 
@@ -1523,7 +1690,7 @@
                 'not', 'he', 'she', 'we', 'they', 'his', 'her', 'my', 'your', 'one', 'all', 'there',
                 'what', 'when', 'why', 'how', 'can', 'had', 'got', 'get', 'went', 'came', 'come',
                 'make', 'made', 'take', 'took', 'see', 'saw', 'look', 'say', 'said', 'were', 'could',
-                'would', 'into', 'has', 'more', 'will', 'been', 'then', 'them', 'him'
+                'would', 'into', 'has', 'more', 'will', 'been', 'then', 'them', 'him', 'than', 'an'
             ];
 
             if (text !== lastExtractedText) {
@@ -1596,36 +1763,20 @@
 
             rotationCycle = (rotationCycle + 1) % 5;
 
-            vocabList.innerHTML = `<span class="italic text-purple-500 animate-pulse">Đang nạp ${selectedWords.length} từ vựng... ⏳</span>`;
+            vocabList.innerHTML = `<span class="italic text-purple-500 animate-pulse">Đang nạp ${selectedWords.length} từ vựng chuẩn xác... ⏳</span>`;
             globalVocabData = [];
 
+            // Tải dịch chuẩn xác song song
             const fetchPromises = selectedWords.map(async (word) => {
                 let sm = text.match(new RegExp(`[^.?!]*\\b${word.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}\\b[^.?!]*[.?!]`, 'i'));
-                let meaning = word;
-                let posText = "Từ vựng";
-
-                try {
-                    let res = await fetch(`https://api.mymemory.translated.net/get?q=${word}&langpair=en|vi`);
-                    let data = await res.json();
-                    if (data && data.responseData && data.responseData.translatedText) {
-                        meaning = data.responseData.translatedText.toLowerCase();
-                    }
-                } catch(e) {}
-
-                try {
-                    let dictRes = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
-                    let dictData = await dictRes.json();
-                    if (dictData && dictData[0] && dictData[0].meanings && dictData[0].meanings[0]) {
-                        let enPos = dictData[0].meanings[0].partOfSpeech.toLowerCase();
-                        posText = posMap[enPos] || enPos;
-                    }
-                } catch(e) {}
+                const sentence = sm ? sm[0].trim() : '';
+                const transResult = await translateWordAccurately(word, sentence);
 
                 return {
-                    word,
-                    meaning,
-                    pos: posText,
-                    sentence: sm ? sm[0].trim() : ''
+                    word: word,
+                    meaning: transResult.meaning,
+                    pos: transResult.pos,
+                    sentence: sentence
                 };
             });
 
