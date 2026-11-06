@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Magic Story Reader by Daddy Dũng</title>
+    <title>Magic Story Reader by Daddy Dũng JERRY </title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Tesseract.js -->
@@ -415,36 +415,42 @@
             finally { if (worker) await worker.terminate(); btn.disabled = false; load.classList.replace('flex', 'hidden'); }
         });
 
-        // ================== XÓA RÁC OCR THÔNG MINH ==================
+        // ================== XÓA RÁC OCR NÂNG CAO ==================
         cleanBtn.addEventListener('click', () => {
             let text = storyText.value;
             if (!text.trim()) return showToast('Khung chữ trống!', 'warning');
             const keep = $('keepLayout').checked;
 
-            // 1. Tách từng dòng và từng từ để lọc rác OCR
+            // 1. Danh sách cho phép các từ 1-2 ký tự thông dụng trong tiếng Anh
+            const validShortWords = [
+                'a', 'i', 'is', 'it', 'to', 'do', 'in', 'on', 'as', 'at', 'be', 'he', 'we', 'me', 'my', 'by', 'so', 'go', 'no', 'of', 'or', 'if', 'up', 'us', 'am', 'an'
+            ];
+            
+            // 2. Danh sách chặn cứng các từ rác do OCR sinh ra
+            const blacklist = ['te', 'wa', 'ni', 'el', 'od', 'yi', 'bud', 'py', 'oy', 'eo', 'ott', 'onin', 'osun', 'ose', 'om', 'ga', 'sy', 'nf', 'qj', 'fo'];
+
             let lines = text.split('\n');
             let cleanLines = lines.map(line => {
                 let words = line.split(/\s+/);
                 let filteredWords = words.filter(word => {
                     let cleanWord = word.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
                     
-                    // Nếu chỉ là dấu câu đứng đơn lẻ, giữ lại các dấu chấm, phẩy cơ bản
+                    // Giữ dấu câu
                     if (!cleanWord) return /^[.,!?]+$/.test(word);
                     
-                    // Xóa các số lẻ loi (thường là số trang, rác)
+                    // Lọc số đứng lẻ
                     if (/^\d+$/.test(cleanWord)) return false;
                     
-                    // Xóa từ bị dính lộn xộn số và chữ (VD: 2qj2)
+                    // Lọc rác số dính chữ
                     if (/\d/.test(cleanWord) && /[a-z]/i.test(cleanWord)) return false;
                     
-                    // Xóa từ 1 ký tự nếu không phải 'a' hoặc 'i' (VD: N, F, l, o)
-                    if (cleanWord.length === 1 && !['a', 'i'].includes(cleanWord)) return false;
+                    // Lọc từ 1-2 ký tự không nằm trong danh sách hợp lệ
+                    if (cleanWord.length <= 2 && !validShortWords.includes(cleanWord)) return false;
                     
-                    // Xóa từ >=2 ký tự nhưng không có nguyên âm (VD: Nf, qj)
-                    if (cleanWord.length >= 2 && !/[aeiouy]/.test(cleanWord)) return false;
+                    // Lọc từ không có nguyên âm (nếu độ dài > 2)
+                    if (cleanWord.length > 2 && !/[aeiouy]/.test(cleanWord)) return false;
                     
-                    // Danh sách đen các từ rác OCR hay xuất hiện ở viền sách
-                    const blacklist = ['py', 'oy', 'eo', 'ott', 'onin', 'osun', 'ose', 'om', 'ga', 'sy', 'nf', 'qj'];
+                    // Lọc blacklist
                     if (blacklist.includes(cleanWord)) return false;
                     
                     return true;
@@ -454,24 +460,21 @@
 
             text = cleanLines.join('\n');
 
-            // 2. Gộp dòng nếu không chọn giữ bố cục
             if (!keep) {
                 text = text.replace(/\n[ \t]*\n/g, ' __PARAGRAPH_BREAK__ ');
                 text = text.replace(/\n/g, ' ');
                 text = text.replace(/ __PARAGRAPH_BREAK__ /g, '\n\n');
             }
 
-            // 3. Chuẩn hóa khoảng trắng & Dấu câu
-            text = text.replace(/\s+([.,!?:;])/g, '$1'); // Kéo dấu câu dính sát vào chữ
-            text = text.replace(/([.,!?:;])(?=[a-zA-Z])/g, '$1 '); // Cách dấu câu với chữ tiếp theo
-            text = text.replace(/^[.,!?:;\s]+|[.,!?:;\s]+$/g, ''); // Bỏ rác đầu/cuối
-            text = text.replace(/ +/g, ' '); // Gộp khoảng trắng thừa
+            text = text.replace(/\s+([.,!?:;])/g, '$1'); 
+            text = text.replace(/([.,!?:;])(?=[a-zA-Z])/g, '$1 '); 
+            text = text.replace(/^[.,!?:;\s]+|[.,!?:;\s]+$/g, ''); 
+            text = text.replace(/ +/g, ' '); 
 
-            // 4. Sửa viết hoa
             text = text.toLowerCase().replace(/(^\s*[a-z]|[.!?]\s*[a-z])/g, c => c.toUpperCase()).replace(/\b(i)\b/g, 'I');
             
             storyText.value = text;
-            showToast('Đã quét sạch rác chữ thông minh! ✨', 'success');
+            showToast('Đã lọc rác mạnh mẽ! ✨', 'success');
             vocabList.classList.remove('blur-active');
             extractVocabulary(text);
         });
