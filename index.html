@@ -14,7 +14,6 @@
     <!-- Supabase JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-    // ===== GIAO DIỆN THEMES =====
     const HUES = ['pink','blue','indigo','purple','orange', 'teal'];
     const T = (id,icon,name,dark,bg,card,ink,...c) => ({id,icon,name,dark,bg,card,ink,c});
     const THEMES = [
@@ -129,11 +128,11 @@
                     </div>
                 </div>
                 
-                <!-- Bảng tùy chỉnh giọng -->
+                <!-- Bảng tùy chỉnh giọng & tốc độ -->
                 <div class="grid grid-cols-2 gap-2 mb-2 bg-blue-50 p-2 rounded-lg border border-blue-100 items-center">
                     <div class="flex items-center gap-1 bg-white px-2 py-1 rounded border border-blue-200">
                         <span class="text-xs">🗣️</span>
-                        <select id="voiceType" class="text-[10px] md:text-xs font-bold text-blue-700 bg-transparent outline-none w-full cursor-pointer">
+                        <select id="voiceType" class="text-[10px] md:text-xs font-bold text-blue-700 bg-transparent outline-none w-full cursor-pointer" onchange="applyVoiceEffects()">
                             <option value="normal">Giọng Nữ chuẩn</option>
                             <option value="child">Giọng Trẻ em</option>
                             <option value="man">Giọng Đàn ông</option>
@@ -142,7 +141,7 @@
                     </div>
                     <div class="flex items-center gap-1 bg-white px-2 py-1.5 rounded border border-blue-200">
                         <span class="text-xs" title="Đọc chậm">🐢</span>
-                        <input type="range" id="speedSlider" min="0.5" max="1.5" step="0.1" value="1.0" class="flex-grow h-1.5 bg-blue-200 rounded-lg appearance-none cursor-pointer accent-blue-500">
+                        <input type="range" id="speedSlider" min="0.5" max="1.5" step="0.1" value="1.0" class="flex-grow h-1.5 bg-blue-200 rounded-lg appearance-none cursor-pointer accent-blue-500" onchange="applyVoiceEffects()">
                         <span class="text-xs" title="Đọc nhanh">🐇</span>
                     </div>
                 </div>
@@ -154,16 +153,15 @@
                     <input type="checkbox" id="keepLayout" checked class="w-3 h-3 accent-blue-500"> Giữ bố cục gốc
                 </label>
 
-                <!-- DÀN NÚT 1 HÀNG NGANG CHUẨN MOBILE -->
+                <!-- DÀN NÚT 1 HÀNG NGANG CHUẨN MOBILE 1 NGÓN TAY -->
                 <div class="flex w-full gap-1 sm:gap-2">
-                    <button id="cleanBtn" class="flex-1 py-2 px-1 bg-yellow-400 active:bg-yellow-500 text-yellow-900 text-[10px] sm:text-xs font-bold rounded-lg shadow-sm btn-bounce flex items-center justify-center whitespace-nowrap"><span class="mr-1">🧹</span>Sạch</button>
-                    <button id="playBtn" class="flex-1 py-2 px-1 bg-green-500 active:bg-green-600 text-white text-[10px] sm:text-xs font-black rounded-lg shadow-sm btn-bounce flex items-center justify-center whitespace-nowrap"><span class="mr-1">▶️</span>Đọc To</button>
-                    <button id="playCursorBtn" class="flex-1 py-2 px-1 bg-cyan-500 active:bg-cyan-600 text-white text-[10px] sm:text-xs font-bold rounded-lg shadow-sm btn-bounce flex items-center justify-center whitespace-nowrap"><span class="mr-1">👆</span>Từ Trỏ</button>
-                    <button id="stopBtn" class="flex-1 py-2 px-1 bg-red-400 active:bg-red-500 text-white text-[10px] sm:text-xs font-bold rounded-lg shadow-sm btn-bounce flex items-center justify-center whitespace-nowrap"><span class="mr-1">⏹️</span>Dừng</button>
+                    <button id="cleanBtn" class="flex-1 py-1.5 px-0.5 bg-yellow-400 active:bg-yellow-500 text-yellow-900 text-[10px] sm:text-xs font-bold rounded-lg shadow-sm btn-bounce flex items-center justify-center whitespace-nowrap"><span class="mr-1">🧹</span>Sạch</button>
+                    <button id="playBtn" class="flex-1 py-1.5 px-0.5 bg-green-500 active:bg-green-600 text-white text-[10px] sm:text-xs font-black rounded-lg shadow-sm btn-bounce flex items-center justify-center whitespace-nowrap"><span class="mr-1">▶️</span>Đọc To</button>
+                    <button id="playCursorBtn" class="flex-1 py-1.5 px-0.5 bg-cyan-500 active:bg-cyan-600 text-white text-[10px] sm:text-xs font-bold rounded-lg shadow-sm btn-bounce flex items-center justify-center whitespace-nowrap"><span class="mr-1">👆</span>Từ Trỏ</button>
+                    <button id="stopBtn" class="flex-1 py-1.5 px-0.5 bg-red-400 active:bg-red-500 text-white text-[10px] sm:text-xs font-bold rounded-lg shadow-sm btn-bounce flex items-center justify-center whitespace-nowrap"><span class="mr-1">⏹️</span>Dừng</button>
                 </div>
             </div>
 
-            <!-- Khung Từ vựng -->
             <div class="p-3 md:p-4 bg-purple-50 border-2 border-purple-200 rounded-[1.5rem] relative transition-all duration-500" id="vocabContainer">
                 <h3 class="font-black text-purple-600 mb-2 flex items-center text-sm md:text-base"><span class="mr-1">📚</span> Từ vựng Thông Minh:</h3>
                 <div id="vocabList" class="flex flex-wrap gap-1.5 text-xs font-bold text-purple-700 transition-all duration-500">
@@ -171,7 +169,6 @@
                 </div>
             </div>
 
-            <!-- Khung Đố Vui -->
             <div class="p-3 md:p-4 bg-orange-50 border-2 border-orange-200 rounded-[1.5rem]" id="quizSection">
                 <h3 class="font-black text-orange-600 mb-2 flex items-center text-sm md:text-base"><span class="mr-1">🎮</span> Đố vui (5 câu):</h3>
                 <div id="quizContainer" class="text-slate-700 font-bold text-xs md:text-sm">
@@ -252,54 +249,70 @@
             showToast('Đang lưu...', 'success');
             try { await db.from('saved_stories').insert([{ title: text.substring(0, 20).replace(/\n/g, ' ') + '...', content: text }]); showToast('Lưu thành công! ☁️', 'success'); fetchStories(); } catch (err) { }
         }
+
         async function loadStory(id) { try { let { data } = await db.from('saved_stories').select('content').eq('id', id).single(); storyText.value = data.content; showToast('Đã tải truyện cũ!', 'success'); } catch (err) {} }
         async function deleteStory(id) { if(confirm('Xóa bài này nhé?')) { try { await db.from('saved_stories').delete().eq('id', id); fetchStories(); } catch (err) {} } }
         setTimeout(fetchStories, 1000);
 
-        // ================== AUDIO SỬ DỤNG GOOGLE TRANSLATE (SIÊU ỔN ĐỊNH 100%) ==================
+        // ================== AUDIO NATIVE GOOGLE (KHẮC PHỤC LỖI MẤT TIẾNG 100%) ==================
         let mainAudio = new Audio();
         let audioPlaylist = [];
         let currentPlaylistIndex = 0;
         let isPlaying = false;
 
-        // Hàm áp dụng hiệu ứng giọng nam, già, trẻ bằng cách bóp méo Pitch (cao độ) của HTMLAudioElement
-        function applyVoiceEffects() {
+        // Hàm điều chỉnh tốc độ & làm méo tiếng mô phỏng các Giọng
+        window.applyVoiceEffects = function() {
             let vType = voiceType.value;
             let baseRate = parseFloat(speedSlider.value);
             
-            // preservesPitch = false sẽ làm cho việc thay đổi tốc độ (playbackRate) làm thay đổi luôn cả cao độ giọng nói
+            // preservesPitch = false sẽ bóp méo cao độ khi tốc độ thay đổi
             if (vType === 'normal') {
                 mainAudio.playbackRate = baseRate;
-                mainAudio.preservesPitch = true;
-                if(mainAudio.mozPreservesPitch !== undefined) mainAudio.mozPreservesPitch = true;
+                try { mainAudio.preservesPitch = true; } catch(e){}
             } else if (vType === 'child') {
                 mainAudio.playbackRate = baseRate * 1.35;
-                mainAudio.preservesPitch = false;
-                if(mainAudio.mozPreservesPitch !== undefined) mainAudio.mozPreservesPitch = false;
+                try { mainAudio.preservesPitch = false; } catch(e){}
             } else if (vType === 'man') {
                 mainAudio.playbackRate = baseRate * 0.75;
-                mainAudio.preservesPitch = false;
-                if(mainAudio.mozPreservesPitch !== undefined) mainAudio.mozPreservesPitch = false;
+                try { mainAudio.preservesPitch = false; } catch(e){}
             } else if (vType === 'old') {
                 mainAudio.playbackRate = baseRate * 0.6;
-                mainAudio.preservesPitch = false;
-                if(mainAudio.mozPreservesPitch !== undefined) mainAudio.mozPreservesPitch = false;
+                try { mainAudio.preservesPitch = false; } catch(e){}
             }
         }
 
-        function playWordAudio(word) { 
+        window.playWordAudio = function(word) { 
             let a = new Audio(`https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=en&q=${encodeURIComponent(word)}`);
-            a.play().catch(e=>{}); 
+            a.play().catch(e => { showToast('Bé nhớ bật âm lượng/tắt nút gạt Im lặng nhé!', 'warning'); }); 
         }
 
         function speakText(text) {
             stopAudio(); 
             if(!text) return;
-            // Tách câu để lách giới hạn độ dài của Google TTS
-            audioPlaylist = text.match(/[^.!?\n]+[.!?\n]*/g)?.map(c=>c.trim()).filter(c=>c.length>0) || [text];
+            
+            // Tách thành các đoạn ngắn <150 ký tự để Google không từ chối (tránh lỗi 404/Mất tiếng)
+            let rawChunks = text.match(/[^.!?\n]+[.!?\n]*/g) || [text];
+            audioPlaylist = [];
+            rawChunks.forEach(chunk => {
+                let c = chunk.trim();
+                if(c.length > 0) {
+                    if (c.length <= 150) {
+                        audioPlaylist.push(c);
+                    } else {
+                        // Tách thêm nếu câu quá dài
+                        let words = c.split(' '); let temp = '';
+                        words.forEach(w => {
+                            if ((temp + ' ' + w).length < 150) temp += (temp ? ' ' : '') + w;
+                            else { audioPlaylist.push(temp); temp = w; }
+                        });
+                        if(temp) audioPlaylist.push(temp);
+                    }
+                }
+            });
+            
             currentPlaylistIndex = 0; 
             isPlaying = true;
-            document.getElementById('playBtn').innerHTML = '<span class="mr-1">🔊</span>Đọc...'; 
+            document.getElementById('playBtn').innerHTML = '<span class="mr-1">🔊</span>Đang đọc...'; 
             playNextAudioChunk();
         }
 
@@ -311,10 +324,11 @@
             applyVoiceEffects();
             
             mainAudio.onended = () => { currentPlaylistIndex++; playNextAudioChunk(); };
-            mainAudio.onerror = () => { currentPlaylistIndex++; playNextAudioChunk(); };
+            mainAudio.onerror = () => { currentPlaylistIndex++; playNextAudioChunk(); }; // Bỏ qua đoạn lỗi đọc tiếp
+            
             mainAudio.play().catch(e => {
                 resetAudioUI();
-                showToast("Bé chạm lại lần nữa nhé!", "error");
+                showToast("Bé bấm Lại 1 lần nữa để phát (do trình duyệt chặn tự phát)!", "error");
             });
         }
 
@@ -324,6 +338,7 @@
             isPlaying = false; 
             resetAudioUI(); 
         }
+
         function resetAudioUI() { 
             isPlaying = false; 
             document.getElementById('playBtn').innerHTML = '<span class="mr-1">▶️</span>Đọc To'; 
@@ -338,12 +353,7 @@
         });
         document.getElementById('stopBtn').addEventListener('click', stopAudio);
 
-        // Khi kéo thanh tốc độ hoặc đổi giọng lúc đang đọc, áp dụng ngay lập tức
-        speedSlider.addEventListener('input', () => { if(isPlaying) applyVoiceEffects(); });
-        voiceType.addEventListener('change', () => { if(isPlaying) applyVoiceEffects(); });
-
-
-        // ================== XUẤT OFFLINE (WORD & MP3 KHÔNG 404) ==================
+        // ================== XUẤT OFFLINE (WORD & MP3 SỬA LỖI 404) ==================
         function exportToWord() {
             const text = storyText.value.trim(); if (!text) return showToast('Trống!', 'warning');
             const wordHtml = `<html xmlns:w='urn:schemas-microsoft-com:office:word'><body style="font-family: 'Comic Sans MS'; background: #fdf2f8; padding: 20px;"><h1 style="color:#ec4899;text-align:center;">🌟 MAGIC STORY READER 🌟</h1><div style="background:#fff;padding:20px;border:2px dashed #bfdbfe;">${text.split('\n').map(l => `<p style="font-size:14pt;font-weight:bold;color:#1e3a8a;margin:0 0 10px 0;">${String(l).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}</p>`).join('')}</div></body></html>`;
@@ -357,10 +367,25 @@
             
             const btn = document.getElementById('btnMp3');
             btn.innerHTML = '⏳ Tải...'; btn.disabled = true;
-            showToast('Đang khâu toàn bộ Audio... Xin giữ nguyên web! ⏳', 'success');
+            showToast('Đang khâu Audio Toàn Bài... Bé chờ chút nha! ⏳', 'success');
             
-            let chunks = text.match(/[^.!?\n]+[.!?\n]*/g) || [text];
-            chunks = chunks.map(c => c.trim()).filter(c => c.length > 0);
+            // Chia đoạn chuẩn <150 chars để lách luật 404 Google
+            let rawChunks = text.match(/[^.!?\n]+[.!?\n]*/g) || [text];
+            let chunks = [];
+            rawChunks.forEach(c => {
+                let txt = c.trim();
+                if(txt.length > 0) {
+                    if (txt.length <= 150) chunks.push(txt);
+                    else {
+                        let words = txt.split(' '); let temp = '';
+                        words.forEach(w => {
+                            if ((temp + ' ' + w).length < 150) temp += (temp ? ' ' : '') + w;
+                            else { chunks.push(temp); temp = w; }
+                        });
+                        if(temp) chunks.push(temp);
+                    }
+                }
+            });
             
             let audioBuffers = [];
             let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -392,9 +417,8 @@
                 a.click();
                 showToast('Tải Audio Toàn Bài thành công! 🎵', 'success');
             } catch(e) {
-                console.error(e);
-                showToast('Mạng yếu, đang mở link dự phòng...', 'warning');
-                window.open(`https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=en&q=${encodeURIComponent(chunks[0].substring(0,199))}`, '_blank');
+                showToast('Mạng yếu, mở link nghe dự phòng...', 'warning');
+                window.open(`https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=en&q=${encodeURIComponent(chunks[0])}`, '_blank');
             } finally {
                 btn.innerHTML = '🎵 MP3'; btn.disabled = false;
             }
@@ -496,7 +520,7 @@
                     let sm = text.match(new RegExp(`[^.?!]*\\b${word.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}\\b[^.?!]*[.?!]`, 'i'));
                     let res = await fetch(`https://api.mymemory.translated.net/get?q=${word}&langpair=en|vi`); let data = await res.json();
                     globalVocabData.push({ word, meaning: data.responseData.translatedText.toLowerCase(), sentence: sm ? sm[0].trim() : '' });
-                    html += `<div class="group px-2 py-1 bg-white border border-purple-300 rounded shadow-sm flex flex-col items-center" onclick="playWordAudio('${word}')">
+                    html += `<div class="group px-2 py-1 bg-white border border-purple-300 rounded shadow-sm flex flex-col items-center cursor-pointer hover:bg-purple-100" onclick="playWordAudio('${word}')">
                         <span class="text-purple-700 font-black text-xs">${word} 🔊</span><span class="text-[10px] text-slate-500 capitalize">${globalVocabData[globalVocabData.length-1].meaning}</span></div>`;
                 } catch (e) {}
             }
@@ -506,7 +530,7 @@
         function setupQuizForm() {
             if(globalVocabData.length < 3) return;
             let avatarHTML = avatars.map(a => `<button onclick="selectAvatar('${a.id}', this)" class="avatar-btn flex flex-col items-center p-1 border rounded-lg hover:bg-slate-100"><span class="text-2xl">${a.icon}</span></button>`).join('');
-            quizContainer.innerHTML = `<div class="bg-white p-2 rounded-xl text-center shadow-sm"><p class="text-orange-600 text-xs font-black mb-2">Chọn nhân vật thi đấu!</p><div class="flex flex-wrap justify-center gap-1.5 mb-2">${avatarHTML}</div><button onclick="startQuizEngine()" class="w-full py-1.5 bg-orange-500 text-white font-black text-xs rounded-lg btn-bounce">🎮 Bắt Đầu (5 Câu)</button></div>`;
+            quizContainer.innerHTML = `<div class="bg-white p-2 rounded-xl text-center shadow-sm"><p class="text-orange-600 text-xs font-black mb-2">Chọn nhân vật thi đấu!</p><div class="flex flex-wrap justify-center gap-1.5 mb-2">${avatarHTML}</div><button onclick="startQuizEngine()" class="w-full py-1.5 bg-orange-500 text-white font-black text-xs rounded-lg btn-bounce hover:bg-orange-600">🎮 Bắt Đầu (5 Câu)</button></div>`;
         }
 
         window.selectAvatar = function(id, btn) { currentPlayer = avatars.find(a => a.id === id); document.querySelectorAll('.avatar-btn').forEach(b => b.classList.remove('avatar-selected')); btn.classList.add('avatar-selected'); }
