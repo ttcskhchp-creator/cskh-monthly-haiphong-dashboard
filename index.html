@@ -228,7 +228,8 @@
         // ================== SUPABASE DATABASE ==================
         const SUPABASE_URL = 'https://xmecpfeujkvidwmqprzd.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_wK5FXrtBK7qPdmJ5fS1aag_gJ3Gdv3G';
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        let supabase = null;
+        try { supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch (e) { console.warn('Supabase lỗi:', e); }
 
         async function fetchStories() {
             try {
@@ -392,7 +393,22 @@
         // ================== CHỌN FILE, XEM TRƯỚC & ĐỌC CHỮ ==================
         const $ = id => document.getElementById(id);
         const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        const LIBS = {
+            pdfjsLib: ['https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js', 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js'],
+            mammoth: ['https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js', 'https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js'],
+            Tesseract: ['https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js', 'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.1/tesseract.min.js']
+        };
+        async function need(g) {
+            if (!window[g]) {
+                for (const url of LIBS[g]) {
+                    try { await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = url; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); } catch (e) {}
+                    if (window[g]) break;
+                }
+            }
+            if (!window[g]) throw new Error('Không tải được thư viện ' + g + '. Kiểm tra mạng rồi thử lại nhé!');
+            if (g === 'pdfjsLib') pdfjsLib.GlobalWorkerOptions.workerSrc = LIBS.pdfjsLib[0].replace('pdf.min.js', 'pdf.worker.min.js');
+        }
+        window.addEventListener('error', e => showToast('Lỗi: ' + (e.message || 'không rõ'), 'error'));
         const ICON = { img: '🖼️', pdf: '📕', docx: '📘', txt: '📄', html: '📄' };
         const MAX_PDF_PAGES = 30;
         let files = [], active = 0, pvToken = 0, pvUrl = null;
@@ -408,10 +424,10 @@
             if (/\.(html?|doc)$/.test(n)) return 'html';
             return null;
         }
-        const loadPdf = f => memo(f, 'pdf', async () => pdfjsLib.getDocument({ data: new Uint8Array(await f.arrayBuffer()) }).promise);
+        const loadPdf = f => memo(f, 'pdf', async () => (await need('pdfjsLib'), pdfjsLib.getDocument({ data: new Uint8Array(await f.arrayBuffer()) }).promise));
         const readText = (f, k) => memo(f, 'txt', async () => {
             if (k === 'txt') return f.text();
-            if (k === 'docx') return (await mammoth.extractRawText({ arrayBuffer: await f.arrayBuffer() })).value;
+            if (k === 'docx') return (await need('mammoth'), await mammoth.extractRawText({ arrayBuffer: await f.arrayBuffer() })).value;
             const raw = await f.text();
             if (!/<\s*(html|body|p|div)\b/i.test(raw)) throw new Error('File .doc cũ chưa đọc được. Bé lưu lại thành .docx hoặc PDF nhé!');
             const d = new DOMParser().parseFromString(raw, 'text/html');
@@ -532,6 +548,7 @@
             let worker = null, usedOcr = false; const parts = [];
             const ocr = async (src, label) => {
                 usedOcr = true;
+                await need('Tesseract');
                 worker = worker || await Tesseract.createWorker('eng', 1, { logger: m => { if (m.status === 'recognizing text') st.textContent = `${label}: ${Math.round(m.progress * 100)}% 🚀`; } });
                 return ocrLayout((await worker.recognize(src)).data);
             };
