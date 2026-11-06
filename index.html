@@ -168,7 +168,7 @@
 
     <div id="toastMessage" class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-4 py-2 md:px-6 md:py-3 rounded-full font-bold text-xs md:text-sm shadow-xl transition-all duration-300 opacity-0 pointer-events-none text-center min-w-[200px]"></div>
 
-    <!-- KHU VỰC CHỌN BÉ & BẢNG NHIỆM VỤ RÀNG BUỘC CHẶT CHẼ -->
+    <!-- KHU VỰC CHỌN BÉ & BẢNG NHIỆM VỤ ĐỒNG BỘ CLOUD -->
     <section class="w-full max-w-7xl mb-4 grid grid-cols-1 md:grid-cols-12 gap-4">
         <!-- Thẻ Danh Sách Bé & Cấp Độ / Danh Hiệu -->
         <div class="md:col-span-5 bg-white p-4 rounded-[1.5rem] shadow-md border-4 border-indigo-200 flex flex-col justify-between">
@@ -206,13 +206,13 @@
             </div>
         </div>
 
-        <!-- Thẻ Nhiệm Vụ 6 Giờ & Bộ Đếm Ràng Buộc -->
+        <!-- Thẻ Nhiệm Vụ 6 Giờ Đồng Bộ Toàn Bộ Thiết Bị -->
         <div class="md:col-span-7 bg-gradient-to-r from-amber-50 to-orange-50 p-4 rounded-[1.5rem] shadow-md border-4 border-amber-300 flex flex-col justify-between">
             <div>
                 <div class="flex justify-between items-center mb-2">
                     <div class="flex items-center gap-1.5">
                         <span class="text-2xl">⚡</span>
-                        <h2 class="text-base font-black text-amber-800">Nhiệm Vụ 6 Tiếng Khép Kín</h2>
+                        <h2 class="text-base font-black text-amber-800">Nhiệm Vụ 6 Tiếng (Đồng Bộ Cloud)</h2>
                     </div>
                     <div class="flex items-center gap-1.5">
                         <span id="retryBadge" class="text-[10px] font-black text-white bg-purple-500 px-2 py-0.5 rounded-full">Lượt thử: 1/3</span>
@@ -222,7 +222,7 @@
                 
                 <!-- Nội dung yêu cầu nhiệm vụ -->
                 <div id="questContent" class="space-y-1.5 text-xs text-slate-700 font-bold mb-3">
-                    <p class="text-amber-600 font-bold italic">Đang bốc thăm thử thách...</p>
+                    <p class="text-amber-600 font-bold italic">Đang đồng bộ nhiệm vụ từ Cloud...</p>
                 </div>
 
                 <!-- BỘ ĐẾM THỰC HIỆN TRỰC TIẾP -->
@@ -428,15 +428,16 @@
         };
 
         function updateSessionUI() {
-            const q = getActiveQuest();
+            if (!currentSharedQuest) return;
+            const q = currentSharedQuest;
             const el1 = document.getElementById('cntReadStories');
             const el2 = document.getElementById('cntReadSentences');
             const el3 = document.getElementById('cntGamesPlayed');
             const el4 = document.getElementById('cntScoreEarned');
-            if (el1) el1.textContent = `${sessionTracker.readStories.size}/${q.targetStories}`;
-            if (el2) el2.textContent = `${sessionTracker.sentencesPassed}/${q.targetSentences}`;
-            if (el3) el3.textContent = `${sessionTracker.gamesPlayed}/${q.targetGames}`;
-            if (el4) el4.textContent = `${sessionTracker.scoreEarned}/${q.targetScore}`;
+            if (el1) el1.textContent = `${sessionTracker.readStories.size}/${q.target_stories || 1}`;
+            if (el2) el2.textContent = `${sessionTracker.sentencesPassed}/${q.target_sentences || 1}`;
+            if (el3) el3.textContent = `${sessionTracker.gamesPlayed}/${q.target_games || 2}`;
+            if (el4) el4.textContent = `${sessionTracker.scoreEarned}/${q.target_score || 150}`;
         }
 
         // ================== HỆ THỐNG DANH HIỆU & CẤP ĐỘ ==================
@@ -457,6 +458,7 @@
         let selectedNewAvatar = '👸';
         let cachedKids = [];
         let currentKidId = localStorage.getItem('magicCurrentKid') || '';
+        let currentSharedQuest = null;
 
         async function syncKidsFromCloud() {
             if (!db) return;
@@ -489,11 +491,10 @@
                 cachedKids = kids;
                 renderKidSelector();
                 loadLeaderboard();
-                renderQuestUI();
+                await syncSharedQuestFromCloud();
             } catch (err) {
                 console.warn('Lỗi đồng bộ Cloud:', err);
                 renderKidSelector();
-                renderQuestUI();
             }
         }
 
@@ -517,7 +518,7 @@
 
         function onSelectKidChanged(kidId) {
             localStorage.setItem('magicCurrentKid', kidId);
-            showToast('Đang tải trang mới cho bé...', 'success');
+            showToast('Đang chuyển bé...', 'success');
             setTimeout(() => {
                 window.location.reload();
             }, 300);
@@ -668,61 +669,114 @@
             showToast('Chúc mừng bé đã nhận được phần thưởng xứng đáng từ Bố Mẹ! 🍦🎉', 'success');
         }
 
-        // ================== NHIỆM VỤ 6 TIẾNG AN TOÀN (KHÔNG KẸT BỐC THĂM) ==================
+        // ================== NHIỆM VỤ 6 TIẾNG ĐỒNG BỘ CLOUD VÀ LỌC BÀI ĐÃ ĐỌC 5 LẦN ==================
         const SIX_HOURS = 6 * 60 * 60 * 1000;
+        const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
 
-        function getActiveQuest() {
+        // Bốc thăm sách hợp lệ: Loại trừ các bài bé đã đọc >= 5 lần trong vòng 30 ngày qua
+        async function pickEligibleStoryFromCloud() {
+            if (!db) return { id: null, title: 'Truyện bất kỳ trong kho' };
             try {
-                let questData = localStorage.getItem('magicCurrentQuest');
-                if (questData) {
-                    let q = JSON.parse(questData);
-                    if (Date.now() - q.createdAt < SIX_HOURS) {
-                        return q;
-                    }
+                // 1. Lấy tất cả truyện từ kho
+                const { data: allStories, error: errS } = await db.from('saved_stories').select('id, title');
+                if (errS || !allStories || !allStories.length) {
+                    return { id: null, title: 'Truyện bất kỳ trong kho' };
                 }
-            } catch (e) {}
-            return generateNew6HourQuest();
+
+                // 2. Lấy lịch sử đọc của bé hiện tại
+                const thirtyDaysAgo = new Date(Date.now() - THIRTY_DAYS).toISOString();
+                const { data: readHist, error: errH } = await db.from('kid_read_history')
+                    .select('story_id, read_count, last_read_at')
+                    .eq('kid_id', currentKidId)
+                    .gte('last_read_at', thirtyDaysAgo);
+
+                const blockedStoryIds = new Set();
+                if (readHist && readHist.length) {
+                    readHist.forEach(item => {
+                        if ((item.read_count || 0) >= 5) {
+                            blockedStoryIds.add(item.story_id);
+                        }
+                    });
+                }
+
+                // 3. Lọc ra danh sách truyện đủ điều kiện
+                let eligible = allStories.filter(s => !blockedStoryIds.has(s.id));
+                if (!eligible.length) {
+                    // Nếu đã đọc hết thì reset lại danh sách kho
+                    eligible = allStories;
+                }
+
+                const chosen = eligible[Math.floor(Math.random() * eligible.length)];
+                return {
+                    id: chosen.id,
+                    title: (chosen.title || 'Truyện hay').replace(/[\r\n]+/g, ' ').trim()
+                };
+            } catch (e) {
+                console.warn('Lỗi chọn truyện:', e);
+                return { id: null, title: 'Truyện bất kỳ trong kho' };
+            }
         }
 
-        function generateNew6HourQuest() {
-            let rankScore = 150;
-            if (typeof cachedKids !== 'undefined' && cachedKids.length) {
-                const kid = cachedKids.find(k => k.id === currentKidId);
-                const rank = getKidRank((kid && kid.weekly_done) || 0);
-                if (rank && rank.minScore) rankScore = rank.minScore;
-            }
-
-            const targetStories = Math.random() > 0.5 ? 2 : 1;
-            const targetGames = Math.floor(Math.random() * 2 + 2);     // 2 - 3 lượt chơi
-            const targetSentences = Math.floor(Math.random() * 2 + 1); // 1 - 2 câu đọc
-            const targetScore = rankScore;
-
-            const newQuest = {
-                id: 'quest_' + Date.now(),
-                createdAt: Date.now(),
-                targetStories: targetStories,
-                targetGames: targetGames,
-                targetSentences: targetSentences,
-                targetScore: targetScore,
-                attempts: {},
-                completedKids: []
-            };
-
+        // Đồng bộ nhiệm vụ 6 tiếng từ Cloud để máy nào cũng thấy giống hệt nhau
+        async function syncSharedQuestFromCloud() {
+            if (!db) return;
             try {
-                localStorage.setItem('magicCurrentQuest', JSON.stringify(newQuest));
-            } catch (e) {}
+                const { data: quests, error } = await db.from('shared_quests').select('*').order('created_at', { ascending: false }).limit(1);
+                const now = Date.now();
 
-            sessionTracker = { readStories: new Set(), sentencesPassed: 0, gamesPlayed: 0, scoreEarned: 0 };
-            return newQuest;
+                let activeQ = null;
+                if (!error && quests && quests.length) {
+                    const q = quests[0];
+                    const createdAt = new Date(q.created_at).getTime();
+                    if (now - createdAt < SIX_HOURS) {
+                        activeQ = q;
+                    }
+                }
+
+                // Nếu chưa có nhiệm vụ hoặc đã quá 6 tiếng -> 1 máy sẽ đại diện tạo và lưu lên Cloud
+                if (!activeQ) {
+                    const picked = await pickEligibleStoryFromCloud();
+                    const kid = cachedKids.find(k => k.id === currentKidId);
+                    const rank = getKidRank((kid && kid.weekly_done) || 0);
+
+                    const newQ = {
+                        id: 'quest_' + now,
+                        created_at: new Date(now).toISOString(),
+                        target_stories: Math.random() > 0.5 ? 2 : 1,
+                        target_games: Math.floor(Math.random() * 2 + 2),
+                        target_sentences: Math.floor(Math.random() * 2 + 1),
+                        target_score: rank.minScore || 150,
+                        story_id: picked.id,
+                        story_title: picked.title || 'Truyện bất kỳ trong kho',
+                        completed_kids: [],
+                        attempts: {}
+                    };
+
+                    await db.from('shared_quests').insert([newQ]);
+                    activeQ = newQ;
+                }
+
+                currentSharedQuest = activeQ;
+                renderQuestUI();
+            } catch (e) {
+                console.warn('Lỗi lấy shared quest từ Cloud:', e);
+                renderQuestUI();
+            }
         }
 
         function renderQuestUI() {
             const content = document.getElementById('questContent');
             if (!content) return;
 
-            const q = getActiveQuest();
+            if (!currentSharedQuest) {
+                content.innerHTML = '<p class="text-amber-600 font-bold italic animate-pulse">Đang đồng bộ nhiệm vụ từ Cloud...</p>';
+                return;
+            }
+
+            const q = currentSharedQuest;
             const now = Date.now();
-            const timeLeft = Math.max(0, SIX_HOURS - (now - (q.createdAt || now)));
+            const createdAt = new Date(q.created_at).getTime();
+            const timeLeft = Math.max(0, SIX_HOURS - (now - createdAt));
             const hours = Math.floor(timeLeft / (60 * 60 * 1000));
             const minutes = Math.floor((timeLeft % (60 * 60 * 1000)) / (60 * 1000));
 
@@ -731,7 +785,8 @@
                 timerEl.textContent = `⏱️ ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`;
             }
 
-            const attemptsUsed = (q.attempts && q.attempts[currentKidId]) || 0;
+            const attempts = q.attempts || {};
+            const attemptsUsed = (attempts[currentKidId]) || 0;
             const retryBadge = document.getElementById('retryBadge');
             const retryBtn = document.getElementById('retryQuestBtn');
 
@@ -751,24 +806,28 @@
                 }
             }
 
-            const isCompleted = (q.completedKids || []).includes(currentKidId);
+            const completedKids = q.completed_kids || [];
+            const isCompleted = completedKids.includes(currentKidId);
             
+            // Hiển thị tên bài bốc thăm rõ ràng không bao giờ bị undefined
+            const displayTitle = q.story_title || 'Truyện bất kỳ trong kho';
+
             content.innerHTML = `
                 <div class="flex items-start gap-1.5">
                     <span>📚</span>
-                    <span>1. Đọc và nghe: <b class="text-blue-700">${q.targetStories} bài truyện khác nhau</b></span>
+                    <span>1. Đọc cuốn: <b class="text-blue-700">${displayTitle}</b> (hoặc đủ ${q.target_stories} bài khác nhau)</span>
                 </div>
                 <div class="flex items-start gap-1.5">
                     <span>🎙️</span>
-                    <span>2. Luyện phát âm đúng: <b class="text-emerald-700">${q.targetSentences} câu văn</b> trong bài</span>
+                    <span>2. Luyện phát âm đúng: <b class="text-emerald-700">${q.target_sentences} câu văn</b> trong bài</span>
                 </div>
                 <div class="flex items-start gap-1.5">
                     <span>🕹️</span>
-                    <span>3. Tham gia đố vui hoặc game: <b class="text-purple-700">${q.targetGames} lượt chơi</b></span>
+                    <span>3. Tham gia đố vui hoặc game: <b class="text-purple-700">${q.target_games} lượt chơi</b></span>
                 </div>
                 <div class="flex items-start gap-1.5">
                     <span>⭐</span>
-                    <span>4. Điểm đạt trong lượt này: <b class="text-orange-700">≥ ${q.targetScore} điểm</b></span>
+                    <span>4. Điểm đạt trong lượt này: <b class="text-orange-700">≥ ${q.target_score} điểm</b></span>
                 </div>
             `;
 
@@ -791,10 +850,11 @@
             }
         }
 
-        function retryCurrentQuest() {
-            const q = getActiveQuest();
-            q.attempts = q.attempts || {};
-            let currentAttempts = q.attempts[currentKidId] || 0;
+        async function retryCurrentQuest() {
+            if (!currentSharedQuest || !db) return;
+            const q = currentSharedQuest;
+            let attempts = q.attempts || {};
+            let currentAttempts = attempts[currentKidId] || 0;
 
             if (currentAttempts >= 3) {
                 showToast('Bé đã sử dụng hết 3 lần thử lại cho nhiệm vụ này rồi!', 'warning');
@@ -802,59 +862,108 @@
             }
 
             currentAttempts++;
-            q.attempts[currentKidId] = currentAttempts;
-            q.completedKids = (q.completedKids || []).filter(id => id !== currentKidId);
-            localStorage.setItem('magicCurrentQuest', JSON.stringify(q));
+            attempts[currentKidId] = currentAttempts;
+            let completedKids = (q.completed_kids || []).filter(id => id !== currentKidId);
 
-            sessionTracker = { readStories: new Set(), sentencesPassed: 0, gamesPlayed: 0, scoreEarned: 0 };
+            try {
+                await db.from('shared_quests').update({
+                    attempts: attempts,
+                    completed_kids: completedKids
+                }).eq('id', q.id);
 
-            renderQuestUI();
-            showToast(`Lượt thử thứ ${currentAttempts}/3 bắt đầu! Dữ liệu cũ sẽ được ghi đè! 🔄`, 'success');
-            talk(`Lượt thử thứ ${currentAttempts}/3! Cố gắng hoàn thành trọn vẹn cả 4 bước nha bé! 💪`);
+                q.attempts = attempts;
+                q.completed_kids = completedKids;
+
+                sessionTracker = { readStories: new Set(), sentencesPassed: 0, gamesPlayed: 0, scoreEarned: 0 };
+                renderQuestUI();
+                showToast(`Lượt thử thứ ${currentAttempts}/3! Điểm mới sẽ ghi đè điểm cũ! 🔄`, 'success');
+                talk(`Lượt thử thứ ${currentAttempts}/3 bắt đầu! Cố gắng đạt điểm cao hơn lần trước nha! 💪`);
+            } catch (e) {
+                showToast('Lỗi cập nhật lượt thử lên Cloud!', 'error');
+            }
+        }
+
+        // Ghi nhận lịch sử đọc sách để sau 5 lần trong tháng sẽ không bốc thăm lại cuốn này nữa
+        async function recordStoryReadCount(storyTitle) {
+            if (!db || !storyTitle) return;
+            try {
+                const safeTitle = storyTitle.trim();
+                const recordId = `${currentKidId}_${encodeURIComponent(safeTitle).slice(0, 40)}`;
+                
+                const { data: exist } = await db.from('kid_read_history').select('*').eq('id', recordId).maybeSingle();
+                if (exist) {
+                    const newCount = (exist.read_count || 1) + 1;
+                    await db.from('kid_read_history').update({
+                        read_count: newCount,
+                        last_read_at: new Date().toISOString()
+                    }).eq('id', recordId);
+                } else {
+                    await db.from('kid_read_history').insert([{
+                        id: recordId,
+                        kid_id: currentKidId,
+                        story_id: recordId,
+                        story_title: safeTitle,
+                        read_count: 1,
+                        last_read_at: new Date().toISOString()
+                    }]);
+                }
+            } catch (e) {
+                console.warn('Lỗi ghi lịch sử đọc:', e);
+            }
         }
 
         async function claimQuestReward() {
-            const q = getActiveQuest();
-            if ((q.completedKids || []).includes(currentKidId)) return;
+            if (!currentSharedQuest) return;
+            const q = currentSharedQuest;
+            const completedKids = q.completed_kids || [];
+            if (completedKids.includes(currentKidId)) return;
 
-            if (sessionTracker.readStories.size < q.targetStories) {
-                const missing = q.targetStories - sessionTracker.readStories.size;
+            // KIỂM TRA RÀNG BUỘC CÁC BƯỚC
+            if (sessionTracker.readStories.size < (q.target_stories || 1)) {
+                const missing = (q.target_stories || 1) - sessionTracker.readStories.size;
                 showToast(`Bé chưa đọc đủ bài! Cần đọc thêm ${missing} bài truyện nữa nhé!`, 'warning');
-                talk(`Bé nhớ bấm nút "Đọc To" để nghe và đọc thêm ${missing} bài truyện nữa nha! 📖`);
+                talk(`Bé nhớ bấm nút "Đọc To" để nghe và đọc đủ bài truyện nha! 📖`);
                 return;
             }
 
-            if (sessionTracker.sentencesPassed < q.targetSentences) {
-                const missing = q.targetSentences - sessionTracker.sentencesPassed;
+            if (sessionTracker.sentencesPassed < (q.target_sentences || 1)) {
+                const missing = (q.target_sentences || 1) - sessionTracker.sentencesPassed;
                 showToast(`Bé chưa luyện phát âm đủ câu! Cần đọc đúng thêm ${missing} câu nữa!`, 'warning');
                 talk(`Bé hãy xuống phần "Thử Thách Đọc Cả Câu" để phát âm chuẩn thêm ${missing} câu nha! 🎙️`);
                 return;
             }
 
-            if (sessionTracker.gamesPlayed < q.targetGames) {
-                const missing = q.targetGames - sessionTracker.gamesPlayed;
+            if (sessionTracker.gamesPlayed < (q.target_games || 2)) {
+                const missing = (q.target_games || 2) - sessionTracker.gamesPlayed;
                 showToast(`Bé chưa chơi đủ số lượt game/câu đố! Cần chơi thêm ${missing} lượt nữa!`, 'warning');
                 talk(`Vào Đố vui hoặc Phòng Game chơi thêm ${missing} lượt nữa cho vui nào bé ơi! 🕹️`);
                 return;
             }
 
-            if (sessionTracker.scoreEarned < q.targetScore) {
-                const missing = q.targetScore - sessionTracker.scoreEarned;
-                showToast(`Chưa đạt điểm chuẩn! Điểm lượt này cần thêm ${missing}đ nữa (≥ ${q.targetScore}đ)!`, 'warning');
-                talk(`Điểm số của lượt này chưa đạt chuẩn ${q.targetScore}đ. Chơi thêm đố vui kiếm thêm ${missing}đ nữa nha! ⭐`);
+            if (sessionTracker.scoreEarned < (q.target_score || 150)) {
+                const missing = (q.target_score || 150) - sessionTracker.scoreEarned;
+                showToast(`Chưa đạt điểm chuẩn! Điểm lượt này cần thêm ${missing}đ nữa (≥ ${q.target_score}đ)!`, 'warning');
+                talk(`Điểm số của lượt này chưa đạt chuẩn ${q.target_score}đ. Chơi thêm đố vui kiếm thêm ${missing}đ nữa nha! ⭐`);
                 return;
             }
 
-            q.completedKids = q.completedKids || [];
-            q.completedKids.push(currentKidId);
-            localStorage.setItem('magicCurrentQuest', JSON.stringify(q));
-
-            const kid = cachedKids.find(k => k.id === currentKidId);
-            const currentTotalScore = (kid && kid.score) || 0;
-            const newTotalScore = currentTotalScore + sessionTracker.scoreEarned + 30;
-            const newDone = ((kid && kid.weekly_done) || 0) + 1;
-
+            // Ghi nhận hoàn thành lên Cloud
+            completedKids.push(currentKidId);
             try {
+                if (db) {
+                    await db.from('shared_quests').update({ completed_kids: completedKids }).eq('id', q.id);
+                }
+
+                // Ghi nhận lịch sử đọc các cuốn sách trong phiên để loại trừ sau 5 lần
+                for (let sTitle of sessionTracker.readStories) {
+                    await recordStoryReadCount(sTitle);
+                }
+
+                const kid = cachedKids.find(k => k.id === currentKidId);
+                const currentTotalScore = (kid && kid.score) || 0;
+                const newTotalScore = currentTotalScore + sessionTracker.scoreEarned + 30;
+                const newDone = ((kid && kid.weekly_done) || 0) + 1;
+
                 if (db) {
                     await db.from('magic_kids').update({
                         score: newTotalScore,
@@ -864,7 +973,6 @@
                 }
 
                 syncKidsFromCloud();
-                renderQuestUI();
                 burst(innerWidth/2, innerHeight/2, ['🏆', '👑', '🎉', '⚡', '⭐'], 30);
                 showToast(`XUẤT SẮC! Bé đã hoàn thành 100% nhiệm vụ và được ghi điểm lên Cloud! 🌟`, 'success');
                 talk(`Tuyệt vời! Bé đã vượt qua toàn bộ thử thách khắt khe! Tớ rất tự hào về bé! 🥳`);
@@ -873,7 +981,7 @@
             }
         }
 
-        setInterval(renderQuestUI, 60000);
+        setInterval(syncSharedQuestFromCloud, 60000);
 
         // ================== BẢNG VÀNG CLOUD HIỂN THỊ ==================
         function loadLeaderboard() {
@@ -1020,7 +1128,6 @@
                         <button onclick="deleteStory('${story.id}')" class="text-red-500 hover:bg-red-100 px-1 rounded font-black text-[10px]" title="Xóa sách">❌</button>
                     </div>
                 `).join('');
-                renderQuestUI();
             } catch (err) {}
         }
 
@@ -1032,7 +1139,7 @@
 
         async function loadStory(id) { 
             try { 
-                let { data } = await db.from('saved_stories').select('content').eq('id', id).single(); 
+                let { data } = await db.from('saved_stories').select('content, title').eq('id', id).single(); 
                 storyText.value = data.content; 
                 showToast('Đã tải truyện cũ!', 'success');
                 cleanBtn.click();
@@ -1152,6 +1259,7 @@
             const playBtn = document.getElementById('playBtn');
             if (playBtn) playBtn.innerHTML = '<span class="mr-1">🔊</span>Đang đọc...';
 
+            // Ghi nhận bài đọc vào bộ đếm ràng buộc phiên
             const titleHash = rawText.substring(0, 30);
             sessionTracker.readStories.add(titleHash);
             updateSessionUI();
