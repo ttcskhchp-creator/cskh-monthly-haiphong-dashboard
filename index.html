@@ -160,6 +160,7 @@
         </div>
     </div>
 
+    <!-- Nút Đổi Giao Diện -->
     <div class="w-full max-w-7xl flex justify-end relative z-40 mb-2">
         <button id="themeBtn" type="button" class="bg-white text-pink-600 border-2 border-pink-300 px-3 py-1.5 md:px-4 md:py-2 rounded-full font-black shadow btn-bounce text-sm md:text-base">🎨 Giao diện</button>
         <div id="themePanel" class="hidden absolute right-0 top-full mt-2 w-[min(92vw,20rem)] bg-white border-4 border-pink-300 rounded-2xl shadow-xl p-3 grid grid-cols-3 gap-2"></div>
@@ -394,7 +395,7 @@
         <span id="me">🦄</span>
     </div>
 
-    <!-- KHỐI JAVASCRIPT HỢP NHẤT TOÀN DIỆN -->
+    <!-- KHỐI JAVASCRIPT HỢP NHẤT TOÀN DIỆN (ĐÃ SỬA DỨT ĐIỂM SỰ KIỆN CLICK VÀ MENU GIAO DIỆN) -->
     <script>
         const $ = id => document.getElementById(id);
 
@@ -714,7 +715,6 @@
             showToast('Chúc mừng bé đã nhận được phần thưởng xứng đáng từ Bố Mẹ! 🍦🎉', 'success');
         }
 
-        // NHIỆM VỤ 6 TIẾNG TỰ KHỞI TẠO
         const SIX_HOURS = 6 * 60 * 60 * 1000;
         const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
 
@@ -1228,14 +1228,12 @@
             window.playWordAudio(word);
         };
 
-        // ================== PHÒNG GAME VUI NHỘN (ĐÃ SỬA GAME NGHE ĐOÁN TỪ) ==================
         const G = { score: 0, k: '' }; let GT;
         const V = () => globalVocabData.filter(v => v.word);
         const shuf = a => [...a].sort(() => Math.random() - .5);
         const area = () => $('gameArea');
         const ctr = () => [innerWidth / 2, innerHeight / 2];
 
-        // Sửa hàm award: Dù bé được 0 điểm thì lượt chơi vẫn luôn được tính vào bộ đếm nhiệm vụ
         function award(n) {
             sessionTracker.gamesPlayed++;
             if (n > 0) {
@@ -1261,7 +1259,6 @@
             clearInterval(GT); G.score = 0; G.k = k; ({ listen: gListen, flip: gFlip, speak: gSpeak, scr: gScr, speed: gSpeed })[k]();
         };
 
-        // ================== HÀM gListen SỬA LỖI KHÔNG CHUYỂN CÂU ==================
         function gListen() {
             const list = V().filter(x => x && x.word && x.meaning);
             if (list.length < 2) return showToast('Cần ít nhất từ vựng để chơi!', 'warning');
@@ -1275,7 +1272,6 @@
                 const v = qs[i];
                 const pool = list.filter(x => x.word !== v.word);
                 
-                // 4 lựa chọn không bao giờ rỗng hay trùng lặp
                 const wrongOptions = shuf(pool).slice(0, 3).map(x => x.meaning);
                 const options = shuf([v.meaning, ...wrongOptions]);
 
@@ -1301,7 +1297,6 @@
                     </div>
                 `;
 
-                // Nút loa phát âm
                 const replayBtn = document.getElementById('btnListenReplay');
                 if (replayBtn) {
                     replayBtn.onclick = (e) => {
@@ -1310,7 +1305,6 @@
                     };
                 }
 
-                // Tự động phát âm từ cho câu hiện tại
                 try { window.playWordAudio(v.word); } catch(e) {}
 
                 const optBtns = el.querySelectorAll('.opt-btn');
@@ -1330,7 +1324,6 @@
                         if (isProcessing) return;
                         isProcessing = true;
 
-                        // Khóa nút tránh bấm liên tiếp
                         optBtns.forEach(b => {
                             b.disabled = true;
                             b.classList.remove('hover:bg-sky-50', 'bg-white');
@@ -1355,10 +1348,8 @@
                             talk('Tiếc quá! Ô màu xanh mới là đáp án đúng nhé! 🙈');
                         }
 
-                        // Mở nút thủ công phòng ngừa
                         if (nextRow) nextRow.classList.remove('hidden');
 
-                        // Luôn tự động chuyển câu sau 1.2s
                         setTimeout(() => {
                             i++;
                             nx();
@@ -1433,7 +1424,216 @@
             }; nx();
         }
 
-        // KHỞI ĐỘNG HỆ THỐNG
+        // ================== SỰ KIỆN CLICK AN TOÀN TUYỆT ĐỐI ==================
+        const WM = { 
+            candy: ['🍭', '🧁', '🦄', '🌈', '⭐', '🍩', '🎀', '🧸'], 
+            ocean: ['🐠', '🐙', '🐳', '🐚', '⚓', '🦀', '🐬', '🫧'], 
+            forest: ['🌲', '🦊', '🦉', '🍄', '🐿️', '🦋', '🌻', '🐻'] 
+        };
+        const MASCOT_SKINS = { 
+            candy: '🦄',
+            ocean: '🎠',
+            forest: '🐎'
+        };
+
+        const curTheme = () => document.documentElement.dataset.theme || 'candy';
+        function wm() {
+            let l = $('wm'); if (!l) { l = document.createElement('div'); l.id = 'wm'; document.body.prepend(l); }
+            const L = WM[curTheme()] || WM.candy;
+            l.innerHTML = Array.from({ length: 18 }, (_, i) => `<i style="left:${(i % 6) * 17 + Math.random() * 8}%;top:${((i / 6) | 0) * 34 + Math.random() * 14}%;font-size:${48 + Math.random() * 60}px;transform:rotate(${Math.random() * 60 - 30}deg);animation-delay:${-Math.random() * 8}s">${L[i % L.length]}</i>`).join('');
+            const me = $('me'); if (me) me.textContent = MASCOT_SKINS[curTheme()] || '🦄';
+        }
+        const _at = applyTheme; 
+        applyTheme = id => { _at(id); wm(); };
+        wm();
+
+        const pick = a => a[Math.random() * a.length | 0];
+        const wig = e => { e.classList.remove('wiggle'); void e.offsetWidth; e.classList.add('wiggle'); };
+        function burst(x, y, list, n = 8) {
+            for (let i = 0; i < n; i++) {
+                const e = document.createElement('span'); e.className = 'fx'; e.textContent = pick(list); e.style.left = x + 'px'; e.style.top = y + 'px'; document.body.appendChild(e);
+                const a = Math.random() * 6.28, d = 40 + Math.random() * 80;
+                try {
+                    e.animate([{ transform: 'translate(-50%,-50%) scale(.5)', opacity: 1 }, { transform: `translate(calc(-50% + ${Math.cos(a) * d}px),calc(-50% + ${Math.sin(a) * d - 40}px)) scale(1.4) rotate(${Math.random() * 360}deg)`, opacity: 0 }], { duration: 900 + Math.random() * 500, easing: 'ease-out' }).onfinish = () => e.remove();
+                } catch(err) {
+                    setTimeout(() => e.remove(), 1000);
+                }
+            }
+        }
+        const FUN = ['🎉', '⭐', '🌈', '🎈', '✨', '🤪', '🐣', '🍕'];
+        let mt; 
+        function talk(m) { 
+            const b = $('mb'); 
+            if (!b) return;
+            b.textContent = m; 
+            b.style.opacity = 1; 
+            clearTimeout(mt); 
+            mt = setTimeout(() => { b.style.opacity = 0.9; }, 6000); 
+        }
+
+        function getMissingStepsAdvice() {
+            if (!currentSharedQuest) return "Bé hãy chọn một truyện trong kho để bắt đầu làm bài nha! 📖";
+            const q = currentSharedQuest;
+            const missingStories = Math.max(0, (q.target_stories || 1) - sessionTracker.readStories.size);
+            const missingSentences = Math.max(0, (q.target_sentences || 1) - sessionTracker.sentencesPassed);
+            const missingGames = Math.max(0, (q.target_games || 2) - sessionTracker.gamesPlayed);
+            const missingScore = Math.max(0, (q.target_score || 150) - sessionTracker.scoreEarned);
+
+            if (missingStories === 0 && missingSentences === 0 && missingGames === 0 && missingScore === 0) {
+                return "Wao xuất sắc quá! Bé đã hoàn thành đủ cả 4 mục! Bấm '🏆 Nộp Ghi Điểm' để nhận thưởng ngay thôi! 🥳🎉";
+            }
+
+            let advise = "Nhiệm vụ còn thiếu: ";
+            let steps = [];
+            if (missingStories > 0) steps.push(`Nghe/đọc ${missingStories} bài`);
+            if (missingSentences > 0) steps.push(`Luyện đọc đúng ${missingSentences} câu`);
+            if (missingGames > 0) steps.push(`Chơi ${missingGames} lượt game`);
+            if (missingScore > 0) steps.push(`Kiếm thêm ${missingScore}đ nữa`);
+
+            return advise + steps.join(", ") + " nha! Cố lên bé yêu! 💪✨";
+        }
+
+        const MOTIVATION_QUOTES = [
+            "Cố lên bé ơi! Bác học ngôn ngữ tương lai không bao giờ bỏ cuộc! 🚀",
+            "Phát âm to và rõ ràng lên nha, chú ngựa đang lắng nghe đây! 🎧",
+            "Gần xong nhiệm vụ rồi, bim bim và trà sữa đang đợi bé đó! 🍟🧋",
+            "Đọc sách tiếng Anh mỗi ngày sẽ thông minh như nhà bác học luôn! 📚✨",
+            "Mỗi câu bé đọc đúng là một bước tiến gần tới phần thưởng bố mẹ! 🎁",
+            "Hí hí hí! Chú ngựa vỗ tay khen bé chăm chỉ nè! 👏🦄",
+            "Có từ nào khó không? Chạm vào thẻ từ vựng là có loa đọc mẫu liền nha! 🔊",
+            "Tập trung một chút nữa thôi là hoàn thành nhiệm vụ 6 tiếng rồi! ⏰"
+        ];
+
+        function scheduleRandomChat() {
+            const nextInterval = Math.floor(Math.random() * 5000) + 10000;
+            setTimeout(() => {
+                if (!document.hidden) {
+                    if (Math.random() < 0.6) {
+                        talk(getMissingStepsAdvice());
+                    } else {
+                        talk(pick(MOTIVATION_QUOTES));
+                    }
+                }
+                scheduleRandomChat();
+            }, nextInterval);
+        }
+        scheduleRandomChat();
+
+        $('me').onclick = (e) => { 
+            e.stopPropagation();
+            wig($('me')); 
+            burst(innerWidth - 40, innerHeight - 50, FUN, 7); 
+            if (Math.random() < 0.5) {
+                talk(getMissingStepsAdvice());
+            } else {
+                talk(pick(MOTIVATION_QUOTES));
+            }
+        };
+
+        // LẮNG NGHE CLICK CHUỘT AN TOÀN (KHÔNG CHẶN NÚT CHỨC NĂNG)
+        document.addEventListener('click', e => {
+            const target = e.target;
+            if (target.id === 'me' || target.closest('#mascot') || target.closest('#themeBtn') || target.closest('#themePanel')) return;
+
+            const b = target.closest('button');
+            const v = target.closest('.vocab-card');
+            const card = target.closest('.guide-card');
+            const isTextarea = target.id === 'storyText';
+            const isDrop = target.closest('#dropZone');
+
+            const r = b && b.getBoundingClientRect();
+            const x = e.clientX || (r ? r.left + r.width / 2 : 0);
+            const y = e.clientY || (r ? r.top : 0);
+
+            if (x && y) {
+                if (v) burst(x, y, ['🔊', '🎵', '⭐'], 5);
+                else if (b && !b.closest('#gameArea')) { burst(x, y, FUN, 7); wig(b); }
+            }
+
+            if (v) {
+                const wordText = v.querySelector('span')?.textContent || 'từ này';
+                talk(`Từ "${wordText.trim()}" hay quá! Bé nhớ đọc theo loa 2 lần để khắc sâu trí nhớ nha! 🔊`);
+                return;
+            }
+
+            if (b) {
+                if (b.id === 'cleanBtn') {
+                    talk("Chổi thần AI đã quét sạch chữ ma OCR! Kéo xuống làm thử thách đọc câu ngay nào bé! 🧹✨");
+                    return;
+                }
+                if (b.id === 'playBtn') {
+                    talk("Đang đọc to cả bài! Bé nghe thật kỹ cách phát âm và nối chữ để đọc câu nhé! 🎧");
+                    return;
+                }
+                if (b.id === 'playCursorBtn') {
+                    talk("Chỉ đâu đọc đó! Chỗ nào khó hiểu bé cứ đặt con trỏ vào đó rồi nghe lại nha! 👆");
+                    return;
+                }
+                if (b.id === 'stopBtn') {
+                    talk("Phanh kít kít! Tạm dừng để uống ngụm nước rồi học tiếp nào bé ơi! 🛑🥤");
+                    return;
+                }
+                if (b.id === 'extractBtn') {
+                    talk("Đang dùng kính lúp thông minh soi chữ từ ảnh... Bé chờ xíu là có chữ ngay! 🔍");
+                    return;
+                }
+                if (b.id === 'claimQuestBtn') {
+                    talk(getMissingStepsAdvice());
+                    return;
+                }
+                if (b.id === 'retryQuestBtn') {
+                    talk("Bắt đầu lượt thử lại! Điểm số mới sẽ ghi đè điểm cũ, cố gắng đạt điểm cao hơn nha! 🔄");
+                    return;
+                }
+            }
+
+            if (isDrop) {
+                talk("Chạm vào đây để tải ảnh trang sách rõ nét hoặc file Word/PDF truyện tranh lên nha! 📸");
+                return;
+            }
+
+            if (isTextarea) {
+                talk("Nội dung bài học ở đây! Bé có thể click vào chữ bất kỳ rồi bấm 'Từ Trỏ' để nghe riêng đoạn đó nha! 📝");
+                return;
+            }
+
+            if (card) {
+                if (card.id === 'cardKidProfile') {
+                    talk("Bảng thành tích của bé! Hoàn thành tối thiểu 5 nhiệm vụ tuần để bố mẹ thưởng bim bim nha! 🍟");
+                    return;
+                }
+                if (card.id === 'cardQuestArea') {
+                    talk(getMissingStepsAdvice());
+                    return;
+                }
+                if (card.id === 'cardLeaderboard') {
+                    talk("Bảng Vàng vinh danh các bạn nhỏ chăm chỉ nhất trên Cloud! Bé đua top 1 cùng các bạn nào! 🏆");
+                    return;
+                }
+                if (card.id === 'cardStoryLibrary') {
+                    talk("Kho truyện Cloud của bố Dũng! Bé chọn một cuốn sách bất kỳ để học bài nha! 📚");
+                    return;
+                }
+                if (card.id === 'cardSentenceSection') {
+                    talk("Thử thách đọc cả câu: Nghe mẫu trước 🔊 rồi bấm '🎤 Bé Đọc' để máy chấm điểm phát âm nha! 🎙️");
+                    return;
+                }
+                if (card.id === 'cardVocabSection') {
+                    talk("Từ vựng thông minh được máy lọc ra! Chạm vào từng từ để nghe đọc và xem giải nghĩa chuẩn nha! 💡");
+                    return;
+                }
+                if (card.id === 'cardQuizSection') {
+                    talk("Đố vui 5 câu: Trả lời đúng để kiếm điểm vượt chuẩn nhiệm vụ nào bé ơi! 🎮");
+                    return;
+                }
+                if (card.id === 'cardGameSection') {
+                    talk("Phòng Game vui nhộn: Chơi game vừa ghi nhớ từ vựng vừa tích lũy điểm thưởng! 🕹️");
+                    return;
+                }
+            }
+        });
+
+        // KHỞI ĐỘNG HỆ THỐNG AN TOÀN
         document.addEventListener('DOMContentLoaded', () => {
             syncKidsFromCloud();
             fetchStories();
