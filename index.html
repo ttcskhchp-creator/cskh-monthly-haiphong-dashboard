@@ -17,9 +17,9 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
     const THEMES = [
-        { id: 'candy', icon: '🍬', name: 'Kẹo Hồng', bg: '#fdf2f8', card: '#ffffff', ink: '#1e293b', primary: '#ec4899', secondary: '#3b82f6' },
-        { id: 'ocean', icon: '🌊', name: 'Đại Dương', bg: '#e8f6ff', card: '#ffffff', ink: '#0f2a3d', primary: '#0891b2', secondary: '#2563eb' },
-        { id: 'forest', icon: '🌿', name: 'Rừng Xanh', bg: '#eef8ea', card: '#ffffff', ink: '#1b2e1f', primary: '#16a34a', secondary: '#0f766e' }
+        { id: 'candy', icon: '🍬', name: 'Kẹo Hồng', bg: '#fdf2f8', card: '#ffffff', ink: '#1e293b', primary: '#ec4899', secondary: '#3b82f6', mascot: '🦄' },
+        { id: 'ocean', icon: '🌊', name: 'Đại Dương', bg: '#e8f6ff', card: '#ffffff', ink: '#0f2a3d', primary: '#0891b2', secondary: '#2563eb', mascot: '🎠' },
+        { id: 'forest', icon: '🌿', name: 'Rừng Xanh', bg: '#eef8ea', card: '#ffffff', ink: '#1b2e1f', primary: '#16a34a', secondary: '#0f766e', mascot: '🐎' }
     ];
 
     function applyTheme(id) {
@@ -32,6 +32,10 @@
         s.setProperty('--secondary', t.secondary);
         document.documentElement.dataset.theme = t.id;
         try { localStorage.setItem('magicTheme', t.id); } catch (e) {}
+        
+        // Đổi hình đại diện của Chatbot Con Ngựa theo đúng chủ đề
+        const me = document.getElementById('me');
+        if (me) me.textContent = t.mascot || '🦄';
     }
 
     try {
@@ -71,9 +75,12 @@
         .fx{position:fixed;z-index:60;pointer-events:none;font-size:22px;line-height:1}
         .wiggle{animation:wg .5s}
         @keyframes wg{0%,100%{transform:rotate(0)}20%{transform:rotate(-8deg) scale(1.1)}40%{transform:rotate(8deg)}60%{transform:rotate(-5deg)}80%{transform:rotate(5deg)}}
-        #mascot{position:fixed;right:8px;bottom:8px;z-index:45;text-align:right;pointer-events:none}
-        #me{font-size:42px;cursor:pointer;pointer-events:auto;display:inline-block;animation:fl 2s ease-in-out infinite alternate;user-select:none}
-        #mb{display:inline-block;max-width:230px;background:#fff;border:3px solid #ec4899;border-radius:16px;padding:6px 10px;font-size:12px;font-weight:900;color:#be185d;box-shadow:0 4px 10px rgba(0,0,0,0.1);opacity:0;transition:opacity .3s;margin-bottom:2px}
+        
+        /* Chatbot Mascot Con Ngựa Thông Minh */
+        #mascot{position:fixed;right:10px;bottom:10px;z-index:50;text-align:right;pointer-events:none}
+        #me{font-size:46px;cursor:pointer;pointer-events:auto;display:inline-block;animation:fl 2s ease-in-out infinite alternate;user-select:none;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.15));transition:transform .2s}
+        #me:hover{transform:scale(1.15)}
+        #mb{display:inline-block;max-width:260px;background:#ffffff;border:3px solid #ec4899;border-radius:18px;padding:8px 12px;font-size:12px;font-weight:900;color:#9d174d;box-shadow:0 6px 16px rgba(0,0,0,0.15);opacity:1;transition:all .3s ease;margin-bottom:4px;text-align:left;pointer-events:auto}
     </style>
 </head>
 <body class="p-2 md:p-6 flex flex-col items-center">
@@ -168,10 +175,10 @@
 
     <div id="toastMessage" class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-4 py-2 md:px-6 md:py-3 rounded-full font-bold text-xs md:text-sm shadow-xl transition-all duration-300 opacity-0 pointer-events-none text-center min-w-[200px]"></div>
 
-    <!-- KHU VỰC CHỌN BÉ & BẢNG NHIỆM VỤ RÀNG BUỘC CHẶT CHẼ -->
+    <!-- KHU VỰC CHỌN BÉ & BẢNG NHIỆM VỤ ĐỒNG BỘ CLOUD -->
     <section class="w-full max-w-7xl mb-4 grid grid-cols-1 md:grid-cols-12 gap-4">
         <!-- Thẻ Danh Sách Bé & Cấp Độ / Danh Hiệu -->
-        <div class="md:col-span-5 bg-white p-4 rounded-[1.5rem] shadow-md border-4 border-indigo-200 flex flex-col justify-between">
+        <div id="cardKidProfile" class="guide-card md:col-span-5 bg-white p-4 rounded-[1.5rem] shadow-md border-4 border-indigo-200 flex flex-col justify-between">
             <div>
                 <div class="flex justify-between items-center mb-2">
                     <span class="text-xs font-black text-indigo-700 uppercase tracking-wider">👦👧 Thành Viên Nhí</span>
@@ -207,7 +214,7 @@
         </div>
 
         <!-- Thẻ Nhiệm Vụ 6 Giờ Đồng Bộ Toàn Bộ Thiết Bị -->
-        <div class="md:col-span-7 bg-gradient-to-r from-amber-50 to-orange-50 p-4 rounded-[1.5rem] shadow-md border-4 border-amber-300 flex flex-col justify-between">
+        <div id="cardQuestArea" class="guide-card md:col-span-7 bg-gradient-to-r from-amber-50 to-orange-50 p-4 rounded-[1.5rem] shadow-md border-4 border-amber-300 flex flex-col justify-between">
             <div>
                 <div class="flex justify-between items-center mb-2">
                     <div class="flex items-center gap-1.5">
@@ -261,7 +268,7 @@
         <!-- CỘT TRÁI -->
         <div class="lg:col-span-5 flex flex-col gap-4">
             <!-- Bảng Điểm Bảng Vàng (Đồng bộ Cloud Supabase) -->
-            <div class="bg-teal-50 p-4 rounded-[1.5rem] shadow-lg border-4 border-teal-300 flex flex-col">
+            <div id="cardLeaderboard" class="guide-card bg-teal-50 p-4 rounded-[1.5rem] shadow-lg border-4 border-teal-300 flex flex-col">
                 <div class="flex justify-between items-center mb-2">
                     <h2 class="text-lg font-black text-teal-600 flex items-center"><span class="mr-2">🏆</span> Bảng Vàng Tuần Này (Cloud)</h2>
                     <span class="text-[10px] font-bold text-teal-700 bg-teal-100 px-2 py-0.5 rounded-full">Tự reset sau 7 ngày</span>
@@ -272,7 +279,7 @@
             </div>
 
             <!-- Chọn truyện -->
-            <div class="bg-white p-4 md:p-6 rounded-[1.5rem] shadow-lg border-4 border-pink-300 flex flex-col">
+            <div id="cardChooseFile" class="guide-card bg-white p-4 md:p-6 rounded-[1.5rem] shadow-lg border-4 border-pink-300 flex flex-col">
                 <h2 class="text-lg font-black text-pink-600 mb-2 flex items-center"><span class="text-xl mr-2">📸</span> 1. Chọn truyện</h2>
                 <input type="file" id="fileInput" multiple accept="image/*,.pdf,.txt,.md,.docx,.doc,.html,.htm" class="sr-only">
                 <label id="dropZone" for="fileInput" class="flex flex-col items-center justify-center bg-slate-50 rounded-xl border-2 border-dashed border-slate-300 overflow-hidden min-h-[120px] mb-2 relative cursor-pointer hover:bg-slate-100 transition-colors">
@@ -289,7 +296,7 @@
             </div>
 
             <!-- Kho truyện -->
-            <div class="bg-indigo-50 p-4 md:p-6 rounded-[1.5rem] shadow-lg border-4 border-indigo-300 flex flex-col max-h-[220px]">
+            <div id="cardStoryLibrary" class="guide-card bg-indigo-50 p-4 md:p-6 rounded-[1.5rem] shadow-lg border-4 border-indigo-300 flex flex-col max-h-[220px]">
                 <div class="flex justify-between items-center mb-2">
                     <h2 class="text-base font-black text-indigo-600 flex items-center"><span class="text-lg mr-2">☁️</span> Kho Truyện</h2>
                     <button onclick="saveToCloud()" class="bg-indigo-500 text-white px-2 py-1 rounded-md text-xs font-bold btn-bounce shadow-sm hover:bg-indigo-600">💾 Lưu Bài</button>
@@ -302,7 +309,7 @@
 
         <!-- CỘT PHẢI -->
         <div class="lg:col-span-7 flex flex-col gap-4 h-full">
-            <div class="bg-white p-3 md:p-5 rounded-[1.5rem] shadow-lg border-4 border-blue-300 flex flex-col flex-grow">
+            <div id="cardReadingPanel" class="guide-card bg-white p-3 md:p-5 rounded-[1.5rem] shadow-lg border-4 border-blue-300 flex flex-col flex-grow">
                 <div class="flex justify-between items-center mb-1">
                     <h2 class="text-base md:text-lg font-black text-blue-600 flex items-center"><span class="text-xl mr-1">📝</span> 2. Luyện nghe & Đọc</h2>
                     <div class="flex gap-1">
@@ -336,7 +343,7 @@
             </div>
 
             <!-- PHẦN THỬ THÁCH ĐỌC CẢ CÂU TRONG BÀI (1-3 CÂU) -->
-            <div class="p-3 md:p-4 bg-emerald-50 border-2 border-emerald-300 rounded-[1.5rem]" id="sentenceChallengeSection">
+            <div id="cardSentenceSection" class="guide-card p-3 md:p-4 bg-emerald-50 border-2 border-emerald-300 rounded-[1.5rem]">
                 <div class="flex justify-between items-center mb-2">
                     <h3 class="font-black text-emerald-700 text-sm md:text-base flex items-center">
                         <span class="mr-1.5">🎙️</span> Thử Thách Đọc Cả Câu (1-3 câu):
@@ -349,7 +356,7 @@
             </div>
 
             <!-- Khung Từ vựng Thông Minh -->
-            <div class="p-3 md:p-4 bg-purple-50 border-2 border-purple-200 rounded-[1.5rem] relative transition-all duration-500" id="vocabContainer">
+            <div id="cardVocabSection" class="guide-card p-3 md:p-4 bg-purple-50 border-2 border-purple-200 rounded-[1.5rem] relative transition-all duration-500">
                 <div class="flex justify-between items-center mb-2">
                     <h3 class="font-black text-purple-600 text-sm md:text-base flex items-center"><span class="mr-1">📚</span> Từ vựng Thông Minh:</h3>
                     <span id="rotationIndicator" class="text-[10px] font-bold text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full border border-purple-200 hidden">Vòng 1/5</span>
@@ -360,7 +367,7 @@
             </div>
 
             <!-- Khung Đố Vui -->
-            <div class="p-3 md:p-4 bg-orange-50 border-2 border-orange-200 rounded-[1.5rem]" id="quizSection">
+            <div id="cardQuizSection" class="guide-card p-3 md:p-4 bg-orange-50 border-2 border-orange-200 rounded-[1.5rem]">
                 <h3 class="font-black text-orange-600 mb-2 flex items-center text-sm md:text-base"><span class="mr-1">🎮</span> Đố vui (5 câu):</h3>
                 <div id="quizContainer" class="text-slate-700 font-bold text-xs md:text-sm">
                     <span class="italic font-normal text-orange-400 text-[10px]">Quét chữ xong bé sẽ được chơi ở đây!</span>
@@ -368,7 +375,7 @@
             </div>
 
             <!-- Phòng Game -->
-            <div class="p-3 md:p-4 bg-sky-50 border-2 border-sky-200 rounded-[1.5rem]" id="gameHub">
+            <div id="cardGameSection" class="guide-card p-3 md:p-4 bg-sky-50 border-2 border-sky-200 rounded-[1.5rem]">
                 <h3 class="font-black text-sky-600 mb-2 text-sm md:text-base">🕹️ Phòng Game Từ Vựng</h3>
                 <div id="gameMenu" class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 mb-2"></div>
                 <div id="gameArea" class="bg-white/80 rounded-xl p-2 text-xs font-bold text-slate-700 min-h-[60px]"><span class="italic font-normal text-sky-400 text-[10px]">Bấm "Sạch" để lấy từ vựng, rồi chọn trò chơi nhé! 🎮</span></div>
@@ -382,9 +389,9 @@
         </p>
     </footer>
 
-    <!-- Mascot & Chatbot Hướng Dẫn Từng Bước -->
+    <!-- Mascot & Chatbot Huấn Luyện Viên Cá Nhân (Tự đổi hình theo Theme) -->
     <div id="mascot">
-        <div id="mb">Chào bé! Tớ là trợ lý của Daddy Dũng! 🦄</div><br>
+        <div id="mb">Chào bé! Tớ là trợ lý của Daddy Dũng! Bấm vào đâu tớ sẽ chỉ đường cho bé nha! 🦄</div><br>
         <span id="me">🦄</span>
     </div>
 
@@ -957,6 +964,7 @@
             const completedKids = q.completed_kids || [];
             if (completedKids.includes(currentKidId)) return;
 
+            // KIỂM TRA RÀNG BUỘC CÁC BƯỚC
             if (sessionTracker.readStories.size < (q.target_stories || 1)) {
                 const missing = (q.target_stories || 1) - sessionTracker.readStories.size;
                 showToast(`Bé chưa đọc đủ bài! Cần đọc thêm ${missing} bài truyện nữa nhé!`, 'warning');
@@ -1164,7 +1172,6 @@
                         <button onclick="deleteStory('${story.id}')" class="text-red-500 hover:bg-red-100 px-1 rounded font-black text-[10px]" title="Xóa sách">❌</button>
                     </div>
                 `).join('');
-                renderQuestUI();
             } catch (err) {}
         }
 
@@ -1450,476 +1457,6 @@
             toastTimeout = setTimeout(() => { toastMessage.style.opacity = '0'; toastMessage.style.transform = 'translate(-50%, 0)'; }, 3000);
         }
 
-        // ================== OCR TIỀN XỬ LÝ ẢNH CHUYÊN NGHIỆP ==================
-        const $ = id => document.getElementById(id);
-        let files = [], active = 0;
-
-        function kind(f) {
-            const n = f.name.toLowerCase();
-            if (f.type.startsWith('image/') || /\.(jpe?g|png)$/.test(n)) return 'img';
-            if (f.type === 'application/pdf' || n.endsWith('.pdf')) return 'pdf';
-            if (n.endsWith('.docx')) return 'docx';
-            if (/\.(txt|md)$/.test(n)) return 'txt';
-            return null;
-        }
-
-        function addFiles(list) {
-            const ok = [];
-            [...list].forEach(f => { if (kind(f)) ok.push(f); });
-            if (!ok.length) return;
-            active = files.length; files.push(...ok); renderFiles();
-        }
-
-        function renderFiles() {
-            $('fileChips').innerHTML = files.map((f, i) => `
-                <span class="inline-flex items-center rounded-full border border-pink-300 bg-white text-[10px] font-bold text-pink-700 max-w-full">
-                    <button type="button" onclick="active=${i};renderFiles()" class="px-1.5 py-0.5 truncate max-w-[80px]">${f.name}</button>
-                    <button type="button" onclick="files.splice(${i},1);renderFiles()" class="px-1 text-red-500">✕</button>
-                </span>
-            `).join('');
-        }
-        $('fileInput').addEventListener('change', e => { addFiles([...e.target.files]); e.target.value = ''; });
-
-        // Tối ưu ảnh (Pre-processing: Grayscale + Tăng tương phản thông minh)
-        async function enhanceImageForOCR(file) {
-            return new Promise((resolve) => {
-                const img = new Image();
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
-                    // Giới hạn độ phân giải lý tưởng cho OCR (1500px - 2200px)
-                    const scale = Math.max(1, Math.min(2200 / Math.max(img.width, img.height), 2.5));
-                    canvas.width = img.width * scale;
-                    canvas.height = img.height * scale;
-                    
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                    const d = imgData.data;
-                    
-                    // Biến đổi sang Grayscale và nâng Contrast
-                    for (let i = 0; i < d.length; i += 4) {
-                        const gray = 0.299 * d[i] + 0.587 * d[i+1] + 0.114 * d[i+2];
-                        // Tăng tương phản nhẹ nhàng để giữ chữ sắc nét không bị vỡ hạt
-                        const contrast = Math.min(255, Math.max(0, (gray - 128) * 1.25 + 128));
-                        d[i] = contrast;
-                        d[i+1] = contrast;
-                        d[i+2] = contrast;
-                    }
-                    ctx.putImageData(imgData, 0, 0);
-                    resolve(canvas.toDataURL('image/png'));
-                };
-                img.onerror = () => resolve(file);
-                img.src = URL.createObjectURL(file);
-            });
-        }
-
-        $('extractBtn').addEventListener('click', async () => {
-            if (!files.length) return showToast('Chọn file nha!', 'warning');
-            $('loadingStatus').classList.replace('hidden', 'flex'); $('extractBtn').disabled = true;
-
-            let worker = null; const parts = [];
-            try {
-                for (let i = 0; i < files.length; i++) {
-                    const f = files[i]; const k = kind(f);
-                    if (k === 'img') {
-                        if (!window.Tesseract) {
-                            await new Promise(ok => { let s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js'; s.onload = ok; document.head.appendChild(s); });
-                        }
-                        worker = worker || await Tesseract.createWorker('eng', 1);
-                        
-                        // Tiền xử lý ảnh chuyên nghiệp trước khi đọc
-                        const preprocessedImg = await enhanceImageForOCR(f);
-                        const res = await worker.recognize(preprocessedImg);
-                        parts.push(res.data.text || '');
-                    } else if (k === 'txt') {
-                        parts.push(await f.text());
-                    } else if (k === 'docx') {
-                        if (!window.mammoth) {
-                            await new Promise(ok => { let s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js'; s.onload = ok; document.head.appendChild(s); });
-                        }
-                        parts.push((await mammoth.extractRawText({ arrayBuffer: await f.arrayBuffer() })).value);
-                    }
-                }
-                storyText.value = parts.join('\n\n'); 
-                showToast('Đọc chữ hoàn tất! Đang làm sạch...', 'success'); 
-                cleanBtn.click();
-            } catch (e) {
-                console.error(e); showToast('Lỗi đọc file!', 'error');
-            } finally {
-                if (worker) await worker.terminate();
-                $('extractBtn').disabled = false; $('loadingStatus').classList.replace('flex', 'hidden');
-            }
-        });
-
-        // ================== BỘ LỌC OCR THÔNG MINH NHƯ AI CHUYÊN GIA ==================
-        cleanBtn.addEventListener('click', () => {
-            let text = storyText.value;
-            if (!text.trim()) return showToast('Trống!', 'warning');
-            const keep = $('keepLayout').checked;
-
-            // 1. Nối lại các từ bị ngắt dòng bằng dấu gạch nối (VD: beau- \n tiful -> beautiful)
-            text = text.replace(/([A-Za-z]+)-\s*[\r\n]+\s*([A-Za-z]+)/g, '$1$2');
-
-            // 2. Chuẩn hóa dấu nháy đơn, kép, gạch ngang
-            text = text.replace(/[‘’`´]/g, "'").replace(/[“”]/g, '"').replace(/[—–]/g, '-');
-
-            // 3. Loại bỏ ký tự nhiễu OCR kỳ lạ (chỉ giữ ký tự Latin, chữ số và dấu câu chuẩn)
-            text = text.replace(/[^a-zA-Z0-9.,!?'";:\-\s]/g, ' ');
-
-            // 4. Danh sách các từ ngắn chuẩn & Danh sách đen chặn ký tự ma
-            const validShortWords = new Set(['a', 'i', 'is', 'it', 'to', 'do', 'in', 'on', 'as', 'at', 'be', 'he', 'we', 'me', 'my', 'by', 'so', 'go', 'no', 'of', 'or', 'if', 'up', 'us', 'am', 'an', 'ox', 'oh', 'ok']);
-            const ocrBlacklist = new Set([
-                'te', 'wa', 'ni', 'el', 'od', 'yi', 'bud', 'py', 'oy', 'eo', 'ott', 'onin', 'osun', 
-                'ose', 'om', 'ga', 'sy', 'nf', 'qj', 'fo', 'ens', 'ees', 'bgogeocc', 'bo0go', '08000', 
-                'e000', 'ii', 'iii', 'iv', 'vi', 'vii', 'viii', 'ix', 'xi', 'xii'
-            ]);
-
-            let cleanLines = text.split('\n').map(line => {
-                let tokens = line.trim().split(/\s+/).filter(Boolean);
-                let validTokens = tokens.filter(tok => {
-                    let clean = tok.replace(/^[^a-zA-Z0-9]+|[^a-zA-Z0-9]+$/g, '').toLowerCase();
-                    if (!clean) return /^[.,!?;:]+$/.test(tok);
-                    
-                    // Giữ số hợp lệ (năm, số thứ tự < 4 chữ số)
-                    if (/^\d+$/.test(clean)) return clean.length <= 4;
-                    // Lọc rác chữ dính số lộn xộn (VD: l1ke, b00k)
-                    if (/\d/.test(clean) && /[a-z]/i.test(clean)) return false;
-
-                    if (ocrBlacklist.has(clean)) return false;
-
-                    // Kiểm tra từ 1-2 ký tự
-                    if (clean.length === 1) return clean === 'a' || clean === 'i';
-                    if (clean.length === 2) return validShortWords.has(clean);
-
-                    // Từ >= 3 ký tự phải chứa ít nhất 1 nguyên âm
-                    if (clean.length >= 3 && !/[aeiouy]/.test(clean)) return false;
-
-                    // Chặn các chuỗi lặp ký tự vô nghĩa (VD: aaaa, bbbb)
-                    if (/(.)\1\1/.test(clean)) return false;
-
-                    return true;
-                });
-                return validTokens.join(' ');
-            });
-
-            // 5. Ghép dòng thông minh theo bố cục
-            text = cleanLines.filter(line => line.length > 0).join('\n');
-            if (!keep) {
-                text = text.replace(/\n[ \t]*\n/g, ' \u0001 ')
-                           .replace(/\n/g, ' ')
-                           .replace(/ ?\u0001 ?/g, '\n\n');
-            }
-
-            // 6. Tinh chỉnh khoảng cách quanh dấu câu và viết hoa câu đúng chuẩn
-            text = text.replace(/\s+([.,!?:;])/g, '$1')
-                       .replace(/([.,!?:;])(?=[a-zA-Z])/g, '$1 ')
-                       .replace(/[ \t]+/g, ' ')
-                       .replace(/\n{3,}/g, '\n\n')
-                       .trim();
-
-            text = text.toLowerCase()
-                       .replace(/(^\s*[a-z]|[.!?]\s*[a-z])/g, c => c.toUpperCase())
-                       .replace(/\b(i)\b/g, 'I');
-
-            storyText.value = text;
-            showToast('Đã làm sạch văn bản chuẩn chuyên gia! ✨', 'success');
-            
-            allStorySentences = text.match(/[^.!?\n]+[.!?\n]*/g)?.map(s => s.trim()).filter(s => s.length > 15) || [];
-            generateSentenceChallenge();
-            extractVocabulary(text);
-        });
-
-        // ================== HÀM DỊCH TỪ VỰNG CHUẨN XÁC 100% (DICTIONARY + GOOGLE API) ==================
-        async function translateWordAccurately(word, sentenceContext) {
-            const clean = word.toLowerCase().trim();
-            
-            // 1. Ưu tiên số 1: Tra trực tiếp từ điển cốt lõi đã hiệu đính chính xác
-            if (LOCAL_DICTIONARY[clean]) {
-                return {
-                    meaning: LOCAL_DICTIONARY[clean].m,
-                    pos: LOCAL_DICTIONARY[clean].p
-                };
-            }
-
-            // 2. Tra cứu từ loại từ Free Dictionary API
-            let detectedPos = "Từ vựng";
-            try {
-                const dictRes = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${clean}`);
-                const dictData = await dictRes.json();
-                if (dictData && dictData[0] && dictData[0].meanings && dictData[0].meanings[0]) {
-                    const enPos = dictData[0].meanings[0].partOfSpeech.toLowerCase();
-                    detectedPos = posMap[enPos] || enPos;
-                }
-            } catch(e) {}
-
-            // 3. Tra cứu bản dịch tiếng Việt chuẩn qua Google Translate API trực tiếp
-            try {
-                const gUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=vi&dt=t&q=${encodeURIComponent(clean)}`;
-                const res = await fetch(gUrl);
-                const data = await res.json();
-                if (data && data[0] && data[0][0] && data[0][0][0]) {
-                    const viTrans = data[0][0][0].toLowerCase().trim();
-                    // Nếu kết quả không bị lặp lại từ tiếng Anh nguyên gốc thì lấy kết quả này
-                    if (viTrans !== clean) {
-                        return { meaning: viTrans, pos: detectedPos };
-                    }
-                }
-            } catch (err) {}
-
-            // 4. Kênh dịch dự phòng MyMemory
-            try {
-                const memUrl = `https://api.mymemory.translated.net/get?q=${clean}&langpair=en|vi`;
-                const mRes = await fetch(memUrl);
-                const mData = await mRes.json();
-                if (mData && mData.responseData && mData.responseData.translatedText) {
-                    const mText = mData.responseData.translatedText.toLowerCase().trim();
-                    if (mText !== clean) {
-                        return { meaning: mText, pos: detectedPos };
-                    }
-                }
-            } catch (err) {}
-
-            return { meaning: clean, pos: detectedPos };
-        }
-
-        // ================== TỪ VỰNG THÔNG MINH (XOAY VÒNG 30% TỪ MỚI - 5 LẦN QUAY LẠI CŨ) ==================
-        async function extractVocabulary(text) {
-            const stopWords = [
-                'the', 'and', 'to', 'of', 'in', 'is', 'that', 'it', 'on', 'you', 'this', 'for', 
-                'but', 'with', 'are', 'have', 'be', 'at', 'or', 'as', 'was', 'so', 'if', 'out', 
-                'not', 'he', 'she', 'we', 'they', 'his', 'her', 'my', 'your', 'one', 'all', 'there',
-                'what', 'when', 'why', 'how', 'can', 'had', 'got', 'get', 'went', 'came', 'come',
-                'make', 'made', 'take', 'took', 'see', 'saw', 'look', 'say', 'said', 'were', 'could',
-                'would', 'into', 'has', 'more', 'will', 'been', 'then', 'them', 'him', 'than', 'an'
-            ];
-
-            if (text !== lastExtractedText) {
-                lastExtractedText = text;
-                rotationCycle = 0;
-                masterCandidatePool = [];
-                initialBaseWords = [];
-                currentDisplayWords = [];
-            }
-
-            if (!masterCandidatePool.length) {
-                let allTokens = text.toLowerCase().match(/\b[a-z]{3,}\b/g) || [];
-                let complexWords = allTokens.filter(w => !stopWords.includes(w));
-                let counts = {};
-                complexWords.forEach(w => counts[w] = (counts[w] || 0) + 1);
-
-                masterCandidatePool = Object.keys(counts)
-                    .filter(w => w.length >= 4)
-                    .sort((a, b) => b.length - a.length)
-                    .slice(0, 35);
-            }
-
-            const totalWordsInStory = (text.trim().match(/\s+/g) || []).length + 1;
-            let targetCount = 15;
-            if (totalWordsInStory > 120) targetCount = 20;
-            else if (totalWordsInStory > 60) targetCount = 18;
-
-            if (masterCandidatePool.length <= targetCount) {
-                targetCount = masterCandidatePool.length;
-            }
-
-            if (!masterCandidatePool.length) { 
-                vocabList.innerHTML = '<span class="italic text-purple-400">Không có từ khó!</span>'; 
-                $('rotationIndicator').classList.add('hidden');
-                return; 
-            }
-
-            let selectedWords = [];
-
-            if (rotationCycle === 0) {
-                initialBaseWords = masterCandidatePool.slice(0, targetCount);
-                selectedWords = [...initialBaseWords];
-                currentDisplayWords = [...selectedWords];
-            } else {
-                const replaceCount = Math.max(1, Math.round(targetCount * 0.3));
-                const keepCount = targetCount - replaceCount;
-
-                let shuffledCurrent = [...currentDisplayWords].sort(() => Math.random() - 0.5);
-                let keptWords = shuffledCurrent.slice(0, keepCount);
-
-                let remainingPool = masterCandidatePool.filter(w => !keptWords.includes(w));
-
-                if (remainingPool.length >= replaceCount) {
-                    let newWords = remainingPool.sort(() => Math.random() - 0.5).slice(0, replaceCount);
-                    selectedWords = [...keptWords, ...newWords];
-                } else {
-                    selectedWords = [...keptWords, ...remainingPool];
-                    while (selectedWords.length < targetCount && masterCandidatePool.length > selectedWords.length) {
-                        let addWord = masterCandidatePool.find(w => !selectedWords.includes(w));
-                        if (addWord) selectedWords.push(addWord);
-                        else break;
-                    }
-                }
-                currentDisplayWords = [...selectedWords];
-            }
-
-            const rotBadge = $('rotationIndicator');
-            rotBadge.textContent = `Vòng ${rotationCycle + 1}/5 (Thay 30% từ mới)`;
-            rotBadge.classList.remove('hidden');
-
-            rotationCycle = (rotationCycle + 1) % 5;
-
-            vocabList.innerHTML = `<span class="italic text-purple-500 animate-pulse">Đang nạp ${selectedWords.length} từ vựng chuẩn xác... ⏳</span>`;
-            globalVocabData = [];
-
-            // Tải dịch chuẩn xác song song
-            const fetchPromises = selectedWords.map(async (word) => {
-                let sm = text.match(new RegExp(`[^.?!]*\\b${word.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}\\b[^.?!]*[.?!]`, 'i'));
-                const sentence = sm ? sm[0].trim() : '';
-                const transResult = await translateWordAccurately(word, sentence);
-
-                return {
-                    word: word,
-                    meaning: transResult.meaning,
-                    pos: transResult.pos,
-                    sentence: sentence
-                };
-            });
-
-            const results = await Promise.allSettled(fetchPromises);
-            let html = '';
-
-            results.forEach(res => {
-                if (res.status === 'fulfilled' && res.value) {
-                    const item = res.value;
-                    globalVocabData.push(item);
-                    html += `
-                        <div class="vocab-card group px-3 py-2 bg-white border-2 border-purple-300 rounded-xl shadow-sm cursor-pointer hover:bg-purple-100 transition-all flex flex-col items-center justify-center text-center select-none active:scale-95" onclick="playWordAudio('${item.word}', this)">
-                            <span class="text-purple-700 font-black text-xs md:text-sm flex items-center gap-1">${item.word} <span class="speaker-icon">🔊</span></span>
-                            <span class="text-[10px] md:text-xs text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full mt-1 font-bold border border-purple-200 capitalize">${item.pos}</span>
-                            <span class="text-[11px] md:text-xs text-slate-500 font-bold border-t border-purple-100 w-full mt-1 pt-0.5 capitalize">${item.meaning}</span>
-                        </div>
-                    `;
-                }
-            });
-
-            vocabList.innerHTML = html;
-            generateQuiz();
-            $('gameArea').innerHTML = '<span class="italic font-normal text-sky-400 text-[10px]">Chọn một trò chơi ở trên nhé! 🎮</span>';
-        }
-
-        // ================== GAME ĐỐ VUI (GẮN BỘ ĐẾM RÀNG BUỘC) ==================
-        window.generateQuiz = function() {
-            if (globalVocabData.length < 3) return;
-            let shuffled = [...globalVocabData].sort(() => Math.random() - 0.5).slice(0, 5);
-            let allMeanings = globalVocabData.map(v => v.meaning);
-            let allEng = globalVocabData.map(v => v.word);
-            const kid = cachedKids.find(k => k.id === currentKidId) || { name: 'Bé Yêu', icon: '👶' };
-
-            let qHTML = `
-                <div class="flex items-center justify-center gap-2 mb-2 bg-orange-100 p-1.5 rounded-lg border border-orange-200">
-                    <span class="text-xl">${kid.icon}</span>
-                    <p class="text-orange-700 text-xs font-bold">Lượt thi đấu của: ${kid.name}</p>
-                </div>
-            `;
-
-            shuffled.forEach((q, i) => {
-                let opts = []; let ans = ""; let txt = "";
-                let type = q.sentence ? Math.floor(Math.random() * 3) : Math.floor(Math.random() * 2);
-
-                if (type === 0) {
-                    ans = q.meaning; txt = `Nghĩa của <b>"${q.word}"</b>?`; opts.push(ans);
-                    while (opts.length < 3) { let r = allMeanings[Math.floor(Math.random() * allMeanings.length)]; if (!opts.includes(r)) opts.push(r); }
-                } else if (type === 1) {
-                    ans = q.word; txt = `Từ nghĩa là <b>"${q.meaning}"</b>?`; opts.push(ans);
-                    while (opts.length < 3) { let r = allEng[Math.floor(Math.random() * allEng.length)]; if (!opts.includes(r)) opts.push(r); }
-                } else {
-                    ans = q.word; txt = `Điền: <i class="text-[10px] text-slate-500">"${q.sentence.replace(new RegExp(`\\b${q.word}\\b`, 'gi'), `<b>[___]</b>`)}"</i>`; opts.push(ans);
-                    while (opts.length < 3) { let r = allEng[Math.floor(Math.random() * allEng.length)]; if (!opts.includes(r)) opts.push(r); }
-                }
-
-                opts.sort(() => Math.random() - 0.5);
-
-                qHTML += `
-                    <div class="mb-2 quiz-question bg-white p-2 rounded border border-slate-200" data-answer="${ans}">
-                        <p class="mb-1.5 text-xs font-bold text-slate-800">C${i + 1}: ${txt}</p>
-                        <div class="flex flex-col gap-1">
-                            ${opts.map(o => `
-                                <label class="bg-slate-50 px-2 py-1 rounded border border-orange-100 cursor-pointer hover:bg-orange-50 text-[10px]">
-                                    <input type="radio" name="q${i}" value="${o}" class="mr-1 accent-orange-500">
-                                    <span class="capitalize">${o}</span>
-                                </label>
-                            `).join('')}
-                        </div>
-                    </div>
-                `;
-            });
-
-            qHTML += `
-                <div class="flex gap-1 mt-1">
-                    <button onclick="checkQuiz()" class="flex-1 py-1.5 bg-orange-500 text-white text-xs font-black rounded-lg btn-bounce">✅ Nộp Bài</button>
-                    <button onclick="generateQuiz()" class="flex-1 py-1.5 bg-sky-500 text-white text-xs font-black rounded-lg btn-bounce">🔄 Đổi Câu Đố</button>
-                </div>
-                <div id="quizResult" class="mt-2 p-2 bg-green-100 rounded-lg text-center flex flex-col items-center hidden"></div>
-            `;
-            quizContainer.innerHTML = qHTML;
-        };
-
-        window.checkQuiz = async function() {
-            let score = 0;
-            let qs = document.querySelectorAll('.quiz-question');
-
-            qs.forEach((q, i) => {
-                let ans = q.getAttribute('data-answer');
-                let sel = document.querySelector(`input[name="q${i}"]:checked`);
-
-                q.querySelectorAll('label').forEach(l => { l.classList.remove('bg-green-100', 'bg-red-100'); l.classList.add('bg-slate-50'); });
-
-                if (sel) {
-                    let p = sel.parentElement;
-                    if (sel.value === ans) {
-                        score += 10;
-                        p.classList.replace('bg-slate-50', 'bg-green-100');
-                    } else {
-                        p.classList.replace('bg-slate-50', 'bg-red-100');
-                        let ci = q.querySelector(`input[value="${ans}"]`);
-                        if (ci) ci.parentElement.classList.replace('bg-slate-50', 'bg-green-100');
-                    }
-                }
-            });
-
-            sessionTracker.gamesPlayed++;
-            sessionTracker.scoreEarned += score;
-            updateSessionUI();
-
-            const kid = cachedKids.find(k => k.id === currentKidId);
-            let resDiv = document.getElementById('quizResult');
-            resDiv.innerHTML = `
-                <span class="text-2xl">${(kid && kid.icon) || '👶'}</span>
-                <span class="text-xs font-black text-green-800">+${score} điểm vào tiến độ lượt này!</span>
-                <button onclick="generateQuiz()" class="mt-1 text-[10px] bg-orange-400 text-white px-2 py-0.5 rounded-full font-bold">Chơi tiếp</button>
-            `;
-            resDiv.classList.remove('hidden');
-        };
-
-        // ================== ĐỔI GIAO DIỆN ==================
-        $('themeBtn').addEventListener('click', () => {
-            $('themePanel').innerHTML = THEMES.map(t => `
-                <button type="button" data-t="${t.id}" class="text-left rounded p-1 border btn-bounce ${t.id === document.documentElement.dataset.theme ? 'border-pink-500 bg-pink-100' : 'border-pink-200'}">
-                    <span class="flex h-3 rounded overflow-hidden mb-1">
-                        <i class="flex-1" style="background:${t.bg}"></i>
-                        <i class="flex-1" style="background:${t.primary}"></i>
-                        <i class="flex-1" style="background:${t.secondary}"></i>
-                    </span>
-                    <span class="text-[10px] font-black">${t.icon} ${t.name}</span>
-                </button>
-            `).join('');
-            $('themePanel').classList.toggle('hidden');
-        });
-
-        $('themePanel').addEventListener('click', e => {
-            const b = e.target.closest('[data-t]');
-            if (b) { applyTheme(b.dataset.t); $('themePanel').classList.add('hidden'); }
-        });
-
-        document.addEventListener('click', e => {
-            if (!e.target.closest('#themePanel,#themeBtn')) { $('themePanel').classList.add('hidden'); }
-        });
-
         document.addEventListener('DOMContentLoaded', () => {
             syncKidsFromCloud();
             fetchStories();
@@ -1927,17 +1464,27 @@
     </script>
 <div id="mascot"><div id="mb"></div><br><span id="me">🦄</span></div>
 <script>
-// ================== HÌNH CHÌM & MASCOT CHATBOT ==================
-const WM = { candy: ['🍭', '🧁', '🦄', '🌈', '⭐', '🍩', '🎀', '🧸'], ocean: ['🐠', '🐙', '🐳', '🐚', '⚓', '🦀', '🐬', '🫧'], forest: ['🌲', '🦊', '🦉', '🍄', '🐿️', '🦋', '🌻', '🐻'] };
-const SKIN = { candy: '🦄', ocean: '🐙', forest: '🦊' };
+// ================== HÌNH CHÌM & MASCOT CHATBOT HUẤN LUYỆN VIÊN (ĐỔI HÌNH THEO THEME) ==================
+const WM = { 
+    candy: ['🍭', '🧁', '🦄', '🌈', '⭐', '🍩', '🎀', '🧸'], 
+    ocean: ['🐠', '🐙', '🐳', '🐚', '⚓', '🦀', '🐬', '🫧'], 
+    forest: ['🌲', '🦊', '🦉', '🍄', '🐿️', '🦋', '🌻', '🐻'] 
+};
+const MASCOT_SKINS = { 
+    candy: '🦄',  // Ngựa thần 1 sừng
+    ocean: '🎠',  // Ngựa biển
+    forest: '🐎'  // Ngựa rừng dũng mãnh
+};
+
 const curTheme = () => document.documentElement.dataset.theme || 'candy';
 function wm() {
     let l = $('wm'); if (!l) { l = document.createElement('div'); l.id = 'wm'; document.body.prepend(l); }
     const L = WM[curTheme()] || WM.candy;
     l.innerHTML = Array.from({ length: 18 }, (_, i) => `<i style="left:${(i % 6) * 17 + Math.random() * 8}%;top:${((i / 6) | 0) * 34 + Math.random() * 14}%;font-size:${48 + Math.random() * 60}px;transform:rotate(${Math.random() * 60 - 30}deg);animation-delay:${-Math.random() * 8}s">${L[i % L.length]}</i>`).join('');
-    const me = $('me'); if (me) me.textContent = SKIN[curTheme()] || '🦄';
+    const me = $('me'); if (me) me.textContent = MASCOT_SKINS[curTheme()] || '🦄';
 }
-const _at = applyTheme; applyTheme = id => { _at(id); wm(); };
+const _at = applyTheme; 
+applyTheme = id => { _at(id); wm(); };
 wm();
 
 const pick = a => a[Math.random() * a.length | 0];
@@ -1950,16 +1497,154 @@ function burst(x, y, list, n = 8) {
     }
 }
 const FUN = ['🎉', '⭐', '🌈', '🎈', '✨', '🤪', '🐣', '🍕'], OOPS = ['🙈', '💫', '🫠', '🤡'], WIN = ['🎉', '🎊', '⭐', '🏆', '🦄'];
-let mt; function talk(m) { const b = $('mb'); b.textContent = m; b.style.opacity = 1; clearTimeout(mt); mt = setTimeout(() => b.style.opacity = 0, 4200); }
+let mt; 
+function talk(m) { 
+    const b = $('mb'); 
+    b.textContent = m; 
+    b.style.opacity = 1; 
+    clearTimeout(mt); 
+    mt = setTimeout(() => b.style.opacity = 0, 4800); 
+}
 
+// BÁO CÁO TIẾN ĐỘ THỜI GIAN THỰC KHI CLICK CHUỘT
+function getMissingStepsAdvice() {
+    if (!currentSharedQuest) return "Bé hãy chọn truyện và đọc bài nhé! 📖";
+    const q = currentSharedQuest;
+    const missingStories = Math.max(0, (q.target_stories || 1) - sessionTracker.readStories.size);
+    const missingSentences = Math.max(0, (q.target_sentences || 1) - sessionTracker.sentencesPassed);
+    const missingGames = Math.max(0, (q.target_games || 2) - sessionTracker.gamesPlayed);
+    const missingScore = Math.max(0, (q.target_score || 150) - sessionTracker.scoreEarned);
+
+    if (missingStories === 0 && missingSentences === 0 && missingGames === 0 && missingScore === 0) {
+        return "Wao! Bé đã hoàn thành trọn vẹn cả 4 bước! Bấm '🏆 Nộp Ghi Điểm' ngay thôi! 🥳";
+    }
+
+    let advise = "Nhiệm vụ còn thiếu: ";
+    let steps = [];
+    if (missingStories > 0) steps.push(`Đọc ${missingStories} bài`);
+    if (missingSentences > 0) steps.push(`Đọc đúng ${missingSentences} câu`);
+    if (missingGames > 0) steps.push(`Chơi ${missingGames} lượt game`);
+    if (missingScore > 0) steps.push(`Kiếm thêm ${missingScore}đ`);
+
+    return advise + steps.join(", ") + " nha bé! 💪";
+}
+
+// ================== HỆ THỐNG LẮNG NGHE CLICK CHUỘT THÔNG MINH ==================
 document.addEventListener('click', e => {
-    const b = e.target.closest('button'), v = e.target.closest('.vocab-card'), r = b && b.getBoundingClientRect();
-    const x = e.clientX || (r ? r.left + r.width / 2 : 0), y = e.clientY || (r ? r.top : 0);
-    if (!x && !y) return;
-    if (v) burst(x, y, ['🔊', '🎵', '⭐'], 5);
-    else if (b && !b.closest('#gameArea')) { burst(x, y, FUN, 7); wig(b); }
+    const target = e.target;
+    const b = target.closest('button');
+    const v = target.closest('.vocab-card');
+    const card = target.closest('.guide-card');
+    const isTextarea = target.id === 'storyText';
+    const isDrop = target.closest('#dropZone');
+
+    const r = b && b.getBoundingClientRect();
+    const x = e.clientX || (r ? r.left + r.width / 2 : 0);
+    const y = e.clientY || (r ? r.top : 0);
+
+    if (x && y) {
+        if (v) burst(x, y, ['🔊', '🎵', '⭐'], 5);
+        else if (b && !b.closest('#gameArea')) { burst(x, y, FUN, 7); wig(b); }
+    }
+
+    // 1. Click vào Thẻ Từ Vựng
+    if (v) {
+        const wordText = v.querySelector('span')?.textContent || 'từ này';
+        talk(`Đang nghe từ "${wordText.trim()}"! Bé nhớ đọc theo loa để phát âm chuẩn nha! 🔊`);
+        return;
+    }
+
+    // 2. Click vào các nút cụ thể
+    if (b) {
+        if (b.id === 'cleanBtn') {
+            talk("Chổi thần đã làm sạch chữ OCR! Giờ bé hãy nghe đọc và kéo xuống làm thử thách câu nhé! 🧹");
+            return;
+        }
+        if (b.id === 'playBtn') {
+            talk("Đang đọc to toàn bài! Bé lắng nghe kỹ cách nối âm để tí đọc lại cả câu nha! 🎧");
+            return;
+        }
+        if (b.id === 'playCursorBtn') {
+            talk("Chỉ đâu đọc đó! Rất tiện để nghe lại câu bé chưa hiểu nhé! 👆");
+            return;
+        }
+        if (b.id === 'stopBtn') {
+            talk("Phanh kít kít! Tạm dừng để nghỉ ngơi một tí nha bé! 🛑");
+            return;
+        }
+        if (b.id === 'extractBtn') {
+            talk("Đang soi chữ siêu nét bằng kính lúp... Đợi xíu là có chữ ngay! 🔍");
+            return;
+        }
+        if (b.id === 'claimQuestBtn') {
+            talk(getMissingStepsAdvice());
+            return;
+        }
+        if (b.id === 'retryQuestBtn') {
+            talk("Bắt đầu lượt thử lại! Điểm mới sẽ ghi đè điểm cũ, cố gắng đạt điểm cao nhất nha! 🔄");
+            return;
+        }
+    }
+
+    // 3. Click vào Vùng Chọn File / Ảnh
+    if (isDrop) {
+        talk("Chạm vào đây để tải ảnh chụp sách truyện hoặc file Word/PDF lên nha bé! 📸");
+        return;
+    }
+
+    // 4. Click vào Khung Soạn Thảo / Đọc Chữ
+    if (isTextarea) {
+        talk("Toàn bộ nội dung truyện ở đây! Bé có thể bôi đen hoặc click vào chữ bất kỳ rồi bấm 'Từ Trỏ' để nghe nhé! 📝");
+        return;
+    }
+
+    // 5. Click vào từng Thẻ chức năng
+    if (card) {
+        if (card.id === 'cardKidProfile') {
+            talk("Đây là thông tin của bé! Đạt đủ 5 bài tuần này với điểm chuẩn để bố mẹ thưởng bim bim nha! 🍟");
+            return;
+        }
+        if (card.id === 'cardQuestArea') {
+            talk(getMissingStepsAdvice());
+            return;
+        }
+        if (card.id === 'cardLeaderboard') {
+            talk("Bảng Vàng vinh danh những bạn chăm chỉ nhất tuần trên Cloud! Cố lên top 1 nào! 🏆");
+            return;
+        }
+        if (card.id === 'cardStoryLibrary') {
+            talk("Kho truyện đã lưu! Bé có thể bấm vào bài cũ để luyện tập lại bất cứ lúc nào! 📚");
+            return;
+        }
+        if (card.id === 'cardSentenceSection') {
+            talk("Thử thách đọc câu: Nghe mẫu trước 🔊 rồi bấm '🎤 Bé Đọc' để máy chấm điểm phát âm nha!");
+            return;
+        }
+        if (card.id === 'cardVocabSection') {
+            talk("Các từ vựng thông minh được máy lọc ra! Chạm vào từng từ để nghe đọc và xem giải nghĩa chuẩn nha! 💡");
+            return;
+        }
+        if (card.id === 'cardQuizSection') {
+            talk("Đố vui 5 câu: Trả lời đúng để tích lũy điểm thưởng vào nhiệm vụ nha bé! 🎮");
+            return;
+        }
+        if (card.id === 'cardGameSection') {
+            talk("Phòng Game vui nhộn: Chơi game vừa vui vừa kiếm điểm vượt chuẩn đổi quà! 🕹️");
+            return;
+        }
+    }
+
+    // 6. Click chuột ra ngoài khoảng trống trang web
+    if (!b && !v && !card && !isTextarea) {
+        talk(getMissingStepsAdvice());
+    }
 });
-$('me').onclick = () => { wig($('me')); talk('Nhớ hoàn thành đủ cả 4 mục trong nhiệm vụ mới được nộp ghi điểm nha bé! 🦄'); burst(innerWidth - 40, innerHeight - 50, FUN, 6); };
+
+$('me').onclick = () => { 
+    wig($('me')); 
+    talk(getMissingStepsAdvice()); 
+    burst(innerWidth - 40, innerHeight - 50, FUN, 6); 
+};
 
 // ================== PHÒNG GAME (GẮN BỘ ĐẾM RÀNG BUỘC) ==================
 const G = { score: 0, k: '' }; let GT;
