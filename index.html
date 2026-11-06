@@ -68,18 +68,12 @@
         #wm{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
         #wm i{position:absolute;font-style:normal;opacity:.13;animation:fl 9s ease-in-out infinite alternate}
         @keyframes fl{to{margin-top:-18px}}
-        main>div>div.bg-white{background-color:rgba(255,255,255,.86)!important}
-        main>div>div.bg-teal-50{background-color:rgba(240,253,250,.86)!important}
-        main>div>div.bg-indigo-50{background-color:rgba(238,242,255,.86)!important}
-        main>div>div.bg-purple-50{background-color:rgba(250,245,255,.86)!important}
-        main>div>div.bg-orange-50{background-color:rgba(255,247,237,.86)!important}
-        main>div>div.bg-sky-50{background-color:rgba(240,249,255,.86)!important}
         .fx{position:fixed;z-index:60;pointer-events:none;font-size:22px;line-height:1}
         .wiggle{animation:wg .5s}
         @keyframes wg{0%,100%{transform:rotate(0)}20%{transform:rotate(-8deg) scale(1.1)}40%{transform:rotate(8deg)}60%{transform:rotate(-5deg)}80%{transform:rotate(5deg)}}
         #mascot{position:fixed;right:8px;bottom:8px;z-index:45;text-align:right;pointer-events:none}
-        #me{font-size:40px;cursor:pointer;pointer-events:auto;display:inline-block;animation:fl 2s ease-in-out infinite alternate;user-select:none}
-        #mb{display:inline-block;max-width:190px;background:#fff;border:2px solid var(--primary,#ec4899);border-radius:14px;padding:4px 8px;font-size:11px;font-weight:800;opacity:0;transition:opacity .3s;margin-bottom:2px}
+        #me{font-size:42px;cursor:pointer;pointer-events:auto;display:inline-block;animation:fl 2s ease-in-out infinite alternate;user-select:none}
+        #mb{display:inline-block;max-width:220px;background:#fff;border:3px solid #ec4899;border-radius:16px;padding:6px 10px;font-size:12px;font-weight:900;color:#be185d;box-shadow:0 4px 10px rgba(0,0,0,0.1);opacity:0;transition:opacity .3s;margin-bottom:2px}
     </style>
 </head>
 <body class="p-2 md:p-6 flex flex-col items-center">
@@ -94,15 +88,50 @@
                    class="w-full text-center text-2xl tracking-[0.4em] font-black py-2 px-3 border-2 border-pink-300 rounded-xl outline-none focus:border-pink-500 bg-pink-50 mb-4" 
                    autocomplete="off" inputmode="numeric">
             <div class="flex gap-2">
-                <button type="button" onclick="closeDeleteModal()" 
-                        class="flex-1 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl text-xs btn-bounce">
-                    Hủy bỏ
-                </button>
-                <button type="button" onclick="confirmDeleteStory()" 
-                        class="flex-1 py-2 bg-red-500 hover:bg-red-600 text-white font-black rounded-xl text-xs shadow-md btn-bounce">
-                    Xác nhận
-                </button>
+                <button type="button" onclick="closeDeleteModal()" class="flex-1 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl text-xs btn-bounce">Hủy bỏ</button>
+                <button type="button" onclick="confirmDeleteStory()" class="flex-1 py-2 bg-red-500 hover:bg-red-600 text-white font-black rounded-xl text-xs shadow-md btn-bounce">Xác nhận</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Modal Thêm Bé Mới (Mã PIN 6868) -->
+    <div id="addKidModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+        <div class="bg-white rounded-2xl shadow-2xl border-4 border-indigo-300 p-5 max-w-sm w-full text-center">
+            <div class="text-4xl mb-1">👶✨</div>
+            <h3 class="text-lg font-black text-indigo-700 mb-1">Thêm Thành Viên Nhí</h3>
+            <p class="text-xs text-slate-500 mb-3">Bố Mẹ nhập mã PIN <b>6868</b> để thêm bé nhé</p>
+            <input type="password" id="parentPinInput" maxlength="6" placeholder="Mã PIN bố mẹ (••••)" 
+                   class="w-full text-center text-xl tracking-[0.3em] font-black py-2 px-3 border-2 border-indigo-200 rounded-xl outline-none focus:border-indigo-500 bg-indigo-50 mb-3" 
+                   autocomplete="off" inputmode="numeric">
+            <input type="text" id="kidNameInput" placeholder="Tên bé (VD: Bắp, Nhím, Tí nị...)" 
+                   class="w-full text-sm font-bold py-2.5 px-3 border-2 border-slate-200 rounded-xl outline-none focus:border-indigo-400 mb-3">
+            <p class="text-xs font-bold text-slate-600 mb-2 text-left">Chọn Avatar cho bé:</p>
+            <div id="newKidAvatars" class="flex flex-wrap gap-1.5 justify-center mb-4"></div>
+            <div class="flex gap-2">
+                <button type="button" onclick="closeAddKidModal()" class="flex-1 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl text-xs btn-bounce">Hủy</button>
+                <button type="button" onclick="confirmAddKid()" class="flex-1 py-2 bg-indigo-500 hover:bg-indigo-600 text-white font-black rounded-xl text-xs shadow-md btn-bounce">Đăng Ký</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Nhắc Nhở Đổi Quà Khủng (Tối thiểu 5 Nhiệm Vụ) -->
+    <div id="rewardModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4">
+        <div class="bg-gradient-to-b from-yellow-50 to-orange-100 rounded-3xl shadow-2xl border-4 border-yellow-400 p-6 max-w-md w-full text-center animate-bounce-once">
+            <div class="text-6xl mb-2 animate-bounce">🎁🎉👑</div>
+            <h2 class="text-2xl font-black text-orange-600 mb-1">XUẤT SẮC QUÁ BÉ ƠI!</h2>
+            <p class="text-sm font-black text-slate-700 mb-3">Bé đã hoàn thành xuất sắc <span class="text-red-500 text-lg font-black">Mục Tiêu Tuần (≥ 5 Nhiệm Vụ)</span> với điểm số tuyệt vời!</p>
+            <div class="bg-white p-4 rounded-2xl border-2 border-orange-200 shadow-inner mb-4 text-left">
+                <p class="font-black text-orange-700 text-sm mb-2 flex items-center">🍦 Hãy chọn ngay 1 phần thưởng và đi gặp Bố Mẹ nào:</p>
+                <ul class="text-xs font-bold text-slate-700 space-y-1.5 list-disc pl-5">
+                    <li>Gói bim bim siêu to khổng lồ 🍟</li>
+                    <li>Một ly trà sữa / chè ngọt mát lạnh 🧋</li>
+                    <li>Một bữa gà rán KFC / Pizza giòn tan 🍗🍕</li>
+                    <li>Đi siêu thị / khu vui chơi thỏa thích 🎪</li>
+                    <li>Được mua một cuốn sách / truyện tranh mới 📚</li>
+                    <li>Một món đồ chơi bé hằng yêu thích 🧸</li>
+                </ul>
+            </div>
+            <button onclick="claimReward()" class="w-full py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-black text-base rounded-2xl shadow-lg btn-bounce">🎉 BÉ ĐÃ ĐỔI QUÀ VỚI BỐ MẸ RỒI!</button>
         </div>
     </div>
 
@@ -120,18 +149,75 @@
 
     <div id="toastMessage" class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-4 py-2 md:px-6 md:py-3 rounded-full font-bold text-xs md:text-sm shadow-xl transition-all duration-300 opacity-0 pointer-events-none text-center min-w-[200px]"></div>
 
+    <!-- KHU VỰC CHỌN BÉ & BẢNG NHIỆM VỤ 6 TIẾNG (MỤC TIÊU 5 NV/TUẦN) -->
+    <section class="w-full max-w-7xl mb-4 grid grid-cols-1 md:grid-cols-12 gap-4">
+        <!-- Thẻ Danh Sách Bé & Nhắc Nhở Tiến Độ -->
+        <div class="md:col-span-5 bg-white p-4 rounded-[1.5rem] shadow-md border-4 border-indigo-200 flex flex-col justify-between">
+            <div>
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-xs font-black text-indigo-700 uppercase tracking-wider flex items-center">👦👧 Bé Nào Đang Học?</span>
+                    <button onclick="openAddKidModal()" class="text-xs bg-indigo-500 hover:bg-indigo-600 text-white font-black px-2.5 py-1 rounded-lg btn-bounce shadow-sm">+ Thêm Bé</button>
+                </div>
+                <!-- Dropdown Chọn Tên Bé -->
+                <div class="relative mb-3">
+                    <select id="kidSelector" onchange="switchKid(this.value)" class="w-full bg-indigo-50 border-2 border-indigo-300 rounded-xl py-2 px-3 font-black text-indigo-800 text-sm outline-none cursor-pointer focus:border-indigo-500">
+                    </select>
+                </div>
+            </div>
+            <!-- Lời nhắc nhở tiến độ tuần -->
+            <div class="bg-indigo-50/80 p-3 rounded-xl border border-indigo-100 text-left">
+                <div class="flex justify-between text-xs font-black text-indigo-800 mb-1">
+                    <span>Nhiệm vụ tuần này:</span>
+                    <span id="weeklyQuestCount" class="text-pink-600 font-black">0/5 🎯</span>
+                </div>
+                <div class="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden mb-2">
+                    <div id="weeklyProgressBar" class="bg-gradient-to-r from-indigo-500 to-pink-500 h-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+                <p id="kidReminderMsg" class="text-xs font-black text-indigo-900 leading-snug">
+                    Đang đồng bộ dữ liệu Cloud... ☁️
+                </p>
+            </div>
+        </div>
+
+        <!-- Thẻ Nhiệm Vụ 6 Giờ & Giới Hạn 3 Lần Thử Lại -->
+        <div class="md:col-span-7 bg-gradient-to-r from-amber-50 to-orange-50 p-4 rounded-[1.5rem] shadow-md border-4 border-amber-300 flex flex-col justify-between">
+            <div>
+                <div class="flex justify-between items-center mb-2">
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-2xl">⚡</span>
+                        <h2 class="text-base font-black text-amber-800">Nhiệm Vụ 6 Tiếng</h2>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span id="retryBadge" class="text-[10px] font-black text-white bg-purple-500 px-2 py-0.5 rounded-full">Lượt thử: 1/3</span>
+                        <span id="questTimer" class="text-xs font-black text-amber-700 bg-amber-200/80 px-2 py-0.5 rounded-full">⏱️ 06:00:00</span>
+                    </div>
+                </div>
+                <div id="questContent" class="space-y-1.5 text-xs text-slate-700 font-bold">
+                    <p class="text-amber-600 font-bold italic">Đang bốc thăm nhiệm vụ kỳ thú cho bé...</p>
+                </div>
+            </div>
+            <div class="flex flex-wrap justify-between items-center mt-3 pt-2 border-t border-amber-200/60 gap-2">
+                <span id="questStatusBadge" class="text-xs font-black text-orange-600">Trạng thái: Đang thực hiện 🚀</span>
+                <div class="flex gap-1.5">
+                    <button onclick="retryCurrentQuest()" id="retryQuestBtn" class="py-1.5 px-3 bg-purple-500 hover:bg-purple-600 text-white font-black text-xs rounded-xl shadow btn-bounce" title="Thử lại để ghi đè điểm cao hơn (tối đa 3 lần)">🔄 Thử Lại (3 lần)</button>
+                    <button onclick="claimQuestReward()" id="claimQuestBtn" class="py-1.5 px-3.5 bg-orange-500 hover:bg-orange-600 text-white font-black text-xs rounded-xl shadow btn-bounce disabled:opacity-50 disabled:cursor-not-allowed">🏆 Hoàn Thành</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <main class="w-full max-w-7xl grid grid-cols-1 lg:grid-cols-12 gap-4 flex-grow pb-8">
         
         <!-- CỘT TRÁI -->
         <div class="lg:col-span-5 flex flex-col gap-4">
-            <!-- Bảng Điểm -->
+            <!-- Bảng Điểm Bảng Vàng (Đồng bộ Cloud Supabase) -->
             <div class="bg-teal-50 p-4 rounded-[1.5rem] shadow-lg border-4 border-teal-300 flex flex-col">
                 <div class="flex justify-between items-center mb-2">
-                    <h2 class="text-lg font-black text-teal-600 flex items-center"><span class="mr-2">🏆</span> Bảng Điểm Bảng Vàng</h2>
-                    <button onclick="resetLeaderboard()" class="text-[10px] md:text-xs bg-red-400 text-white px-2 py-1 rounded-md font-bold hover:bg-red-500">Làm mới</button>
+                    <h2 class="text-lg font-black text-teal-600 flex items-center"><span class="mr-2">🏆</span> Bảng Vàng Tuần Này (Cloud)</h2>
+                    <span class="text-[10px] font-bold text-teal-700 bg-teal-100 px-2 py-0.5 rounded-full">Tự reset sau 7 ngày</span>
                 </div>
                 <div id="leaderboardList" class="flex flex-wrap gap-2 justify-center">
-                    <p class="text-teal-500 text-xs font-bold italic">Chưa có ai ghi điểm cả! Bé chơi ngay nào!</p>
+                    <p class="text-teal-500 text-xs font-bold italic">Đang tải Bảng Vàng từ Cloud... ☁️</p>
                 </div>
             </div>
 
@@ -153,7 +239,7 @@
             </div>
 
             <!-- Kho truyện -->
-            <div class="bg-indigo-50 p-4 md:p-6 rounded-[1.5rem] shadow-lg border-4 border-indigo-300 flex flex-col max-h-[200px]">
+            <div class="bg-indigo-50 p-4 md:p-6 rounded-[1.5rem] shadow-lg border-4 border-indigo-300 flex flex-col max-h-[220px]">
                 <div class="flex justify-between items-center mb-2">
                     <h2 class="text-base font-black text-indigo-600 flex items-center"><span class="text-lg mr-2">☁️</span> Kho Truyện</h2>
                     <button onclick="saveToCloud()" class="bg-indigo-500 text-white px-2 py-1 rounded-md text-xs font-bold btn-bounce shadow-sm hover:bg-indigo-600">💾 Lưu Bài</button>
@@ -168,7 +254,7 @@
         <div class="lg:col-span-7 flex flex-col gap-4 h-full">
             <div class="bg-white p-3 md:p-5 rounded-[1.5rem] shadow-lg border-4 border-blue-300 flex flex-col flex-grow">
                 <div class="flex justify-between items-center mb-1">
-                    <h2 class="text-base md:text-lg font-black text-blue-600 flex items-center"><span class="text-xl mr-1">📝</span> 2. Luyện nghe</h2>
+                    <h2 class="text-base md:text-lg font-black text-blue-600 flex items-center"><span class="text-xl mr-1">📝</span> 2. Luyện nghe & Đọc</h2>
                     <div class="flex gap-1">
                         <button onclick="exportToWord()" class="bg-blue-100 text-blue-700 px-2 py-1 rounded shadow-sm btn-bounce text-[10px] md:text-xs font-bold">🖨️ Word</button>
                         <button onclick="exportToMP3()" id="btnMp3" class="bg-green-100 text-green-700 px-2 py-1 rounded shadow-sm btn-bounce text-[10px] md:text-xs font-bold">🎵 MP3</button>
@@ -199,7 +285,20 @@
                 </div>
             </div>
 
-            <!-- Khung Từ vựng -->
+            <!-- PHẦN THỬ THÁCH ĐỌC CẢ CÂU TRONG BÀI (1-3 CÂU) -->
+            <div class="p-3 md:p-4 bg-emerald-50 border-2 border-emerald-300 rounded-[1.5rem]" id="sentenceChallengeSection">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="font-black text-emerald-700 text-sm md:text-base flex items-center">
+                        <span class="mr-1.5">🎙️</span> Thử Thách Đọc Cả Câu (1-3 câu):
+                    </h3>
+                    <button onclick="generateSentenceChallenge()" class="text-[10px] font-bold bg-emerald-200 hover:bg-emerald-300 text-emerald-800 px-2 py-0.5 rounded-lg btn-bounce">🔄 Đổi Câu Khác</button>
+                </div>
+                <div id="sentenceChallengeArea" class="space-y-2 text-xs font-bold text-slate-700">
+                    <p class="text-emerald-500 italic text-[11px]">Bấm nút "Sạch" ở trên để máy chọn ra 1-3 câu hay nhất cho bé luyện đọc nhé!</p>
+                </div>
+            </div>
+
+            <!-- Khung Từ vựng Thông Minh -->
             <div class="p-3 md:p-4 bg-purple-50 border-2 border-purple-200 rounded-[1.5rem] relative transition-all duration-500" id="vocabContainer">
                 <div class="flex justify-between items-center mb-2">
                     <h3 class="font-black text-purple-600 text-sm md:text-base flex items-center"><span class="mr-1">📚</span> Từ vựng Thông Minh:</h3>
@@ -217,6 +316,8 @@
                     <span class="italic font-normal text-orange-400 text-[10px]">Quét chữ xong bé sẽ được chơi ở đây!</span>
                 </div>
             </div>
+
+            <!-- Phòng Game -->
             <div class="p-3 md:p-4 bg-sky-50 border-2 border-sky-200 rounded-[1.5rem]" id="gameHub">
                 <h3 class="font-black text-sky-600 mb-2 text-sm md:text-base">🕹️ Phòng Game Từ Vựng</h3>
                 <div id="gameMenu" class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 mb-2"></div>
@@ -231,6 +332,12 @@
         </p>
     </footer>
 
+    <!-- Mascot & Chatbot Hướng Dẫn Từng Bước -->
+    <div id="mascot">
+        <div id="mb">Chào bé! Tớ là trợ lý của Daddy Dũng! 🦄</div><br>
+        <span id="me">🦄</span>
+    </div>
+
     <script>
         // ================== BIẾN TOÀN CỤC ==================
         const storyText = document.getElementById('storyText');
@@ -242,6 +349,7 @@
         const speedSlider = document.getElementById('speedSlider');
         let toastTimeout;
         let globalVocabData = [];
+        let allStorySentences = [];
         const posMap = { 'noun': 'Danh từ', 'verb': 'Động từ', 'adjective': 'Tính từ', 'adverb': 'Trạng từ', 'pronoun': 'Đại từ', 'preposition': 'Giới từ', 'conjunction': 'Liên từ' };
 
         // ================== QUẢN LÝ XOAY VÒNG 30% TỪ VỰNG ==================
@@ -251,37 +359,481 @@
         let currentDisplayWords = [];
         let rotationCycle = 0;
 
-        // ================== LEADERBOARD ==================
-        const avatars = [
-            { id: 'princess', icon: '👸', name: 'Công Chúa' }, { id: 'knight', icon: '🤺', name: 'Hiệp Sĩ' },
-            { id: 'king', icon: '🤴', name: 'Nhà Vua' }, { id: 'dragon', icon: '🐉', name: 'Rồng Lửa' },
-            { id: 'dino', icon: '🦖', name: 'Khủng Long' }, { id: 'tiger', icon: '🐯', name: 'Hổ Con' },
-            { id: 'rabbit', icon: '🐰', name: 'Thỏ Trắng' }, { id: 'turtle', icon: '🐢', name: 'Rùa Nhỏ' }
-        ];
-        let currentPlayer = null;
+        // ================== SUPABASE KẾT NỐI CLOUD ==================
+        const SUPABASE_URL = 'https://xmecpfeujkvidwmqprzd.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_wK5FXrtBK7qPdmJ5fS1aag_gJ3Gdv3G';
+        let db = null; 
+        try { 
+            db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); 
+        } catch (e) {
+            console.warn('Lỗi kết nối Supabase:', e);
+        }
 
+        // ================== HỆ THỐNG QUẢN LÝ THÀNH VIÊN VÀ ĐIỂM SỐ CLOUD ==================
+        const defaultAvatars = ['👸', '🤴', '🤺', '🐉', '🦖', '🐯', '🐰', '🐢', '🦄', '🐼', '🦁', '🚀'];
+        let selectedNewAvatar = '👸';
+        let cachedKids = [];
+        let currentKidId = localStorage.getItem('magicCurrentKid') || '';
+
+        // Tải danh sách thành viên và kiểm tra tự động Reset sau 7 ngày trên Cloud
+        async function syncKidsFromCloud() {
+            if (!db) return;
+            try {
+                let { data: kids, error } = await db.from('magic_kids').select('*').order('score', { ascending: false });
+                if (error) throw error;
+
+                if (!kids || kids.length === 0) {
+                    // Tạo thành viên mặc định nếu chưa có
+                    const defaults = [
+                        { id: 'kid_1', name: 'Bé Bắp', icon: '👸', score: 0, weekly_done: 0, week_start: new Date().toISOString() },
+                        { id: 'kid_2', name: 'Bé Nhím', icon: '🦖', score: 0, weekly_done: 0, week_start: new Date().toISOString() }
+                    ];
+                    await db.from('magic_kids').insert(defaults);
+                    kids = defaults;
+                }
+
+                // Kiểm tra tự động Reset 1 tuần (7 ngày)
+                const now = Date.now();
+                const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
+
+                for (let k of kids) {
+                    const start = new Date(k.week_start || k.updated_at || now).getTime();
+                    if (now - start > SEVEN_DAYS) {
+                        k.weekly_done = 0;
+                        k.score = 0; // Reset điểm tuần
+                        k.week_start = new Date().toISOString();
+                        await db.from('magic_kids').update({ weekly_done: 0, score: 0, week_start: k.week_start }).eq('id', k.id);
+                    }
+                }
+
+                cachedKids = kids;
+                renderKidSelector();
+                loadLeaderboard();
+            } catch (err) {
+                console.warn('Dùng cache cục bộ do chưa kết nối được Cloud:', err);
+                renderKidSelector();
+            }
+        }
+
+        function renderKidSelector() {
+            const selector = document.getElementById('kidSelector');
+            if (!cachedKids.length) return;
+
+            if (!cachedKids.find(k => k.id === currentKidId)) {
+                currentKidId = cachedKids[0].id;
+                localStorage.setItem('magicCurrentKid', currentKidId);
+            }
+
+            selector.innerHTML = cachedKids.map(k => `
+                <option value="${k.id}" ${k.id === currentKidId ? 'selected' : ''}>
+                    ${k.icon} ${k.name} (${k.score || 0}đ)
+                </option>
+            `).join('');
+
+            updateKidDashboard();
+        }
+
+        function switchKid(kidId) {
+            currentKidId = kidId;
+            localStorage.setItem('magicCurrentKid', currentKidId);
+            updateKidDashboard();
+            loadLeaderboard();
+            const kid = cachedKids.find(k => k.id === kidId);
+            if (kid) talk(`Chào ${kid.name}! Mau hoàn thành tối thiểu 5 nhiệm vụ tuần này nha! 🚀`);
+        }
+
+        // Cập nhật tiến độ tuần và LỜI NHẮC NHỞ THÔNG MINH
+        function updateKidDashboard() {
+            const kid = cachedKids.find(k => k.id === currentKidId);
+            if (!kid) return;
+
+            const done = kid.weekly_done || 0;
+            const score = kid.score || 0;
+
+            document.getElementById('weeklyQuestCount').textContent = `${done}/5 🎯`;
+            const percent = Math.min(100, Math.round((done / 5) * 100));
+            document.getElementById('weeklyProgressBar').style.width = percent + '%';
+
+            const reminder = document.getElementById('kidReminderMsg');
+
+            // Lời nhắc nhở dựa theo tình trạng nhiệm vụ & điểm số
+            if (done === 0) {
+                reminder.innerHTML = `⚠️ <span class="text-red-500 font-black">Bé ơi, tuần này chưa làm nhiệm vụ nào!</span> Mau nhận bài đầu tiên để bắt đầu săn bim bim nào! 🍟`;
+            } else if (done < 5) {
+                const remain = 5 - done;
+                reminder.innerHTML = `💪 Bé đã làm được <b>${done}/5</b> nhiệm vụ. <span class="text-orange-600 font-black">Chỉ cần thêm ${remain} bài nữa</span> là đủ điều kiện đòi quà bố mẹ!`;
+            } else if (done >= 5 && score < 150) {
+                const needScore = 150 - score;
+                reminder.innerHTML = `🌟 Bé đã đạt đủ số lượng (<b>${done}/5</b>) nhưng <span class="text-amber-600 font-black">còn thiếu ${needScore}đ nữa</span> để vượt chuẩn 150đ đổi quà lớn! Luyện thêm bài nha!`;
+            } else {
+                reminder.innerHTML = `👑 <span class="text-emerald-600 font-black">ĐẠT CHUẨN XUẤT SẮC!</span> (${done}/5 bài - ${score}đ). Bấm nhận quà và đi gặp bố mẹ ngay thôi! 🎁🎉`;
+                if (!sessionStorage.getItem('rewardShown_' + kid.id)) {
+                    openRewardModal();
+                    sessionStorage.setItem('rewardShown_' + kid.id, '1');
+                }
+            }
+        }
+
+        // ================== THÊM BÉ VÀO CLOUD VỚI MÃ PIN 6868 ==================
+        function openAddKidModal() {
+            const modal = document.getElementById('addKidModal');
+            document.getElementById('parentPinInput').value = '';
+            document.getElementById('kidNameInput').value = '';
+            const avtBox = document.getElementById('newKidAvatars');
+            avtBox.innerHTML = defaultAvatars.map(avt => `
+                <button type="button" onclick="chooseNewKidAvatar('${avt}', this)" class="text-2xl p-1.5 border-2 rounded-xl hover:bg-indigo-50 ${avt === selectedNewAvatar ? 'border-indigo-500 bg-indigo-100' : 'border-slate-200'}">
+                    ${avt}
+                </button>
+            `).join('');
+            modal.classList.remove('hidden');
+        }
+
+        function closeAddKidModal() {
+            document.getElementById('addKidModal').classList.add('hidden');
+        }
+
+        function chooseNewKidAvatar(avt, btn) {
+            selectedNewAvatar = avt;
+            document.querySelectorAll('#newKidAvatars button').forEach(b => {
+                b.classList.remove('border-indigo-500', 'bg-indigo-100');
+                b.classList.add('border-slate-200');
+            });
+            btn.classList.add('border-indigo-500', 'bg-indigo-100');
+        }
+
+        async function confirmAddKid() {
+            const pin = document.getElementById('parentPinInput').value.trim();
+            const name = document.getElementById('kidNameInput').value.trim();
+
+            if (pin !== '6868') {
+                return showToast('Mã PIN phụ huynh không đúng (6868)!', 'error');
+            }
+            if (!name) {
+                return showToast('Bố mẹ nhập tên cho bé nhé!', 'warning');
+            }
+
+            const newKid = {
+                id: 'kid_' + Date.now(),
+                name: name,
+                icon: selectedNewAvatar,
+                score: 0,
+                weekly_done: 0,
+                week_start: new Date().toISOString()
+            };
+
+            try {
+                showToast('Đang đăng ký lên Cloud...', 'warning');
+                if (db) {
+                    await db.from('magic_kids').insert([newKid]);
+                }
+                closeAddKidModal();
+                showToast(`Đã thêm thành viên ${name} lên Cloud thành công! 🎉`, 'success');
+                syncKidsFromCloud();
+                talk(`Hoan hô bạn ${name} đã tham gia học cùng chúng mình! 🥳`);
+            } catch (err) {
+                showToast('Lỗi khi thêm bé lên Cloud!', 'error');
+            }
+        }
+
+        function openRewardModal() {
+            document.getElementById('rewardModal').classList.remove('hidden');
+            burst(innerWidth/2, innerHeight/2, ['🎁', '🍕', '🍗', '🍟', '🍦', '⭐'], 30);
+        }
+
+        function claimReward() {
+            document.getElementById('rewardModal').classList.add('hidden');
+            showToast('Chúc mừng bé đã nhận được phần thưởng xứng đáng từ Bố Mẹ! 🍦🎉', 'success');
+        }
+
+        // ================== NHIỆM VỤ 6 TIẾNG & TỐI ĐA 3 LẦN THỬ LẠI ==================
+        const SIX_HOURS = 6 * 60 * 60 * 1000;
+
+        function getActiveQuest() {
+            let questData = localStorage.getItem('magicCurrentQuest');
+            if (questData) {
+                let q = JSON.parse(questData);
+                if (Date.now() - q.createdAt < SIX_HOURS) {
+                    return q;
+                }
+            }
+            return generateNew6HourQuest();
+        }
+
+        function generateNew6HourQuest() {
+            let targetStoryTitle = "Truyện bất kỳ trong kho";
+            const storyListEls = document.querySelectorAll('#storyList .cursor-pointer span');
+            if (storyListEls.length) {
+                const randomStory = storyListEls[Math.floor(Math.random() * storyListEls.length)].textContent;
+                targetStoryTitle = randomStory.replace('📄', '').trim();
+            }
+
+            const targetScore = Math.floor(Math.random() * 3 + 3) * 10; // 30đ, 40đ hoặc 50đ
+            const targetSentences = Math.floor(Math.random() * 2 + 1);  // Đọc 1 - 2 câu
+
+            const newQuest = {
+                id: 'quest_' + Date.now(),
+                createdAt: Date.now(),
+                storyTitle: targetStoryTitle,
+                targetScore: targetScore,
+                targetSentences: targetSentences,
+                attempts: {},        // Lưu số lần thử của từng bé: { kid_id: count }
+                completedKids: []
+            };
+
+            localStorage.setItem('magicCurrentQuest', JSON.stringify(newQuest));
+            return newQuest;
+        }
+
+        function renderQuestUI() {
+            const q = getActiveQuest();
+            const timeLeft = Math.max(0, SIX_HOURS - (Date.now() - q.createdAt));
+            const hours = Math.floor(timeLeft / (60 * 60 * 1000));
+            const minutes = Math.floor((timeLeft % (60 * 60 * 1000)) / (60 * 1000));
+            document.getElementById('questTimer').textContent = `⏱️ ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`;
+
+            const attemptsUsed = (q.attempts && q.attempts[currentKidId]) || 0;
+            const retryBadge = document.getElementById('retryBadge');
+            const retryBtn = document.getElementById('retryQuestBtn');
+
+            retryBadge.textContent = `Lượt thử: ${Math.min(3, attemptsUsed + 1)}/3`;
+
+            // Ẩn nút thử lại nếu đã thử đủ 3 lần
+            if (attemptsUsed >= 3) {
+                retryBtn.classList.add('hidden');
+                retryBadge.textContent = 'Đã hết 3 lượt thử 🛑';
+            } else {
+                retryBtn.classList.remove('hidden');
+            }
+
+            const isCompleted = (q.completedKids || []).includes(currentKidId);
+            const content = document.getElementById('questContent');
+            content.innerHTML = `
+                <div class="flex items-start gap-1.5">
+                    <span>📖</span>
+                    <span>1. Đọc cuốn: <b class="text-amber-900">${q.storyTitle}</b></span>
+                </div>
+                <div class="flex items-start gap-1.5">
+                    <span>🎮</span>
+                    <span>2. Kiếm tối thiểu: <b class="text-emerald-700">${q.targetScore} điểm</b> từ Đố vui hoặc Game</span>
+                </div>
+                <div class="flex items-start gap-1.5">
+                    <span>🎙️</span>
+                    <span>3. Luyện phát âm đúng: <b class="text-purple-700">${q.targetSentences} câu văn</b> trong bài</span>
+                </div>
+            `;
+
+            const badge = document.getElementById('questStatusBadge');
+            const claimBtn = document.getElementById('claimQuestBtn');
+            if (isCompleted) {
+                badge.textContent = 'Trạng thái: Đã hoàn thành xuất sắc! 🏆';
+                badge.className = 'text-xs font-black text-emerald-600';
+                claimBtn.disabled = true;
+                claimBtn.textContent = '✅ Đã Nhận Thưởng';
+            } else {
+                badge.textContent = 'Trạng thái: Đang thực hiện 🚀';
+                badge.className = 'text-xs font-black text-orange-600';
+                claimBtn.disabled = false;
+                claimBtn.textContent = '🏆 Hoàn Thành';
+            }
+        }
+
+        // Nút Thử lại nhiệm vụ (Ghi đè dữ liệu cũ, tối đa 3 lần)
+        function retryCurrentQuest() {
+            const q = getActiveQuest();
+            q.attempts = q.attempts || {};
+            let currentAttempts = q.attempts[currentKidId] || 0;
+
+            if (currentAttempts >= 3) {
+                showToast('Bé đã sử dụng hết 3 lần thử lại cho nhiệm vụ này rồi!', 'warning');
+                return;
+            }
+
+            currentAttempts++;
+            q.attempts[currentKidId] = currentAttempts;
+
+            // Xóa trạng thái hoàn thành nếu có để thử lại ghi đè
+            q.completedKids = (q.completedKids || []).filter(id => id !== currentKidId);
+            localStorage.setItem('magicCurrentQuest', JSON.stringify(q));
+
+            renderQuestUI();
+            showToast(`Bé đang ở lượt thử thứ ${currentAttempts}/3. Điểm mới sẽ ghi đè điểm cũ! 🔄`, 'success');
+            talk(`Lượt thử thứ ${currentAttempts}/3 bắt đầu! Cố gắng đạt điểm cao hơn lần trước nha! 💪`);
+        }
+
+        async function claimQuestReward() {
+            const q = getActiveQuest();
+            if ((q.completedKids || []).includes(currentKidId)) return;
+
+            const kid = cachedKids.find(k => k.id === currentKidId);
+            const kidScore = (kid && kid.score) || 0;
+
+            if (kidScore < q.targetScore) {
+                showToast(`Bé cần đạt tối thiểu ${q.targetScore} điểm trước nhé! (Hiện có: ${kidScore}đ)`, 'warning');
+                talk(`Chưa đủ điểm nhiệm vụ rồi! Bé làm thêm câu đố để đạt ${q.targetScore}đ nhé! 🎮`);
+                return;
+            }
+
+            // Ghi nhận hoàn thành nhiệm vụ
+            q.completedKids = q.completedKids || [];
+            q.completedKids.push(currentKidId);
+            localStorage.setItem('magicCurrentQuest', JSON.stringify(q));
+
+            // Tặng 30 điểm nhiệm vụ và tăng 1 lần nhiệm vụ tuần lên Cloud
+            try {
+                const newScore = kidScore + 30;
+                const newDone = (kid.weekly_done || 0) + 1;
+
+                if (db) {
+                    await db.from('magic_kids').update({
+                        score: newScore,
+                        weekly_done: newDone,
+                        updated_at: new Date().toISOString()
+                    }).eq('id', currentKidId);
+                }
+
+                syncKidsFromCloud();
+                renderQuestUI();
+                burst(innerWidth/2, innerHeight/2, ['🏆', '⭐', '🎉', '⚡'], 25);
+                showToast('Xuất sắc! Bé được cộng +30đ và tính 1 nhiệm vụ tuần! 🌟', 'success');
+                talk('Nhiệm vụ 6 tiếng đã hoàn thành rực rỡ! Tiến gần đến quà bố mẹ rồi! 🥳');
+            } catch (e) {
+                showToast('Lỗi cập nhật điểm lên Cloud!', 'error');
+            }
+        }
+
+        setInterval(renderQuestUI, 60000);
+
+        // ================== BẢNG VÀNG CLOUD HIỂN THỊ ==================
         function loadLeaderboard() {
-            let data = JSON.parse(localStorage.getItem('magicLeaderboard') || '{}');
             let board = document.getElementById('leaderboardList');
-            let sorted = Object.entries(data).sort((a,b) => b[1] - a[1]);
-            if(sorted.length === 0) { board.innerHTML = '<p class="text-teal-500 text-[10px] md:text-xs font-bold italic">Chưa có ai ghi điểm cả!</p>'; return; }
-            board.innerHTML = sorted.map(([id, score], i) => {
-                let avt = avatars.find(a => a.id === id);
+            if (!cachedKids.length) {
+                board.innerHTML = '<p class="text-teal-500 text-xs font-bold italic">Đang tải bảng điểm... ☁️</p>';
+                return;
+            }
+
+            let sorted = [...cachedKids].sort((a,b) => (b.score || 0) - (a.score || 0));
+
+            board.innerHTML = sorted.map((k, i) => {
                 let rank = i === 0 ? '🥇' : (i === 1 ? '🥈' : (i === 2 ? '🥉' : '🎗️'));
-                return `<div class="bg-white px-2 py-0.5 rounded shadow-sm border border-teal-200 flex items-center gap-1">
-                    <span class="text-sm">${rank}</span><span class="text-base">${avt.icon}</span><span class="text-teal-800 font-black text-[10px] md:text-xs">${score}đ</span>
+                return `<div class="bg-white px-2.5 py-1 rounded-xl shadow-sm border border-teal-200 flex items-center gap-1.5 ${k.id === currentKidId ? 'ring-2 ring-teal-400 bg-teal-50/50' : ''}">
+                    <span class="text-sm">${rank}</span>
+                    <span class="text-lg">${k.icon}</span>
+                    <span class="text-xs font-bold text-slate-700">${k.name}:</span>
+                    <span class="text-teal-800 font-black text-xs">${k.score || 0}đ</span>
                 </div>`;
             }).join('');
         }
-        window.resetLeaderboard = function() { if(confirm('Xóa sạch điểm?')) { localStorage.removeItem('magicLeaderboard'); loadLeaderboard(); showToast('Đã xóa bảng điểm!', 'success'); } }
-        loadLeaderboard();
 
-        // ================== SUPABASE ==================
-        const SUPABASE_URL = 'https://xmecpfeujkvidwmqprzd.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_wK5FXrtBK7qPdmJ5fS1aag_gJ3Gdv3G';
-        let db = null; try { db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch (e) {}
+        // ================== THỬ THÁCH ĐỌC CẢ CÂU (1 - 3 CÂU) ==================
+        function generateSentenceChallenge() {
+            const area = document.getElementById('sentenceChallengeArea');
+            if (!allStorySentences.length) {
+                const text = storyText.value.trim();
+                if (text) {
+                    allStorySentences = text.match(/[^.!?\n]+[.!?\n]*/g)?.map(s => s.trim()).filter(s => s.length > 15) || [];
+                }
+            }
 
+            if (!allStorySentences.length) {
+                area.innerHTML = '<p class="text-emerald-500 italic text-[11px]">Chưa có bài đọc nào! Hãy chọn sách và bấm "Sạch" để máy chọn câu luyện đọc nhé.</p>';
+                return;
+            }
+
+            const count = Math.min(3, Math.max(1, Math.floor(Math.random() * 3) + 1));
+            const shuffled = [...allStorySentences].sort(() => Math.random() - 0.5).slice(0, count);
+            const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+            area.innerHTML = shuffled.map((sentence, idx) => `
+                <div class="bg-white p-2.5 rounded-xl border border-emerald-200 shadow-sm sentence-item" data-sentence="${encodeURIComponent(sentence)}">
+                    <div class="flex justify-between items-start gap-2 mb-1">
+                        <span class="text-emerald-800 font-black text-xs">Câu ${idx + 1}:</span>
+                        <div class="flex gap-1">
+                            <button onclick="playSentenceSample('${encodeURIComponent(sentence)}')" class="px-2 py-0.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 text-[10px] font-black rounded-lg btn-bounce">🔊 Nghe Mẫu</button>
+                            ${SR ? `<button onclick="recordSentenceVoice(this, '${encodeURIComponent(sentence)}')" class="px-2 py-0.5 bg-pink-500 hover:bg-pink-600 text-white text-[10px] font-black rounded-lg btn-bounce flex items-center gap-0.5">🎤 Bé Đọc</button>` : ''}
+                        </div>
+                    </div>
+                    <p class="text-slate-800 text-xs font-bold leading-relaxed mb-1.5 italic">"${sentence}"</p>
+                    <div class="sentence-feedback text-[10px] font-black min-h-[16px] text-slate-500">Bé nghe mẫu rồi nhấn nút "🎤 Bé Đọc" nhé!</div>
+                </div>
+            `).join('');
+
+            talk('Thử thách đọc cả câu đã sẵn sàng! Đọc to và tự tin lên nhé! 🎙️');
+        }
+
+        function playSentenceSample(encodedSentence) {
+            stopAudio();
+            const sentence = decodeURIComponent(encodedSentence);
+            mainAudio.src = `https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=en&q=${encodeURIComponent(sentence)}`;
+            mainAudio.playbackRate = 0.8;
+            mainAudio.play().catch(() => showToast('Bật âm lượng lên nha bé!', 'warning'));
+        }
+
+        function recordSentenceVoice(btn, encodedSentence) {
+            const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SR) return showToast('Trình duyệt chưa hỗ trợ micro nhận diện!', 'warning');
+
+            const parent = btn.closest('.sentence-item');
+            const feedback = parent.querySelector('.sentence-feedback');
+            const originalSentence = decodeURIComponent(encodedSentence).toLowerCase().replace(/[^a-z0-9\s]/g, '');
+
+            const recognition = new SR();
+            recognition.lang = 'en-US';
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 3;
+
+            feedback.innerHTML = '<span class="text-pink-600 animate-pulse">👂 Đang lắng nghe... Bé đọc to lên nào!</span>';
+            btn.disabled = true;
+
+            recognition.onresult = async (event) => {
+                const results = Array.from(event.results[0]).map(r => r.transcript.toLowerCase().replace(/[^a-z0-9\s]/g, ''));
+                btn.disabled = false;
+
+                const origWords = originalSentence.split(/\s+/).filter(Boolean);
+                let bestMatchScore = 0;
+                let heardText = results[0];
+
+                results.forEach(resText => {
+                    const resWords = resText.split(/\s+/).filter(Boolean);
+                    let matchedCount = 0;
+                    origWords.forEach(w => {
+                        if (resWords.includes(w)) matchedCount++;
+                    });
+                    const score = Math.round((matchedCount / origWords.length) * 100);
+                    if (score > bestMatchScore) {
+                        bestMatchScore = score;
+                        heardText = resText;
+                    }
+                });
+
+                if (bestMatchScore >= 70) {
+                    feedback.innerHTML = `<span class="text-emerald-600">🎉 Xuất sắc! Bé đọc khớp ${bestMatchScore}% ("${heardText}") 🌟 +10đ</span>`;
+                    burst(btn.getBoundingClientRect().left, btn.getBoundingClientRect().top, ['⭐', '👏', '🎉'], 10);
+                    
+                    // Cộng 10đ lên Cloud Supabase
+                    const kid = cachedKids.find(k => k.id === currentKidId);
+                    if (kid && db) {
+                        const newScore = (kid.score || 0) + 10;
+                        await db.from('magic_kids').update({ score: newScore }).eq('id', currentKidId);
+                        syncKidsFromCloud();
+                    }
+                    talk('Phát âm chuẩn quá bé ơi! Cứ thế phát huy nha! 👏');
+                } else {
+                    feedback.innerHTML = `<span class="text-amber-600">🤔 Máy nghe là: "${heardText}" (Khớp ${bestMatchScore}%). Bé nghe mẫu rồi thử lại nha! 💪</span>`;
+                    talk('Gần đúng rồi! Nghe mẫu lại một lần nữa rồi đọc lại nhé! 🎧');
+                }
+            };
+
+            recognition.onerror = () => {
+                btn.disabled = false;
+                feedback.innerHTML = '<span class="text-red-400">Không nghe rõ, bé thử chạm lại micro nhé!</span>';
+            };
+
+            recognition.start();
+        }
+
+        // ================== KHO TRUYỆN SUPABASE ==================
         async function fetchStories() {
+            if (!db) return;
             try {
                 let { data: stories } = await db.from('saved_stories').select('*').order('created_at', { ascending: false });
                 const listEl = document.getElementById('storyList');
@@ -294,6 +846,7 @@
                         <button onclick="deleteStory('${story.id}')" class="text-red-500 hover:bg-red-100 px-1 rounded font-black text-[10px]" title="Xóa sách">❌</button>
                     </div>
                 `).join('');
+                renderQuestUI();
             } catch (err) {}
         }
 
@@ -302,9 +855,17 @@
             showToast('Đang lưu...', 'success');
             try { await db.from('saved_stories').insert([{ title: text.substring(0, 20).replace(/\n/g, ' ') + '...', content: text }]); showToast('Lưu thành công! ☁️', 'success'); fetchStories(); } catch (err) { }
         }
-        async function loadStory(id) { try { let { data } = await db.from('saved_stories').select('content').eq('id', id).single(); storyText.value = data.content; showToast('Đã tải truyện cũ!', 'success'); } catch (err) {} }
-        
-        // ================== XÓA TRUYỆN BẢO MẬT MÃ PIN 6868 (ẨN) ==================
+
+        async function loadStory(id) { 
+            try { 
+                let { data } = await db.from('saved_stories').select('content').eq('id', id).single(); 
+                storyText.value = data.content; 
+                showToast('Đã tải truyện cũ!', 'success');
+                cleanBtn.click();
+            } catch (err) {} 
+        }
+
+        // ================== XÓA TRUYỆN MÃ PIN 6868 ==================
         let pendingDeleteId = null;
 
         function deleteStory(id) {
@@ -330,17 +891,11 @@
 
             if (pin !== '6868') {
                 showToast('Mật khẩu không đúng!', 'error');
-                if (pinInput) {
-                    pinInput.value = '';
-                    pinInput.focus();
-                }
+                if (pinInput) { pinInput.value = ''; pinInput.focus(); }
                 return;
             }
 
-            if (!pendingDeleteId) {
-                closeDeleteModal();
-                return;
-            }
+            if (!pendingDeleteId) { closeDeleteModal(); return; }
 
             try {
                 showToast('Đang xóa truyện...', 'warning');
@@ -351,22 +906,9 @@
                 showToast('Đã xóa truyện khỏi kho! 🗑️', 'success');
                 fetchStories();
             } catch (err) {
-                console.error(err);
                 showToast('Lỗi khi xóa bài!', 'error');
             }
         }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            const pinInput = document.getElementById('deletePinInput');
-            if (pinInput) {
-                pinInput.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter') confirmDeleteStory();
-                    if (e.key === 'Escape') closeDeleteModal();
-                });
-            }
-        });
-
-        setTimeout(fetchStories, 1000);
 
         // ================== CẤU TRÚC PHÁT ÂM THANH TRỰC TIẾP ==================
         let mainAudio = new Audio();
@@ -487,7 +1029,7 @@
             if (isStoryPlaying) mainAudio.playbackRate = parseFloat(speedSlider.value) || 0.8;
         });
 
-        // ================== XUẤT OFFLINE (WORD & MP3) ==================
+        // ================== XUẤT OFFLINE ==================
         function exportToWord() {
             const text = storyText.value.trim(); if (!text) return showToast('Trống!', 'warning');
             const wordHtml = `<html xmlns:w='urn:schemas-microsoft-com:office:word'><body style="font-family: 'Comic Sans MS'; background: #fdf2f8; padding: 20px;"><h1 style="color:#ec4899;text-align:center;">🌟 MAGIC STORY READER 🌟</h1><div style="background:#fff;padding:20px;border:2px dashed #bfdbfe;">${text.split('\n').map(l => `<p style="font-size:14pt;font-weight:bold;color:#1e3a8a;margin:0 0 10px 0;">${String(l).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}</p>`).join('')}</div></body></html>`;
@@ -586,7 +1128,7 @@
             toastTimeout = setTimeout(() => { toastMessage.style.opacity = '0'; toastMessage.style.transform = 'translate(-50%, 0)'; }, 3000);
         }
 
-        // ================== OCR QUÉT FILE ĐÃ SỬA CHUẨN XÁC ==================
+        // ================== OCR QUÉT FILE ==================
         const $ = id => document.getElementById(id);
         let files = [], active = 0;
 
@@ -651,7 +1193,7 @@
             }
         });
 
-        // ================== BỘ LỌC OCR CHUẨN CHIỀU NAY ==================
+        // ================== BỘ LỌC OCR CHUẨN ==================
         cleanBtn.addEventListener('click', () => {
             let text = storyText.value;
             if (!text.trim()) return showToast('Trống!', 'warning');
@@ -681,6 +1223,9 @@
             text = text.toLowerCase().replace(/(^\s*[a-z]|[.!?]\s*[a-z])/g, c => c.toUpperCase()).replace(/\b(i)\b/g, 'I');
             storyText.value = text;
             showToast('Đã lọc sạch rác!', 'success');
+            
+            allStorySentences = text.match(/[^.!?\n]+[.!?\n]*/g)?.map(s => s.trim()).filter(s => s.length > 15) || [];
+            generateSentenceChallenge();
             extractVocabulary(text);
         });
 
@@ -816,48 +1361,22 @@
             });
 
             vocabList.innerHTML = html;
-            setupQuizForm();
+            generateQuiz();
             $('gameArea').innerHTML = '<span class="italic font-normal text-sky-400 text-[10px]">Chọn một trò chơi ở trên nhé! 🎮</span>';
         }
 
-        function setupQuizForm() {
-            if (globalVocabData.length < 3) return;
-            let avatarHTML = avatars.map(a => `
-                <button onclick="selectAvatar('${a.id}', this)" class="avatar-btn flex flex-col items-center p-1 border rounded-lg hover:bg-slate-100">
-                    <span class="text-2xl">${a.icon}</span>
-                </button>
-            `).join('');
-
-            quizContainer.innerHTML = `
-                <div class="bg-white p-2 rounded-xl text-center shadow-sm">
-                    <p class="text-orange-600 text-xs font-black mb-2">Chọn nhân vật thi đấu!</p>
-                    <div class="flex flex-wrap justify-center gap-1.5 mb-2">${avatarHTML}</div>
-                    <button onclick="startQuizEngine()" class="w-full py-1.5 bg-orange-500 text-white font-black text-xs rounded-lg btn-bounce">🎮 Bắt Đầu (5 Câu)</button>
-                </div>
-            `;
-        }
-
-        window.selectAvatar = function(id, btn) {
-            currentPlayer = avatars.find(a => a.id === id);
-            document.querySelectorAll('.avatar-btn').forEach(b => { b.classList.remove('avatar-selected'); });
-            btn.classList.add('avatar-selected');
-        };
-
-        window.startQuizEngine = function() {
-            if (!currentPlayer) return showToast('Bé chọn 1 nhân vật nhé!', 'warning');
-            showToast(`Cố lên ${currentPlayer.name}!`, 'success');
-            generateQuiz();
-        };
-
+        // ================== GAME ĐỐ VUI (5 CÂU) ==================
         window.generateQuiz = function() {
+            if (globalVocabData.length < 3) return;
             let shuffled = [...globalVocabData].sort(() => Math.random() - 0.5).slice(0, 5);
             let allMeanings = globalVocabData.map(v => v.meaning);
             let allEng = globalVocabData.map(v => v.word);
+            const kid = cachedKids.find(k => k.id === currentKidId) || { name: 'Bé Yêu', icon: '👶' };
 
             let qHTML = `
                 <div class="flex items-center justify-center gap-2 mb-2 bg-orange-100 p-1.5 rounded-lg border border-orange-200">
-                    <span class="text-xl">${currentPlayer.icon}</span>
-                    <p class="text-orange-700 text-xs font-bold">${currentPlayer.name}</p>
+                    <span class="text-xl">${kid.icon}</span>
+                    <p class="text-orange-700 text-xs font-bold">Lượt thi đấu của: ${kid.name}</p>
                 </div>
             `;
 
@@ -895,15 +1414,15 @@
 
             qHTML += `
                 <div class="flex gap-1 mt-1">
-                    <button onclick="checkQuiz()" class="flex-1 py-1.5 bg-orange-500 text-white text-xs font-black rounded-lg">✅ Nộp</button>
-                    <button onclick="setupQuizForm()" class="flex-1 py-1.5 bg-sky-500 text-white text-xs font-black rounded-lg">🔄 Đổi N.Vật</button>
+                    <button onclick="checkQuiz()" class="flex-1 py-1.5 bg-orange-500 text-white text-xs font-black rounded-lg btn-bounce">✅ Nộp Bài</button>
+                    <button onclick="generateQuiz()" class="flex-1 py-1.5 bg-sky-500 text-white text-xs font-black rounded-lg btn-bounce">🔄 Đổi Câu Đố</button>
                 </div>
                 <div id="quizResult" class="mt-2 p-2 bg-green-100 rounded-lg text-center flex flex-col items-center hidden"></div>
             `;
             quizContainer.innerHTML = qHTML;
         };
 
-        window.checkQuiz = function() {
+        window.checkQuiz = async function() {
             let score = 0;
             let qs = document.querySelectorAll('.quiz-question');
 
@@ -926,15 +1445,18 @@
                 }
             });
 
-            let data = JSON.parse(localStorage.getItem('magicLeaderboard') || '{}');
-            data[currentPlayer.id] = (data[currentPlayer.id] || 0) + score;
-            localStorage.setItem('magicLeaderboard', JSON.stringify(data));
-            loadLeaderboard();
+            // Đồng bộ điểm lên Cloud Supabase
+            const kid = cachedKids.find(k => k.id === currentKidId);
+            if (kid && db) {
+                const newScore = (kid.score || 0) + score;
+                await db.from('magic_kids').update({ score: newScore }).eq('id', currentKidId);
+                syncKidsFromCloud();
+            }
 
             let resDiv = document.getElementById('quizResult');
             resDiv.innerHTML = `
-                <span class="text-2xl">${currentPlayer.icon}</span>
-                <span class="text-xs font-black text-green-800">+${score} điểm!</span>
+                <span class="text-2xl">${(kid && kid.icon) || '👶'}</span>
+                <span class="text-xs font-black text-green-800">+${score} điểm vào Bảng Vàng Cloud!</span>
                 <button onclick="generateQuiz()" class="mt-1 text-[10px] bg-orange-400 text-white px-2 py-0.5 rounded-full font-bold">Chơi tiếp</button>
             `;
             resDiv.classList.remove('hidden');
@@ -963,8 +1485,13 @@
         document.addEventListener('click', e => {
             if (!e.target.closest('#themePanel,#themeBtn')) { $('themePanel').classList.add('hidden'); }
         });
+
+        // Khởi động đồng bộ dữ liệu Cloud
+        document.addEventListener('DOMContentLoaded', () => {
+            syncKidsFromCloud();
+            fetchStories();
+        });
     </script>
-<div id="mascot"><div id="mb"></div><br><span id="me">🦄</span></div>
 <script>
 // ================== HÌNH CHÌM & MASCOT ==================
 const WM = { candy: ['🍭', '🧁', '🦄', '🌈', '⭐', '🍩', '🎀', '🧸'], ocean: ['🐠', '🐙', '🐳', '🐚', '⚓', '🦀', '🐬', '🫧'], forest: ['🌲', '🦊', '🦉', '🍄', '🐿️', '🦋', '🌻', '🐻'] };
@@ -989,36 +1516,25 @@ function burst(x, y, list, n = 8) {
     }
 }
 const FUN = ['🎉', '⭐', '🌈', '🎈', '✨', '🤪', '🐣', '🍕'], OOPS = ['🙈', '💫', '🫠', '🤡'], WIN = ['🎉', '🎊', '⭐', '🏆', '🦄'];
-let mt; function talk(m) { const b = $('mb'); b.textContent = m; b.style.opacity = 1; clearTimeout(mt); mt = setTimeout(() => b.style.opacity = 0, 3800); }
+let mt; function talk(m) { const b = $('mb'); b.textContent = m; b.style.opacity = 1; clearTimeout(mt); mt = setTimeout(() => b.style.opacity = 0, 4000); }
 const MSG = {
-    playBtn: ['Mở loa lên! Hàng xóm sắp nghe bé đọc tiếng Anh rồi 📢', 'Tai thỏ vểnh lên, nghe nào 🐰'],
-    stopBtn: ['Phanh kít kít! 🛑', 'Suỵt… yên lặng như tờ 🤫'],
-    cleanBtn: ['Chổi thần quét sạch chữ ma! 🧹👻', 'Ma OCR: "Tôi bị đuổi oan!" 😭'],
-    extractBtn: ['Soi chữ bằng kính lúp siêu cấp 🔍', 'Đang đọc... đừng làm rung ảnh nha 📸'],
-    playCursorBtn: ['Chỉ đâu đọc đó, như phép thuật 🪄'], btnMp3: ['Đang đóng gói giọng nói vào hộp 🎁']
+    playBtn: ['Mở loa lên! Nghe thật kỹ cách phát âm nha 📢', 'Tai thỏ vểnh lên, cùng nghe đọc nào 🐰'],
+    stopBtn: ['Phanh kít kít! Dừng lại nghỉ tí 🛑', 'Suỵt… yên lặng như tờ 🤫'],
+    cleanBtn: ['Chổi thần quét sạch chữ rác! 🧹✨', 'Đã nạp câu văn cho phần thử thách đọc rồi nhé! 🎙️'],
+    extractBtn: ['Đang soi từng chữ một... Bé đợi xíu nhé! 🔍'],
+    playCursorBtn: ['Chỉ đâu đọc đó, thật là kỳ diệu 🪄'], 
+    btnMp3: ['Đang đóng gói bài học thành file MP3 cho bé 🎁']
 };
-const JOKES = ['Học xong nhớ ăn cơm nha 🍚', 'Từ nào khó? Tui cũng không biết, tui là con thú mà 🙈', 'Ngáp một cái rồi học tiếp nào 🥱', 'Bé giỏi tới mức ma OCR cũng vỗ tay 👻👏', 'Bí mật: tiếng Anh dễ hơn bé nghĩ đó 🤫'];
+const JOKES = ['Học xong nhớ ăn cơm nha 🍚', 'Hoàn thành tối thiểu 5 nhiệm vụ tuần để đòi quà nha 🎁', 'Bé giỏi tới mức chú kỳ lân cũng vỗ tay 🦄👏', 'Tiếng Anh là chuyện nhỏ đối với bé! 💪'];
 document.addEventListener('click', e => {
     const b = e.target.closest('button'), v = e.target.closest('.vocab-card'), r = b && b.getBoundingClientRect();
     const x = e.clientX || (r ? r.left + r.width / 2 : 0), y = e.clientY || (r ? r.top : 0);
     if (!x && !y) return;
     if (v) burst(x, y, ['🔊', '🎵', '⭐'], 5);
     else if (b && !b.closest('#gameArea')) { burst(x, y, FUN, 7); wig(b); if (MSG[b.id] && Math.random() < .8) talk(pick(MSG[b.id])); }
-    else if (!b) burst(x, y, ['✨', '⭐'], 2);
 });
 $('me').onclick = () => { wig($('me')); talk(pick(JOKES)); burst(innerWidth - 40, innerHeight - 50, FUN, 6); };
-setInterval(() => { if (!document.hidden) talk(pick(JOKES)); }, 35000);
-setInterval(() => { if (isStoryPlaying) { const r = $('playBtn').getBoundingClientRect(); burst(r.left + r.width / 2, r.top, ['🎵', '🎶', '😎'], 2); } }, 900);
-$('cleanBtn').addEventListener('click', () => {
-    const br = document.createElement('div'); br.className = 'fx'; br.style.cssText = 'font-size:60px;top:40vh;left:0'; br.textContent = '🧹'; document.body.appendChild(br);
-    br.animate([{ transform: 'translateX(-10vw) rotate(-20deg)' }, { transform: 'translateX(110vw) rotate(20deg)' }], { duration: 1200, easing: 'ease-in' }).onfinish = () => br.remove();
-    for (let i = 1; i < 6; i++) setTimeout(() => burst(innerWidth * i / 6, innerHeight * .4, ['👻', '💨', '🕸️'], 3), i * 180);
-});
-const _cq = window.checkQuiz;
-window.checkQuiz = function () {
-    _cq(); const m = (($('quizResult') || {}).textContent || '').match(/\+(\d+)/), s = m ? +m[1] : 0;
-    burst(innerWidth / 2, innerHeight / 2, s >= 30 ? WIN : OOPS, 16); talk(s >= 30 ? 'Siêu quá! Bé là thiên tài 🧠✨' : 'Không sao, lần sau gỡ lại nha 💪');
-};
+setInterval(() => { if (!document.hidden && Math.random() < 0.4) talk(pick(JOKES)); }, 30000);
 
 // ================== PHÒNG GAME ==================
 const G = { score: 0, k: '' }; let GT;
@@ -1027,25 +1543,39 @@ const shuf = a => [...a].sort(() => Math.random() - .5);
 const spk = w => playWordAudio(w);
 const area = () => $('gameArea');
 const ctr = () => [innerWidth / 2, innerHeight / 2];
-function award(n) {
-    if (!n) return; const p = currentPlayer || avatars[0], d = JSON.parse(localStorage.getItem('magicLeaderboard') || '{}');
-    d[p.id] = (d[p.id] || 0) + n; localStorage.setItem('magicLeaderboard', JSON.stringify(d)); loadLeaderboard();
+
+async function award(n) {
+    if (!n) return;
+    const kid = cachedKids.find(k => k.id === currentKidId);
+    if (kid && db) {
+        const newScore = (kid.score || 0) + n;
+        await db.from('magic_kids').update({ score: newScore }).eq('id', currentKidId);
+        syncKidsFromCloud();
+    }
 }
+
 function fin() {
-    clearInterval(GT); award(G.score); const p = currentPlayer || avatars[0];
-    area().innerHTML = `<div class="text-center"><div class="text-4xl">${G.score >= 40 ? '🏆' : '🎖️'}</div><div class="text-base font-black text-green-600">${p.icon} +${G.score} điểm!</div><div class="text-[10px] mb-1">${G.score >= 40 ? 'Đỉnh của chóp! 🚀' : 'Cũng ổn đó, chơi lại cho đỉnh hơn nhé! 😆'}</div><button class="px-3 py-1 bg-sky-500 text-white rounded-lg" onclick="playGame(G.k)">🔄 Chơi lại</button></div>`;
-    burst(...ctr(), WIN, 24); talk(G.score >= 40 ? 'Bé ơi, tui xin chữ ký! ✍️' : 'Hòa vốn rồi, tiếp nào! 😎');
+    clearInterval(GT); 
+    award(G.score); 
+    const kid = cachedKids.find(k => k.id === currentKidId) || { icon: '👶' };
+    area().innerHTML = `<div class="text-center"><div class="text-4xl">${G.score >= 40 ? '🏆' : '🎖️'}</div><div class="text-base font-black text-green-600">${kid.icon} +${G.score} điểm!</div><div class="text-[10px] mb-1">${G.score >= 40 ? 'Đỉnh của chóp! 🚀' : 'Cũng ổn đó, chơi lại cho đỉnh hơn nhé! 😆'}</div><button class="px-3 py-1 bg-sky-500 text-white rounded-lg" onclick="playGame(G.k)">🔄 Chơi lại</button></div>`;
+    burst(...ctr(), WIN, 24); 
+    talk(G.score >= 40 ? 'Bé đỉnh quá! Điểm Bảng Vàng Cloud tăng vọt rồi! 🚀' : 'Hòa vốn rồi, tiếp tục gỡ lại nào! 😎');
 }
+
 const GAMES = [['listen', '🎧', 'Nghe đoán từ'], ['flip', '🃏', 'Lật thẻ nhớ'], ['speak', '🎤', 'Tập phát âm'], ['scr', '🔤', 'Xếp chữ'], ['speed', '⚡', 'Đua tốc độ']];
 $('gameMenu').innerHTML = GAMES.map(g => `<button class="py-1.5 bg-sky-500 text-white rounded-lg text-[11px] font-black btn-bounce" onclick="playGame('${g[0]}')">${g[1]} ${g[2]}</button>`).join('');
+
 window.playGame = k => {
     if (V().length < 4) return showToast('Bấm "Sạch" để lấy từ vựng trước nhé!', 'warning');
     clearInterval(GT); G.score = 0; G.k = k; ({ listen: gListen, flip: gFlip, speak: gSpeak, scr: gScr, speed: gSpeed })[k]();
 };
-function judge(btns, ok, ansBtn) {
+
+function judge(btns, ok) {
     btns.forEach(b => b.disabled = true);
-    if (ok) { G.score += 10; burst(...ctr(), WIN, 10); } else { burst(...ctr(), OOPS, 6); talk(pick(['Ối! Hụt rồi 🙈', 'Gần đúng… theo kiểu của rùa 🐢'])); }
+    if (ok) { G.score += 10; burst(...ctr(), WIN, 10); } else { burst(...ctr(), OOPS, 6); talk(pick(['Ối! Hụt rồi 🙈', 'Gần đúng… bé thử lại nhé!'])); }
 }
+
 function gListen() {
     const qs = shuf(V()).slice(0, 6); let i = 0;
     const nx = () => {
@@ -1061,6 +1591,7 @@ function gListen() {
         });
     }; nx();
 }
+
 function gSpeed() {
     let t = 30; const pool = V(), el = area();
     const nx = () => {
@@ -1070,6 +1601,7 @@ function gSpeed() {
     };
     GT = setInterval(() => { t--; const e = $('tm'); if (e) e.textContent = t; if (t <= 0) fin(); }, 1000); nx();
 }
+
 function gFlip() {
     const vs = shuf(V()).slice(0, 6), cs = shuf(vs.flatMap((v, k) => [{ k, t: v.word, en: 1 }, { k, t: v.meaning }]));
     let sel = [], lock = false, done = 0, moves = 0;
@@ -1085,6 +1617,7 @@ function gFlip() {
         } else { lock = true; setTimeout(() => { [b1, b2].forEach(x => { delete x.dataset.o; x.textContent = '❓'; x.className = x.className.replace(OPEN, 'bg-sky-300'); }); lock = false; }, 900); }
     });
 }
+
 function gScr() {
     const pl = V().filter(v => v.word.length <= 9), vs = shuf(pl.length >= 3 ? pl : V()).slice(0, 5); let i = 0, pk = [];
     const nx = () => {
@@ -1102,14 +1635,14 @@ function gScr() {
         }; r();
     }; nx();
 }
+
 function gSpeak() {
     const vs = shuf(V()).slice(0, 5), SR = window.SpeechRecognition || window.webkitSpeechRecognition; let i = 0;
     const nx = () => {
         if (i >= vs.length) return fin(); const v = vs[i];
-        area().innerHTML = `<div class="text-center"><div class="text-[10px] text-sky-500">Câu ${i + 1}/${vs.length} • ${G.score}đ</div><div class="text-2xl font-black text-purple-700">${v.word}</div><div class="text-[11px] capitalize text-slate-500 mb-2">${v.meaning}</div><button onclick="spk('${v.word}')" class="px-3 py-1.5 bg-cyan-500 text-white rounded-lg">🔊 Nghe mẫu</button> ${SR ? '<button id="mic" class="px-3 py-1.5 bg-pink-500 text-white rounded-lg">🎤 Bé đọc</button>' : ''} <button id="sk" class="px-2 py-1.5 bg-slate-200 rounded-lg">⏭️</button><div id="sr" class="mt-2 min-h-[1.5rem]"></div>${SR ? '' : '<div class="mt-1">Bé đọc theo rồi tự chấm nhé:</div><div class="flex justify-center gap-3 mt-1 text-3xl"><button class="sf" data-p="2">😖</button><button class="sf" data-p="6">😐</button><button class="sf" data-p="10">😍</button></div>'}</div>`;
+        area().innerHTML = `<div class="text-center"><div class="text-[10px] text-sky-500">Câu ${i + 1}/${vs.length} • ${G.score}đ</div><div class="text-2xl font-black text-purple-700">${v.word}</div><div class="text-[11px] capitalize text-slate-500 mb-2">${v.meaning}</div><button onclick="spk('${v.word}')" class="px-3 py-1.5 bg-cyan-500 text-white rounded-lg">🔊 Nghe mẫu</button> ${SR ? '<button id="mic" class="px-3 py-1.5 bg-pink-500 text-white rounded-lg">🎤 Bé đọc</button>' : ''} <button id="sk" class="px-2 py-1.5 bg-slate-200 rounded-lg">⏭️</button><div id="sr" class="mt-2 min-h-[1.5rem]"></div></div>`;
         const go = p => { G.score += p; i++; setTimeout(nx, 1300); };
         $('sk').onclick = () => go(0);
-        area().querySelectorAll('.sf').forEach(b => b.onclick = () => { burst(...ctr(), +b.dataset.p > 5 ? FUN : OOPS, 6); go(+b.dataset.p); });
         if (SR) $('mic').onclick = () => {
             const r = new SR(); r.lang = 'en-US'; r.maxAlternatives = 5; $('sr').textContent = '👂 Đang nghe...';
             r.onresult = e => {
