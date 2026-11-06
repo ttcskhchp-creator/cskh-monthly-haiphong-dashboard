@@ -16,7 +16,6 @@
     <!-- Supabase JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-    // ===== HỆ THỐNG GIAO DIỆN CHUẨN XÁC KHÔNG LỖI CÚ PHÁP =====
     const THEMES = [
         { id: 'candy', icon: '🍬', name: 'Kẹo Hồng', bg: '#fdf2f8', card: '#ffffff', ink: '#1e293b', primary: '#ec4899', secondary: '#3b82f6' },
         { id: 'ocean', icon: '🌊', name: 'Đại Dương', bg: '#e8f6ff', card: '#ffffff', ink: '#0f2a3d', primary: '#0891b2', secondary: '#2563eb' },
@@ -68,8 +67,6 @@
     </style>
 </head>
 <body class="p-2 md:p-6 flex flex-col items-center">
-
-    <audio id="magicPlayer" playsinline webkit-playsinline preload="auto" class="hidden"></audio>
 
     <div class="w-full max-w-7xl flex justify-end relative z-40 mb-2">
         <button id="themeBtn" type="button" class="bg-white text-pink-600 border-2 border-pink-300 px-3 py-1.5 md:px-4 md:py-2 rounded-full font-black shadow btn-bounce text-sm md:text-base">🎨 Giao diện</button>
@@ -140,22 +137,12 @@
                     </div>
                 </div>
                 
-                <!-- Bảng tùy chỉnh giọng & tốc độ -->
-                <div class="grid grid-cols-2 gap-2 mb-2 bg-blue-50 p-2 rounded-lg border border-blue-100 items-center">
-                    <div class="flex items-center gap-1 bg-white px-2 py-1 rounded border border-blue-200">
-                        <span class="text-xs">🗣️</span>
-                        <select id="voiceType" class="text-[10px] md:text-xs font-bold text-blue-700 bg-transparent outline-none w-full cursor-pointer">
-                            <option value="normal">Giọng Nữ chuẩn</option>
-                            <option value="child">Giọng Trẻ em</option>
-                            <option value="man">Giọng Đàn ông</option>
-                            <option value="old">Giọng Người già</option>
-                        </select>
-                    </div>
-                    <div class="flex items-center gap-1 bg-white px-2 py-1.5 rounded border border-blue-200">
-                        <span class="text-xs" title="Đọc chậm">🐢</span>
-                        <input type="range" id="speedSlider" min="0.5" max="1.5" step="0.1" value="1.0" class="flex-grow h-1.5 bg-blue-200 rounded-lg appearance-none cursor-pointer accent-blue-500">
-                        <span class="text-xs" title="Đọc nhanh">🐇</span>
-                    </div>
+                <!-- Thanh chỉnh tốc độ -->
+                <div class="flex items-center gap-2 mb-2 bg-blue-50 p-2 rounded-lg border border-blue-100">
+                    <span class="text-xs font-bold text-blue-700">Tốc độ:</span>
+                    <span class="text-xs" title="Đọc chậm">🐢</span>
+                    <input type="range" id="speedSlider" min="0.5" max="1.3" step="0.1" value="0.8" class="flex-grow h-1.5 bg-blue-200 rounded-lg appearance-none cursor-pointer accent-blue-500">
+                    <span class="text-xs" title="Đọc nhanh">🐇</span>
                 </div>
 
                 <p class="text-slate-400 text-[10px] md:text-xs font-bold mb-1">Mẹo: Đặt trỏ vào chữ để nghe từ đó!</p>
@@ -207,7 +194,6 @@
         const toastMessage = document.getElementById('toastMessage');
         const cleanBtn = document.getElementById('cleanBtn');
         const speedSlider = document.getElementById('speedSlider');
-        const voiceType = document.getElementById('voiceType');
         let toastTimeout;
         let globalVocabData = [];
         const posMap = { 'noun': 'Danh từ', 'verb': 'Động từ', 'adjective': 'Tính từ', 'adverb': 'Trạng từ', 'pronoun': 'Đại từ', 'preposition': 'Giới từ', 'conjunction': 'Liên từ' };
@@ -267,44 +253,33 @@
         async function deleteStory(id) { if(confirm('Xóa bài này nhé?')) { try { await db.from('saved_stories').delete().eq('id', id); fetchStories(); } catch (err) {} } }
         setTimeout(fetchStories, 1000);
 
-        // ================== AUDIO ENGINE CHUẨN PHÁT TIẾNG 100% TRÊN CHROME ĐIỆN THOẠI ==================
-        let playSessionId = 0;
-        let storyPlaylist = [];
-        let storyPlaylistIdx = 0;
+        // ================== CẤU TRÚC PHÁT ÂM THANH TRỰC TIẾP (CHUẨN ỔN ĐỊNH CŨ) ==================
+        let mainAudio = new Audio();
+        let audioPlaylist = [];
+        let currentPlaylistIndex = 0;
         let isStoryPlaying = false;
-        let currentUtterance = null;
-
-        // Tải sẵn danh sách giọng đọc của máy
-        let nativeVoices = [];
-        function loadVoices() {
-            if ('speechSynthesis' in window) {
-                nativeVoices = window.speechSynthesis.getVoices().filter(v => v.lang && v.lang.toLowerCase().startsWith('en'));
-            }
-        }
-        loadVoices();
-        if ('speechSynthesis' in window && window.speechSynthesis.onvoiceschanged !== undefined) {
-            window.speechSynthesis.onvoiceschanged = loadVoices;
-        }
+        let wordAudio = new Audio();
 
         function stopAudio() {
-            playSessionId++;
             isStoryPlaying = false;
-            storyPlaylist = [];
-            storyPlaylistIdx = 0;
+            audioPlaylist = [];
+            currentPlaylistIndex = 0;
 
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-            }
-            currentUtterance = null;
+            mainAudio.pause();
+            mainAudio.currentTime = 0;
+            mainAudio.onended = null;
+            mainAudio.onerror = null;
+
+            wordAudio.pause();
+            wordAudio.currentTime = 0;
 
             const btn = document.getElementById('playBtn');
             if (btn) btn.innerHTML = '<span class="mr-1">▶️</span>Đọc To';
         }
 
-        // --- 1. PHÁT TỪ VỰNG DUY NHẤT (CÓ HIỆU ỨNG THỊ GIÁC, TUYỆT ĐỐI KHÔNG ĐỌC CẢ BÀI) ---
+        // --- 1. PHÁT TỪ VỰNG DUY NHẤT (HIỆU ỨNG THỊ GIÁC, KHÔNG ĐỌC CẢ BÀI) ---
         window.playWordAudio = function(word, el) {
             stopAudio();
-            const session = ++playSessionId;
 
             if (el) {
                 document.querySelectorAll('.vocab-card').forEach(c => {
@@ -317,113 +292,71 @@
                 if (speaker) speaker.classList.add('animate-bounce');
 
                 setTimeout(() => {
-                    if (session === playSessionId) {
-                        el.classList.remove('ring-4', 'ring-purple-400', 'scale-105', 'bg-purple-100');
-                        if (speaker) speaker.classList.remove('animate-bounce');
-                    }
+                    el.classList.remove('ring-4', 'ring-purple-400', 'scale-105', 'bg-purple-100');
+                    if (speaker) speaker.classList.remove('animate-bounce');
                 }, 1000);
             }
 
             const cleanWord = String(word || '').trim();
             if (!cleanWord) return;
 
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-                window.speechSynthesis.resume();
-                
-                const u = new SpeechSynthesisUtterance(cleanWord);
-                u.lang = 'en-US';
-                u.rate = 0.85;
-                u.pitch = 1.0;
-                if (nativeVoices.length) u.voice = nativeVoices[0];
-
-                currentUtterance = u;
-                window.speechSynthesis.speak(u);
-            } else {
-                showToast('Thiết bị chưa bật giọng đọc tiếng Anh!', 'warning');
-            }
+            wordAudio.src = `https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=en&q=${encodeURIComponent(cleanWord)}`;
+            wordAudio.playbackRate = 0.9;
+            wordAudio.play().catch(e => {
+                showToast('Bé kiểm tra âm lượng hoặc tắt chế độ im lặng nhé!', 'warning');
+            });
         };
 
-        // --- 2. PHÁT BÀI ĐỌC / TỪ CON TRỎ (KHÔNG LẶP LẠI) ---
+        // --- 2. PHÁT BÀI ĐỌC (HẾT LẶP 2 LẦN) ---
         function speakText(text) {
             stopAudio();
             const rawText = String(text || '').trim();
             if (!rawText) return showToast('Chưa có nội dung để đọc!', 'warning');
 
-            const sentences = rawText.match(/[^.!?\n]+[.!?\n]*/g) || [rawText];
-            storyPlaylist = sentences.map(s => s.trim()).filter(s => s.length > 0);
-            if (!storyPlaylist.length) return;
+            audioPlaylist = rawText.match(/[^.!?\n]+[.!?\n]*/g) || [rawText];
+            audioPlaylist = audioPlaylist.map(chunk => chunk.trim()).filter(chunk => chunk.length > 0);
+            if (!audioPlaylist.length) return;
 
-            const session = ++playSessionId;
-            storyPlaylistIdx = 0;
+            currentPlaylistIndex = 0;
             isStoryPlaying = true;
 
             const playBtn = document.getElementById('playBtn');
             if (playBtn) playBtn.innerHTML = '<span class="mr-1">🔊</span>Đang đọc...';
 
-            playStorySentence(session);
+            playNextAudioChunk();
         }
 
-        function playStorySentence(session) {
-            if (session !== playSessionId || !isStoryPlaying || storyPlaylistIdx >= storyPlaylist.length) {
-                if (session === playSessionId) stopAudio();
-                return;
-            }
-
-            const sentence = storyPlaylist[storyPlaylistIdx];
-            if (!('speechSynthesis' in window)) {
-                showToast('Thiết bị không hỗ trợ giọng đọc Web!', 'error');
+        function playNextAudioChunk() {
+            if (!isStoryPlaying || currentPlaylistIndex >= audioPlaylist.length) {
                 stopAudio();
                 return;
             }
 
-            window.speechSynthesis.resume();
+            const chunk = audioPlaylist[currentPlaylistIndex];
+            mainAudio.src = `https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=en&q=${encodeURIComponent(chunk)}`;
+            mainAudio.playbackRate = parseFloat(speedSlider.value) || 0.8;
 
-            const u = new SpeechSynthesisUtterance(sentence);
-            u.lang = 'en-US';
-
-            const vType = voiceType.value;
-            const baseRate = parseFloat(speedSlider.value) || 1.0;
-
-            if (vType === 'child') {
-                u.pitch = 1.4; u.rate = Math.min(1.5, baseRate * 1.1);
-            } else if (vType === 'man') {
-                u.pitch = 0.7; u.rate = Math.max(0.5, baseRate * 0.9);
-            } else if (vType === 'old') {
-                u.pitch = 0.55; u.rate = Math.max(0.5, baseRate * 0.75);
-            } else {
-                u.pitch = 1.0; u.rate = baseRate;
-            }
-
-            if (nativeVoices.length) {
-                if (vType === 'man') u.voice = nativeVoices.find(v => /male|david|george|james/i.test(v.name)) || nativeVoices[0];
-                else u.voice = nativeVoices.find(v => /female|samantha|zira|google/i.test(v.name)) || nativeVoices[0];
-            }
-
-            currentUtterance = u;
-
-            let hasMoved = false;
-            const goNext = () => {
-                if (hasMoved || session !== playSessionId) return;
-                hasMoved = true;
-                storyPlaylistIdx++;
-                setTimeout(() => {
-                    if (session === playSessionId && isStoryPlaying) {
-                        playStorySentence(session);
-                    }
-                }, 80);
+            mainAudio.onended = () => {
+                currentPlaylistIndex++;
+                playNextAudioChunk();
             };
 
-            u.onend = goNext;
-            u.onerror = goNext;
+            mainAudio.onerror = () => {
+                currentPlaylistIndex++;
+                playNextAudioChunk();
+            };
 
-            window.speechSynthesis.speak(u);
+            mainAudio.play().catch(e => {
+                stopAudio();
+                showToast('Bé ấn lại để tiếp tục phát âm thanh nhé!', 'warning');
+            });
         }
 
         document.getElementById('playBtn').addEventListener('click', () => { 
             if (!isStoryPlaying) speakText(storyText.value.trim()); 
         });
-        
+
+        // Ấn từ con trỏ: Ngắt ngay luồng cũ và đọc chuẩn xác không bị lặp
         let lastCursorClickTime = 0;
         document.getElementById('playCursorBtn').addEventListener('click', () => {
             const now = Date.now();
@@ -436,8 +369,11 @@
             while (pos > 0 && /\S/.test(text[pos - 1])) pos--;
             speakText(text.substring(pos).trim());
         });
-        
+
         document.getElementById('stopBtn').addEventListener('click', stopAudio);
+        speedSlider.addEventListener('input', () => {
+            if (isStoryPlaying) mainAudio.playbackRate = parseFloat(speedSlider.value) || 0.8;
+        });
 
         // ================== XUẤT OFFLINE (WORD & MP3) ==================
         function exportToWord() {
@@ -477,7 +413,7 @@
 
             try {
                 for(let i=0; i<chunks.length; i++) {
-                    let url = `https://translate.google.com/translate_tts?client=tw-ob&ie=UTF-8&tl=en&q=${encodeURIComponent(chunks[i])}`;
+                    let url = `https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=en&q=${encodeURIComponent(chunks[i])}`;
                     let proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
                     let res = await fetch(proxyUrl);
                     if(!res.ok) throw new Error('Proxy lỗi');
@@ -503,7 +439,7 @@
                 showToast('Tải Audio Toàn Bài thành công! 🎵', 'success');
             } catch(e) {
                 showToast('Mở link nghe tạm thời...', 'warning');
-                window.open(`https://translate.google.com/translate_tts?client=tw-ob&ie=UTF-8&tl=en&q=${encodeURIComponent(chunks[0])}`, '_blank');
+                window.open(`https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=en&q=${encodeURIComponent(chunks[0])}`, '_blank');
             } finally {
                 btn.innerHTML = '🎵 MP3'; btn.disabled = false;
             }
@@ -633,7 +569,7 @@
             extractVocabulary(text);
         });
 
-        // ================== TỪ VỰNG THÔNG MINH (TỰ CO DÃN 15 - 20 TỪ THEO ĐỘ DÀI) ==================
+        // ================== TỪ VỰNG THÔNG MINH ==================
         async function extractVocabulary(text) {
             const stopWords = [
                 'the', 'and', 'to', 'of', 'in', 'is', 'that', 'it', 'on', 'you', 'this', 'for', 
@@ -651,11 +587,8 @@
 
             const totalWordsInStory = (text.trim().match(/\s+/g) || []).length + 1;
             let targetCount = 15;
-            if (totalWordsInStory > 120) {
-                targetCount = 20;
-            } else if (totalWordsInStory > 60) {
-                targetCount = 18;
-            }
+            if (totalWordsInStory > 120) targetCount = 20;
+            else if (totalWordsInStory > 60) targetCount = 18;
 
             let unique = Object.keys(counts)
                 .filter(w => w.length >= 4)
