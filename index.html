@@ -1253,13 +1253,22 @@
             try {
                 showToast('Đang xóa truyện...', 'warning');
                 const targetId = pendingDeleteId;
-                closeDeleteModal();
+                const { data: meta, error: readError } = await db.from('saved_stories')
+                    .select('storage_path').eq('id', targetId).single();
+                if (readError) throw readError;
+                if (meta && meta.storage_path) {
+                    const { error: fileError } = await db.storage.from('stories').remove([meta.storage_path]);
+                    if (fileError) throw new Error('Không xóa được file truyện: ' + fileError.message);
+                }
                 const { error } = await db.from('saved_stories').delete().eq('id', targetId);
                 if (error) throw error;
-                showToast('Đã xóa truyện khỏi kho! 🗑️', 'success');
+                store.del('magicStory_' + targetId);
+                closeDeleteModal();
+                showToast('Đã xóa truyện và file khỏi kho! 🗑️', 'success');
                 fetchStories();
             } catch (err) {
-                showToast('Lỗi khi xóa bài!', 'error');
+                console.error('confirmDeleteStory:', err);
+                showToast('Lỗi khi xóa bài: ' + (err.message || 'Không rõ nguyên nhân'), 'error');
             }
         }
 
@@ -2438,35 +2447,115 @@ function cacheStory(id, text) {                         // nhớ tối đa 15 tr
     idx = idx.filter(x => x !== id); idx.push(id); while (idx.length > 15) store.del('magicStory_' + idx.shift());
     store.set('magicStory_' + id, text); store.set('magicStoryIdx', JSON.stringify(idx));
 }
-fetchStories = async function () {                      // chỉ tải id + tiêu đề (không tải cả nội dung các truyện), tối đa 100
-    if (!db) return;
+// ================== STORAGE V2: METADATA TRONG DB, NỘI DUNG TRONG BUCKET stories ==================
+const STORY_BUCKET = 'stories';
+const escapeStoryHtml = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+async function storyHash(value) {
+    if (window.crypto && crypto.subtle) {
+        const bytes = new TextEncoder().encode(value);
+        const digest = await crypto.subtle.digest('SHA-256', bytes);
+        return [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+    // Fallback hash chỉ dùng để giảm trùng lặp, không dùng cho bảo mật.
+    let h = 2166136261; for (let i = 0; i < value.length; i++) { h ^= value.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return 'fallback-' + (h >>> 0).toString(16) + '-' + value.length;
+}
+fetchStories = async function () {
+    const listEl = document.getElementById('storyList');
+    if (!db) { if (listEl) listEl.innerHTML = '<p class="text-amber-600 text-xs font-bold">Chưa kết nối Supabase.</p>'; return; }
     try {
-        const { data: stories } = await db.from('saved_stories').select('id, title').order('created_at', { ascending: false }).limit(100);
-        const listEl = document.getElementById('storyList');
-        if (!stories || !stories.length) { listEl.innerHTML = '<p class="text-indigo-400 font-bold text-[10px] italic text-center">Chưa có bài nào.</p>'; return; }
-        listEl.innerHTML = stories.map(s => `<div class="bg-white p-1.5 rounded border border-indigo-100 flex justify-between items-center shadow-sm"><div class="cursor-pointer truncate flex-1 pr-1" onclick="loadStory('${s.id}')"><span class="text-indigo-700 font-bold text-[10px] md:text-xs">📄 ${(s.title || 'Truyện').replace(/</g, '&lt;')}</span></div><button onclick="deleteStory('${s.id}')" class="text-red-500 hover:bg-red-100 px-1 rounded font-black text-[10px]" title="Xóa sách">❌</button></div>`).join('');
+        // Chỉ lấy metadata, không tải nội dung truyện; giới hạn 50 truyện mỗi trang.
+        const { data: stories, error } = await db.from('saved_stories')
+            .select('id,title,created_at,file_size,storage_path')
+            .order('created_at', { ascending: false }).range(0, 49);
+        if (error) throw error;
+        if (!stories || !stories.length) {
+            listEl.innerHTML = '<p class="text-indigo-400 font-bold text-[10px] italic text-center py-2">Kho truyện chưa có bài nào.</p>';
+            renderQuestUI(); return;
+        }
+        listEl.innerHTML = stories.map(s => {
+            const size = s.file_size ? ` · ${(s.file_size / 1024).toFixed(1)} KB` : '';
+            return `<div class="bg-white p-1.5 rounded border border-indigo-100 flex justify-between items-center shadow-sm gap-2">
+                <button type="button" class="cursor-pointer truncate flex-1 text-left" onclick="loadStory('${escapeStoryHtml(s.id)}')">
+                    <span class="text-indigo-700 font-bold text-[10px] md:text-xs">📄 ${escapeStoryHtml(s.title || 'Truyện')}${size}</span>
+                </button>
+                <button type="button" onclick="deleteStory('${escapeStoryHtml(s.id)}')" class="text-red-500 hover:bg-red-100 px-1 rounded font-black text-[10px]" title="Xóa sách">❌</button>
+            </div>`;
+        }).join('');
         renderQuestUI();
-    } catch (err) {}
+    } catch (err) {
+        console.error('fetchStories:', err);
+        listEl.innerHTML = `<p class="text-red-600 text-[11px] font-bold">Không tải được kho truyện: ${escapeStoryHtml(err.message || 'Lỗi truy vấn')}.</p>`;
+    }
 };
-loadStory = async function (id) {                       // truyện từ kho: giữ nguyên chữ, KHÔNG quét xóa từ
+loadStory = async function (id) {
+    if (!db || !id) return showToast('Chưa kết nối Cloud!', 'warning');
     try {
-        let c = store.get('magicStory_' + id);
-        if (!c) { const { data, error } = await db.from('saved_stories').select('content').eq('id', id).single(); if (error || !data) throw error || 0; c = data.content; cacheStory(id, c); }
-        storyText.value = c; textSource = 'cloud'; showToast('Đã tải truyện từ kho, giữ nguyên từ 📚', 'success'); cleanBtn.click();
-    } catch (err) { showToast('Chưa tải được truyện, thử lại nhé!', 'error'); }
+        let content = store.get('magicStory_' + id);
+        if (!content) {
+            const { data, error } = await db.from('saved_stories')
+                .select('content,storage_path,title').eq('id', id).single();
+            if (error) throw error;
+            if (data.storage_path) {
+                const { data: blob, error: storageError } = await db.storage.from(STORY_BUCKET).download(data.storage_path);
+                if (storageError) throw storageError;
+                content = await blob.text();
+            } else {
+                // Tương thích các truyện cũ đang lưu trực tiếp trong cột content.
+                content = data.content || '';
+            }
+            if (!content) throw new Error('Truyện không có nội dung hoặc file đã bị thiếu.');
+            cacheStory(id, content);
+        }
+        storyText.value = content; textSource = 'cloud';
+        showToast('Đã tải truyện từ kho ☁️', 'success'); cleanBtn.click();
+    } catch (err) {
+        console.error('loadStory:', err);
+        showToast('Không tải được truyện: ' + (err.message || 'Lỗi truy xuất'), 'error');
+    }
 };
-saveToCloud = async function () {                       // gọn chữ, giới hạn độ dài, không lưu trùng
-    let text = storyText.value.replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim(); if (!text) return showToast('Chưa có truyện!', 'warning');
-    if (!db) return showToast('Chưa kết nối được Cloud, thử lại sau nhé!', 'warning');
-    if (text.length > 40000) { text = text.slice(0, 40000); showToast('Truyện dài quá, chỉ lưu 40.000 ký tự đầu', 'warning'); }
-    const title = text.substring(0, 40).replace(/\n/g, ' ').trim() + '...';
+saveToCloud = async function () {
+    const text = storyText.value.replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
+    if (!text) return showToast('Chưa có truyện!', 'warning');
+    if (!db) return showToast('Chưa kết nối Supabase!', 'warning');
+    if (text.length > 200000) return showToast('Truyện vượt quá 200.000 ký tự. Hãy chia thành các phần nhỏ.', 'warning');
+    const title = text.substring(0, 60).replace(/\n/g, ' ').trim() + (text.length > 60 ? '...' : '');
+    let uploadedPath = null;
     try {
-        const { data: dup } = await db.from('saved_stories').select('id').eq('title', title).limit(1);
-        if (dup && dup.length) return showToast('Truyện này đã có trong kho rồi! 📚', 'warning');
-        const { data, error } = await db.from('saved_stories').insert([{ title, content: text }]).select('id').single();
-        if (error) throw error; cacheStory(data.id, text); showToast('Lưu thành công! ☁️', 'success'); fetchStories();
-    } catch (err) { showToast('Lưu chưa được, thử lại nhé!', 'error'); }
+        showToast('Đang kiểm tra và lưu truyện...', 'warning');
+        const hash = await storyHash(text);
+        const { data: duplicate, error: dupError } = await db.from('saved_stories')
+            .select('id').eq('content_hash', hash).limit(1);
+        if (dupError && !/content_hash/i.test(dupError.message || '')) throw dupError;
+        if (duplicate && duplicate.length) return showToast('Truyện này đã có trong kho rồi! 📚', 'warning');
+
+        const id = (crypto.randomUUID ? crypto.randomUUID() : 'story-' + Date.now() + '-' + Math.random().toString(36).slice(2));
+        uploadedPath = `${id}.txt`;
+        const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+        const { error: uploadError } = await db.storage.from(STORY_BUCKET).upload(uploadedPath, blob, {
+            upsert: false, contentType: 'text/plain; charset=utf-8', cacheControl: '31536000'
+        });
+        if (uploadError) throw new Error('Không tải file lên Storage. Hãy kiểm tra bucket stories và policy: ' + uploadError.message);
+
+        const { error: insertError } = await db.from('saved_stories').insert([{
+            id, title, content: null, storage_path: uploadedPath,
+            content_type: 'text/plain', file_size: blob.size, content_hash: hash
+        }]);
+        if (insertError) {
+            // Hoàn tác file nếu ghi metadata thất bại để tránh file rác.
+            await db.storage.from(STORY_BUCKET).remove([uploadedPath]);
+            uploadedPath = null;
+            throw insertError;
+        }
+        cacheStory(id, text);
+        showToast('Đã lưu truyện lên Storage và ghi danh mục thành công! ☁️', 'success');
+        await fetchStories();
+    } catch (err) {
+        console.error('saveToCloud:', err);
+        showToast('Lưu truyện thất bại: ' + (err.message || 'Lỗi không xác định'), 'error');
+    }
 };
+
 recordStoryReadCount = async function (storyTitle) {    // chỉ đọc cột read_count thay vì cả dòng
     if (!db || !storyTitle) return;
     try {
