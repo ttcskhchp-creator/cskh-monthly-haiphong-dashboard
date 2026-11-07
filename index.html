@@ -409,9 +409,9 @@
 
             <!-- Phòng Game -->
             <div id="cardGameSection" class="guide-card p-3 md:p-4 bg-sky-50 border-2 border-sky-200 rounded-[1.5rem]">
-                <h3 class="font-black text-sky-600 mb-2 text-sm md:text-base">🕹️ Phòng Game Vui Nhộn</h3>
-                <div id="gameMenu" class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3"></div>
-                <div id="gameArea" class="bg-white/80 rounded-xl p-2 text-xs font-bold text-slate-700 min-h-[60px]"><span class="italic font-normal text-sky-400 text-[10px]">Bấm "Sạch" để lấy từ vựng và câu văn, rồi chọn trò chơi nhé! 🎮</span></div>
+                <h3 class="font-black text-sky-600 mb-2 text-sm md:text-base">🕹️ Phòng Game Từ Vựng</h3>
+                <div id="gameMenu" class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 mb-2"></div>
+                <div id="gameArea" class="bg-white/80 rounded-xl p-2 text-xs font-bold text-slate-700 min-h-[60px]"><span class="italic font-normal text-sky-400 text-[10px]">Bấm "Sạch" để lấy từ vựng, rồi chọn trò chơi nhé! 🎮</span></div>
             </div>
         </div>
     </main>
@@ -1152,6 +1152,7 @@
             mainAudio.play().catch(() => showToast('Bật âm lượng lên nha bé!', 'warning'));
         }
 
+        // Lọc ký tự tiếng Trung hoặc ký tự lạ khi thu âm câu dài
         function sanitizeSpeech(text) {
             return String(text || '').replace(/[\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff]/g, '').replace(/[^a-zA-Z0-9\s'-]/g, ' ').replace(/\s+/g, ' ').trim();
         }
@@ -1320,135 +1321,833 @@
             talk(G.score >= 40 ? 'Điểm của lượt này tăng vùn vụt rồi! Sắp đạt chuẩn nộp bài rồi đó! 🚀' : 'Tiếp tục luyện thêm câu đố để đủ điểm nộp bài nha! 😎');
         }
 
-        // ================== MINI GAME GHÉP CÂU HOÀN TOÀN MỚI ==================
-        function gSent() {
-            let sents = (allStorySentences && allStorySentences.length)
-                ? allStorySentences
-                : (storyText.value.match(/[^.!?\n]+[.!?]*/g) || []).map(s => s.trim()).filter(s => {
-                    const l = s.split(/\s+/).length;
-                    return l >= 3 && l <= 12;
-                });
-            sents = sents.filter(s => {
-                const l = s.split(/\s+/).length;
-                return l >= 3 && l <= 12;
-            });
-            if (!sents.length) {
-                showToast('Chưa có câu bài học! Chọn truyện và bấm "Sạch" trước nhé!', 'warning');
-                return talk('Bé qua tab 📖 Đọc, chọn bài rồi bấm "Sạch" để máy chuẩn bị câu ghép nha!');
-            }
+        const GAMES = [['listen', '🎧', 'Nghe đoán từ'], ['flip', '🃏', 'Lật thẻ nhớ'], ['speak', '🎤', 'Tập phát âm'], ['scr', '🔤', 'Xếp chữ'], ['speed', '⚡', 'Đua tốc độ']];
+        $('gameMenu').innerHTML = GAMES.map(g => `<button class="py-1.5 bg-sky-500 text-white rounded-lg text-[11px] font-black btn-bounce" onclick="playGame('${g[0]}')">${g[1]} ${g[2]}</button>`).join('');
 
-            const qs = shuf(sents).slice(0, 4);
+        window.playGame = k => {
+            if (V().length < 4) return showToast('Bấm "Sạch" để lấy từ vựng trước nhé!', 'warning');
+            clearInterval(GT); G.score = 0; G.k = k; ({ listen: gListen, flip: gFlip, speak: gSpeak, scr: gScr, speed: gSpeed })[k]();
+        };
+
+        function gListen() {
+            const list = V().filter(x => x && x.word && x.meaning);
+            if (list.length < 2) return showToast('Cần ít nhất từ vựng để chơi!', 'warning');
+            const qs = shuf(list).slice(0, 6); 
             let i = 0;
+            let isProcessing = false;
 
             const nx = () => {
+                isProcessing = false;
                 if (i >= qs.length) return fin();
-                const targetSentence = qs[i];
-                const targetWords = targetSentence.replace(/[.,!?;:"'()]/g, '').trim().split(/\s+/).filter(Boolean);
-                if (targetWords.length < 3) {
-                    i++;
-                    return nx();
+                const v = qs[i];
+                const pool = list.filter(x => x.word !== v.word);
+                
+                const wrongOptions = shuf(pool).slice(0, 3).map(x => x.meaning);
+                const options = shuf([v.meaning, ...wrongOptions]);
+
+                const el = area();
+                el.innerHTML = `
+                    <div class="flex justify-between items-center text-[11px] text-sky-600 mb-2 font-bold">
+                        <span>Câu ${i + 1}/${qs.length}</span>
+                        <span>Điểm: <b class="text-orange-600 font-black">${G.score}đ</b></span>
+                    </div>
+                    <div class="text-center mb-3">
+                        <button type="button" id="btnListenReplay" class="text-5xl py-2 px-4 bg-amber-100 hover:bg-amber-200 border-2 border-amber-300 rounded-2xl shadow-sm btn-bounce">🔊</button>
+                        <div class="text-[11px] text-slate-500 font-bold mt-1">Chạm vào loa để nghe lại nha!</div>
+                    </div>
+                    <div id="listenOptContainer" class="grid grid-cols-2 gap-2 mb-2">
+                        ${options.map((opt, idx) => `
+                            <button type="button" class="opt-btn py-2.5 px-2 bg-white hover:bg-sky-50 border-2 border-sky-200 rounded-xl font-black text-xs text-slate-700 capitalize shadow-sm transition-all text-center leading-snug">
+                                ${opt}
+                            </button>
+                        `).join('')}
+                    </div>
+                    <div id="listenNextRow" class="text-center hidden mt-1">
+                        <button type="button" id="btnManualNext" class="py-1 px-3 bg-sky-500 text-white rounded-lg text-xs font-black shadow btn-bounce">Câu tiếp theo ➡️</button>
+                    </div>
+                `;
+
+                const replayBtn = document.getElementById('btnListenReplay');
+                if (replayBtn) {
+                    replayBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        window.playWordAudio(v.word);
+                    };
                 }
 
-                let bank = shuf(targetWords.map((w, idx) => ({ id: idx, text: w, used: false })));
-                let chosen = [];
+                try { window.playWordAudio(v.word); } catch(e) {}
 
-                const render = () => {
-                    const el = area();
-                    el.innerHTML = `
-                        <div class="flex justify-between items-center text-xs text-emerald-600 font-bold mb-2">
-                            <span>Câu ${i + 1}/${qs.length}</span>
-                            <span>Điểm: <b class="text-orange-600 font-black">${G.score}đ</b></span>
-                        </div>
-                        <div class="text-center mb-2">
-                            <button type="button" id="btnSentAudio" class="px-3 py-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 text-xs font-black rounded-xl border border-emerald-300 btn-bounce shadow-sm inline-flex items-center gap-1">
-                                🔊 Nghe câu mẫu
-                            </button>
-                        </div>
-                        <div class="min-h-[56px] p-2 bg-emerald-50/80 border-2 border-dashed border-emerald-300 rounded-2xl flex flex-wrap gap-1.5 items-center justify-center mb-3">
-                            ${chosen.length === 0 ? '<span class="text-xs text-slate-400 font-bold italic">Chạm vào các từ bên dưới theo đúng thứ tự câu...</span>' : ''}
-                            ${chosen.map((item, cIdx) => `
-                                <button type="button" class="btn-bounce chosen-word px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-black text-xs shadow-sm flex items-center gap-1" data-cidx="${cIdx}">
-                                    ${item.text} <span class="text-[10px] opacity-75">✕</span>
-                                </button>
-                            `).join('')}
-                        </div>
-                        <div class="flex flex-wrap gap-1.5 justify-center mb-3">
-                            ${bank.map((item) => `
-                                <button type="button" class="btn-bounce bank-word px-3 py-1.5 bg-white hover:bg-emerald-50 border-2 border-emerald-200 text-emerald-800 font-black text-xs rounded-xl shadow-sm ${item.used ? 'opacity-20 pointer-events-none' : ''}" data-id="${item.id}">
-                                    ${item.text}
-                                </button>
-                            `).join('')}
-                        </div>
-                        <div class="flex justify-center gap-2">
-                            <button type="button" id="btnSentReset" class="py-1 px-3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl text-xs btn-bounce">🔄 Xếp lại</button>
-                            <button type="button" id="btnSentCheck" class="py-1 px-4 bg-green-500 hover:bg-green-600 text-white font-black rounded-xl text-xs shadow-sm btn-bounce">✅ Kiểm tra</button>
-                        </div>
-                        <div id="sentFeedback" class="mt-2 text-center text-xs font-black min-h-[1.5rem]"></div>
-                    `;
+                const optBtns = el.querySelectorAll('.opt-btn');
+                const nextRow = document.getElementById('listenNextRow');
+                const manualNextBtn = document.getElementById('btnManualNext');
 
-                    $('btnSentAudio').onclick = () => playSentenceSample(encodeURIComponent(targetSentence));
-
-                    el.querySelectorAll('.bank-word').forEach(btn => {
-                        btn.onclick = () => {
-                            const id = parseInt(btn.dataset.id);
-                            const found = bank.find(w => w.id === id);
-                            if (found && !found.used) {
-                                found.used = true;
-                                chosen.push(found);
-                                render();
-                            }
-                        };
-                    });
-
-                    el.querySelectorAll('.chosen-word').forEach(btn => {
-                        btn.onclick = () => {
-                            const cIdx = parseInt(btn.dataset.cidx);
-                            const removed = chosen.splice(cIdx, 1)[0];
-                            if (removed) {
-                                const b = bank.find(w => w.id === removed.id);
-                                if (b) b.used = false;
-                            }
-                            render();
-                        };
-                    });
-
-                    $('btnSentReset').onclick = () => {
-                        bank.forEach(w => w.used = false);
-                        chosen = [];
-                        render();
+                if (manualNextBtn) {
+                    manualNextBtn.onclick = () => {
+                        i++;
+                        nx();
                     };
+                }
 
-                    $('btnSentCheck').onclick = () => {
-                        if (chosen.length < targetWords.length) {
-                            showToast('Bé chưa xếp hết các từ kìa!', 'warning');
-                            return;
-                        }
-                        const fb = $('sentFeedback');
-                        const isCorrect = chosen.map(w => w.text.toLowerCase()).join(' ') === targetWords.map(w => w.toLowerCase()).join(' ');
+                optBtns.forEach((btn, idx) => {
+                    btn.onclick = (e) => {
+                        e.stopPropagation();
+                        if (isProcessing) return;
+                        isProcessing = true;
+
+                        optBtns.forEach(b => {
+                            b.disabled = true;
+                            b.classList.remove('hover:bg-sky-50', 'bg-white');
+                        });
+
+                        const chosen = options[idx];
+                        const isCorrect = (chosen === v.meaning);
 
                         if (isCorrect) {
-                            fb.innerHTML = '<span class="text-green-600">🎉 Xuất sắc! Bé ghép đúng hoàn toàn câu rồi! +15đ</span>';
-                            G.score += 15;
-                            burst(...ctr(), WIN, 14);
-                            playSentenceSample(encodeURIComponent(targetSentence));
-                            talk('Tuyệt cú mèo! Bé ghép câu chuẩn chỉnh luôn! 🌟');
-                            setTimeout(() => {
-                                i++;
-                                nx();
-                            }, 1600);
+                            btn.classList.add('bg-green-200', 'border-green-500', 'text-green-800');
+                            G.score += 10;
+                            try { burst(...ctr(), WIN, 12); } catch(e) {}
+                            talk('Chính xác rồi! Bé nghe siêu quá! 👏🌟');
                         } else {
-                            fb.innerHTML = '<span class="text-red-500">Chưa đúng thứ tự rồi 🙈 Bé nghe lại câu mẫu rồi thử lại nha!</span>';
-                            wig(el);
-                            burst(...ctr(), OOPS, 6);
-                            talk('Thử lại nào bé ơi, bấm "Nghe câu mẫu" để nhớ vị trí các từ nhé! 🎧');
+                            btn.classList.add('bg-red-200', 'border-red-500', 'text-red-800');
+                            optBtns.forEach((b, k) => {
+                                if (options[k] === v.meaning) {
+                                    b.classList.add('bg-green-200', 'border-green-500', 'text-green-800');
+                                }
+                            });
+                            try { burst(...ctr(), OOPS, 6); } catch(e) {}
+                            talk('Tiếc quá! Ô màu xanh mới là đáp án đúng nhé! 🙈');
                         }
-                    };
-                };
 
-                render();
+                        if (nextRow) nextRow.classList.remove('hidden');
+
+                        setTimeout(() => {
+                            i++;
+                            nx();
+                        }, 1200);
+                    };
+                });
             };
 
             nx();
+        }
+
+        function gSpeed() {
+            let t = 30; const pool = V(), el = area();
+            const nx = () => {
+                const v = pick(pool), o = shuf([v, ...shuf(pool.filter(x => x !== v)).slice(0, 2)]);
+                el.innerHTML = `<div class="flex justify-between text-[10px] text-sky-600"><span>⏱️ <b id="tm">${t}</b>s</span><span>${G.score}đ</span></div><div class="text-center text-xl font-black my-2">${v.word}</div><div class="grid gap-1.5">${o.map(x => `<button class="o py-1.5 bg-slate-50 border-2 border-sky-200 rounded-lg capitalize">${x.meaning}</button>`).join('')}</div>`;
+                el.querySelectorAll('.o').forEach((b, j) => b.onclick = () => { if (o[j] === v) { G.score += 10; burst(...ctr(), FUN, 5); } else { t = Math.max(0, t - 3); wig(el); } nx(); });
+            };
+            GT = setInterval(() => { t--; const e = $('tm'); if (e) e.textContent = t; if (t <= 0) fin(); }, 1000); nx();
+        }
+
+        function gFlip() {
+            const vs = shuf(V()).slice(0, 6), cs = shuf(vs.flatMap((v, k) => [{ k, t: v.word, en: 1 }, { k, t: v.meaning }]));
+            let sel = [], lock = false, done = 0, moves = 0;
+            area().innerHTML = `<div id="mv" class="text-[10px] text-sky-600 mb-1">Lượt: 0</div><div class="grid grid-cols-4 gap-1.5">${cs.map((c, i) => `<button class="cd h-14 rounded-lg bg-sky-300 text-white text-[10px] font-black leading-tight px-0.5 capitalize">❓</button>`).join('')}</div>`;
+            const OPEN = 'bg-white text-sky-700 border-2 border-sky-300';
+            area().querySelectorAll('.cd').forEach((b, i) => b.onclick = () => {
+                const c = cs[i]; if (lock || b.dataset.o) return; b.dataset.o = 1; b.textContent = c.t; b.className = b.className.replace('bg-sky-300', OPEN);
+                if (c.en) window.playWordAudio(c.t); sel.push([b, c]); if (sel.length < 2) return;
+                moves++; $('mv').textContent = 'Lượt: ' + moves; const [[b1, c1], [b2, c2]] = sel; sel = [];
+                if (c1.k === c2.k) {
+                    done++; [b1, b2].forEach(x => x.className = x.className.replace('bg-white', 'bg-green-200')); burst(...ctr(), FUN, 6);
+                    if (done === vs.length) { G.score = Math.max(10, 100 - moves * 5); setTimeout(fin, 700); }
+                } else { lock = true; setTimeout(() => { [b1, b2].forEach(x => { delete x.dataset.o; x.textContent = '❓'; x.className = x.className.replace(OPEN, 'bg-sky-300'); }); lock = false; }, 900); }
+            });
+        }
+
+        function gScr() {
+            const pl = V().filter(v => v.word.length <= 9), vs = shuf(pl.length >= 3 ? pl : V()).slice(0, 5); let i = 0, pk = [];
+            const nx = () => {
+                if (i >= vs.length) return fin(); const v = vs[i], L = shuf(v.word.split('').map(c => ({ c }))); pk = [];
+                const r = () => {
+                    area().innerHTML = `<div class="text-[10px] text-sky-500">Câu ${i + 1}/${vs.length} • ${G.score}đ</div><div class="text-center my-1">Nghĩa: <b class="text-purple-600 capitalize">${v.meaning}</b> <button onclick="window.playWordAudio('${v.word}')">🔊</button></div><div class="flex justify-center gap-1 mb-2 min-h-[2.2rem]">${v.word.split('').map((_, k) => `<span class="w-7 h-8 border-b-4 border-sky-300 text-center text-lg uppercase">${pk[k] ? pk[k].c : ''}</span>`).join('')}</div><div class="flex flex-wrap justify-center gap-1">${L.map(l => `<button class="lt w-8 h-8 rounded-lg bg-yellow-300 text-yellow-900 font-black uppercase ${pk.includes(l) ? 'opacity-30' : ''}">${l.c}</button>`).join('')}<button id="un" class="px-2 rounded-lg bg-red-200">⌫</button></div>`;
+                    area().querySelectorAll('.lt').forEach((b, j) => b.onclick = () => {
+                        const l = L[j]; if (pk.includes(l)) return; pk.push(l); r();
+                        if (pk.length === v.word.length) {
+                            if (pk.map(x => x.c).join('') === v.word) { G.score += 10; window.playWordAudio(v.word); burst(...ctr(), FUN, 10); i++; setTimeout(nx, 1100); }
+                            else { wig(area()); talk('Chữ nhảy loạn xạ rồi! 🤪'); setTimeout(() => { pk = []; r(); }, 700); }
+                        }
+                    });
+                    $('un').onclick = () => { pk.pop(); r(); };
+                }; r();
+            }; nx();
+        }
+
+        function gSpeak() {
+            const vs = shuf(V()).slice(0, 5), SR = window.SpeechRecognition || window.webkitSpeechRecognition; let i = 0;
+            const nx = () => {
+                if (i >= vs.length) return fin(); const v = vs[i];
+                area().innerHTML = `<div class="text-center"><div class="text-[10px] text-sky-500">Câu ${i + 1}/${vs.length} • ${G.score}đ</div><div class="text-2xl font-black text-purple-700">${v.word}</div><div class="text-[11px] capitalize text-slate-500 mb-2">${v.meaning}</div><button onclick="window.playWordAudio('${v.word}')" class="px-3 py-1.5 bg-cyan-500 text-white rounded-lg">🔊 Nghe mẫu</button> ${SR ? '<button id="mic" class="px-3 py-1.5 bg-pink-500 text-white rounded-lg">🎤 Bé đọc</button>' : ''} <button id="sk" class="px-2 py-1.5 bg-slate-200 rounded-lg">⏭️</button><div id="sr" class="mt-2 min-h-[1.5rem]"></div></div>`;
+                const go = p => { G.score += p; i++; setTimeout(nx, 1300); };
+                $('sk').onclick = () => go(0);
+                if (SR) $('mic').onclick = () => {
+                    const r = new SR(); r.lang = 'en-US'; r.maxAlternatives = 5; $('sr').textContent = '👂 Đang nghe...';
+                    r.onresult = e => {
+                        const al = [...e.results[0]].map(a => sanitizeSpeech(a.transcript).toLowerCase().trim()), ok = al.some(a => a.split(/\s+/).includes(v.word));
+                        $('sr').innerHTML = ok ? '🎉 Chuẩn luôn!' : `🤔 Máy nghe là "${al[0] || '...'}" — thử lại nhé!`;
+                        if (ok) { burst(...ctr(), WIN, 12); go(10); } else wig(area());
+                    };
+                    r.onerror = () => $('sr').textContent = 'Không nghe thấy gì 🙉 (nhớ cho phép micro nhé)'; r.start();
+                };
+            }; nx();
+        }
+
+        // ================== SỰ KIỆN CLICK AN TOÀN TUYỆT ĐỐI ==================
+        const WM = { 
+            candy: ['🍭', '🧁', '🦄', '🌈', '⭐', '🍩', '🎀', '🧸'], 
+            ocean: ['🐠', '🐙', '🐳', '🐚', '⚓', '🦀', '🐬', '🫧'], 
+            forest: ['🌲', '🦊', '🦉', '🍄', '🐿️', '🦋', '🌻', '🐻'] 
+        };
+        const MASCOT_SKINS = { 
+            candy: '🦄',
+            ocean: '🎠',
+            forest: '🐎'
+        };
+
+        const curTheme = () => document.documentElement.dataset.theme || 'candy';
+        function wm() {
+            let l = $('wm'); if (!l) { l = document.createElement('div'); l.id = 'wm'; document.body.prepend(l); }
+            const L = WM[curTheme()] || WM.candy;
+            l.innerHTML = Array.from({ length: 18 }, (_, i) => `<i style="left:${(i % 6) * 17 + Math.random() * 8}%;top:${((i / 6) | 0) * 34 + Math.random() * 14}%;font-size:${48 + Math.random() * 60}px;transform:rotate(${Math.random() * 60 - 30}deg);animation-delay:${-Math.random() * 8}s">${L[i % L.length]}</i>`).join('');
+            const me = $('me'); if (me) me.textContent = MASCOT_SKINS[curTheme()] || '🦄';
+        }
+        const _at = applyTheme; 
+        applyTheme = id => { _at(id); wm(); };
+        wm();
+
+        const pick = a => a[Math.random() * a.length | 0];
+        const wig = e => { e.classList.remove('wiggle'); void e.offsetWidth; e.classList.add('wiggle'); };
+        function burst(x, y, list, n = 8) {
+            for (let i = 0; i < n; i++) {
+                const e = document.createElement('span'); e.className = 'fx'; e.textContent = pick(list); e.style.left = x + 'px'; e.style.top = y + 'px'; document.body.appendChild(e);
+                const a = Math.random() * 6.28, d = 40 + Math.random() * 80;
+                try {
+                    e.animate([{ transform: 'translate(-50%,-50%) scale(.5)', opacity: 1 }, { transform: `translate(calc(-50% + ${Math.cos(a) * d}px),calc(-50% + ${Math.sin(a) * d - 40}px)) scale(1.4) rotate(${Math.random() * 360}deg)`, opacity: 0 }], { duration: 900 + Math.random() * 500, easing: 'ease-out' }).onfinish = () => e.remove();
+                } catch(err) {
+                    setTimeout(() => e.remove(), 1000);
+                }
+            }
+        }
+        const FUN = ['🎉', '⭐', '🌈', '🎈', '✨', '🤪', '🐣', '🍕'];
+        let mt; 
+        function talk(m) { 
+            const b = $('mb'); 
+            if (!b) return;
+            b.textContent = m; 
+            b.style.opacity = 1; 
+            clearTimeout(mt); 
+            mt = setTimeout(() => { b.style.opacity = 0; }, 6000); 
+        }
+
+        function getMissingStepsAdvice() {
+            if (!currentSharedQuest) return "Bé hãy chọn một truyện trong kho để bắt đầu làm bài nha! 📖";
+            const q = currentSharedQuest;
+            const missingStories = Math.max(0, (q.target_stories || 1) - sessionTracker.readStories.size);
+            const missingSentences = Math.max(0, (q.target_sentences || 1) - sessionTracker.sentencesPassed);
+            const missingGames = Math.max(0, (q.target_games || 2) - sessionTracker.gamesPlayed);
+            const missingScore = Math.max(0, (q.target_score || 150) - sessionTracker.scoreEarned);
+
+            if (missingStories === 0 && missingSentences === 0 && missingGames === 0 && missingScore === 0) {
+                return "Wao xuất sắc quá! Bé đã hoàn thành đủ cả 4 mục! Bấm '🏆 Nộp Ghi Điểm' để nhận thưởng ngay thôi! 🥳🎉";
+            }
+
+            let advise = "Nhiệm vụ còn thiếu: ";
+            let steps = [];
+            if (missingStories > 0) steps.push(`Nghe/đọc ${missingStories} bài`);
+            if (missingSentences > 0) steps.push(`Luyện đọc đúng ${missingSentences} câu`);
+            if (missingGames > 0) steps.push(`Chơi ${missingGames} lượt game`);
+            if (missingScore > 0) steps.push(`Kiếm thêm ${missingScore}đ nữa`);
+
+            return advise + steps.join(", ") + " nha! Cố lên bé yêu! 💪✨";
+        }
+
+        const MOTIVATION_QUOTES = [
+            "Cố lên bé ơi! Bác học ngôn ngữ tương lai không bao giờ bỏ cuộc! 🚀",
+            "Phát âm to và rõ ràng lên nha, chú ngựa đang lắng nghe đây! 🎧",
+            "Gần xong nhiệm vụ rồi, bim bim và trà sữa đang đợi bé đó! 🍟🧋",
+            "Đọc sách tiếng Anh mỗi ngày sẽ thông minh như nhà bác học luôn! 📚✨",
+            "Mỗi câu bé đọc đúng là một bước tiến gần tới phần thưởng bố mẹ! 🎁",
+            "Hí hí hí! Chú ngựa vỗ tay khen bé chăm chỉ nè! 👏🦄",
+            "Có từ nào khó không? Chạm vào thẻ từ vựng là có loa đọc mẫu liền nha! 🔊",
+            "Tập trung một chút nữa thôi là hoàn thành nhiệm vụ 6 tiếng rồi! ⏰"
+        ];
+
+        function scheduleRandomChat() {
+            const nextInterval = Math.floor(Math.random() * 5000) + 10000;
+            setTimeout(() => {
+                if (!document.hidden) {
+                    if (Math.random() < 0.6) {
+                        talk(getMissingStepsAdvice());
+                    } else {
+                        talk(pick(MOTIVATION_QUOTES));
+                    }
+                }
+                scheduleRandomChat();
+            }, nextInterval);
+        }
+        scheduleRandomChat();
+
+        $('me').onclick = (e) => { 
+            e.stopPropagation();
+            wig($('me')); 
+            burst(innerWidth - 40, innerHeight - 50, FUN, 7); 
+            if (Math.random() < 0.5) {
+                talk(getMissingStepsAdvice());
+            } else {
+                talk(pick(MOTIVATION_QUOTES));
+            }
+        };
+
+        // LẮNG NGHE CLICK CHUỘT AN TOÀN
+        document.addEventListener('click', e => {
+            const target = e.target;
+            if (target.id === 'me' || target.closest('#mascot') || target.closest('#themeBtn') || target.closest('#themePanel')) return;
+
+            const b = target.closest('button');
+            const v = target.closest('.vocab-card');
+            const card = target.closest('.guide-card');
+            const isTextarea = target.id === 'storyText';
+            const isDrop = target.closest('#dropZone');
+
+            const r = b && b.getBoundingClientRect();
+            const x = e.clientX || (r ? r.left + r.width / 2 : 0);
+            const y = e.clientY || (r ? r.top : 0);
+
+            if (x && y) {
+                if (v) burst(x, y, ['🔊', '🎵', '⭐'], 5);
+                else if (b && !b.closest('#gameArea')) { burst(x, y, FUN, 7); wig(b); }
+            }
+
+            if (v) {
+                const wordText = v.querySelector('span')?.textContent || 'từ này';
+                talk(`Từ "${wordText.trim()}" hay quá! Bé nhớ đọc theo loa 2 lần để khắc sâu trí nhớ nha! 🔊`);
+                return;
+            }
+
+            if (b) {
+                if (b.id === 'cleanBtn') {
+                    talk("Chổi thần AI đã quét sạch chữ ma OCR! Kéo xuống làm thử thách đọc câu ngay nào bé! 🧹✨");
+                    return;
+                }
+                if (b.id === 'playBtn') {
+                    talk("Đang đọc to cả bài! Bé nghe thật kỹ cách phát âm và nối chữ để đọc câu nhé! 🎧");
+                    return;
+                }
+                if (b.id === 'playCursorBtn') {
+                    talk("Chỉ đâu đọc đó! Chỗ nào khó hiểu bé cứ đặt con trỏ vào đó rồi nghe lại nha! 👆");
+                    return;
+                }
+                if (b.id === 'stopBtn') {
+                    talk("Phanh kít kít! Tạm dừng để uống ngụm nước rồi học tiếp nào bé ơi! 🛑🥤");
+                    return;
+                }
+                if (b.id === 'extractBtn') {
+                    talk("Đang dùng kính lúp thông minh soi chữ từ ảnh... Bé chờ xíu là có chữ ngay! 🔍");
+                    return;
+                }
+                if (b.id === 'claimQuestBtn') {
+                    talk(getMissingStepsAdvice());
+                    return;
+                }
+                if (b.id === 'retryQuestBtn') {
+                    talk("Bắt đầu lượt thử lại! Điểm số mới sẽ ghi đè điểm cũ, cố gắng đạt điểm cao hơn nha! 🔄");
+                    return;
+                }
+            }
+
+            if (isDrop) {
+                talk("Chạm vào đây để tải ảnh trang sách rõ nét hoặc file Word/PDF truyện tranh lên nha! 📸");
+                return;
+            }
+
+            if (isTextarea) {
+                talk("Nội dung bài học ở đây! Bé có thể click vào chữ bất kỳ rồi bấm 'Từ Trỏ' để nghe riêng đoạn đó nha! 📝");
+                return;
+            }
+
+            if (card) {
+                if (card.id === 'cardKidProfile') {
+                    talk("Bảng thành tích của bé! Hoàn thành tối thiểu 5 nhiệm vụ tuần để bố mẹ thưởng bim bim nha! 🍟");
+                    return;
+                }
+                if (card.id === 'cardQuestArea') {
+                    talk(getMissingStepsAdvice());
+                    return;
+                }
+                if (card.id === 'cardLeaderboard') {
+                    talk("Bảng Vàng vinh danh các bạn nhỏ chăm chỉ nhất trên Cloud! Bé đua top 1 cùng các bạn nào! 🏆");
+                    return;
+                }
+                if (card.id === 'cardStoryLibrary') {
+                    talk("Kho truyện Cloud của bố Dũng! Bé chọn một cuốn sách bất kỳ để học bài nha! 📚");
+                    return;
+                }
+                if (card.id === 'cardSentenceSection') {
+                    talk("Thử thách đọc cả câu: Nghe mẫu trước 🔊 rồi bấm '🎤 Bé Đọc' để máy chấm điểm phát âm nha! 🎙️");
+                    return;
+                }
+                if (card.id === 'cardVocabSection') {
+                    talk("Từ vựng thông minh được máy lọc ra! Chạm vào từng từ để nghe đọc và xem giải nghĩa chuẩn nha! 💡");
+                    return;
+                }
+                if (card.id === 'cardQuizSection') {
+                    talk("Đố vui 5 câu: Trả lời đúng để kiếm điểm vượt chuẩn nhiệm vụ nào bé ơi! 🎮");
+                    return;
+                }
+                if (card.id === 'cardGameSection') {
+                    talk("Phòng Game vui nhộn: Chơi game vừa ghi nhớ từ vựng vừa tích lũy điểm thưởng! 🕹️");
+                    return;
+                }
+            }
+        });
+
+        // ================== CẤU TRÚC PHÁT ÂM THANH TRỰC TIẾP ==================
+        let mainAudio = new Audio();
+        let audioPlaylist = [];
+        let currentPlaylistIndex = 0;
+        let isStoryPlaying = false;
+        let wordAudio = new Audio();
+
+        function stopAudio() {
+            isStoryPlaying = false;
+            audioPlaylist = [];
+            currentPlaylistIndex = 0;
+
+            mainAudio.pause();
+            mainAudio.currentTime = 0;
+            mainAudio.onended = null;
+            mainAudio.onerror = null;
+
+            wordAudio.pause();
+            wordAudio.currentTime = 0;
+
+            const btn = document.getElementById('playBtn');
+            if (btn) btn.innerHTML = '<span class="mr-1">▶️</span>Đọc To';
+        }
+
+        window.playWordAudio = function(word, el) {
+            stopAudio();
+
+            if (el) {
+                document.querySelectorAll('.vocab-card').forEach(c => {
+                    c.classList.remove('ring-4', 'ring-purple-400', 'scale-105', 'bg-purple-100');
+                    const sp = c.querySelector('.speaker-icon');
+                    if (sp) sp.classList.remove('animate-bounce');
+                });
+                el.classList.add('ring-4', 'ring-purple-400', 'scale-105', 'bg-purple-100');
+                const speaker = el.querySelector('.speaker-icon');
+                if (speaker) speaker.classList.add('animate-bounce');
+
+                setTimeout(() => {
+                    el.classList.remove('ring-4', 'ring-purple-400', 'scale-105', 'bg-purple-100');
+                    if (speaker) speaker.classList.remove('animate-bounce');
+                }, 1000);
+            }
+
+            const cleanWord = String(word || '').replace(/[^a-zA-Z0-9\s'-]/g, '').trim();
+            if (!cleanWord) return;
+
+            wordAudio.src = `https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=en&q=${encodeURIComponent(cleanWord)}`;
+            wordAudio.playbackRate = 0.9;
+            wordAudio.play().catch(e => {
+                showToast('Bé kiểm tra âm lượng hoặc tắt chế độ im lặng nhé!', 'warning');
+            });
+        };
+
+        function speakText(text) {
+            stopAudio();
+            const rawText = String(text || '').trim();
+            if (!rawText) return showToast('Chưa có nội dung để đọc!', 'warning');
+
+            audioPlaylist = rawText.match(/[^.!?\n]+[.!?\n]*/g) || [rawText];
+            audioPlaylist = audioPlaylist.map(chunk => chunk.trim()).filter(chunk => chunk.length > 0);
+            if (!audioPlaylist.length) return;
+
+            currentPlaylistIndex = 0;
+            isStoryPlaying = true;
+
+            const playBtn = document.getElementById('playBtn');
+            if (playBtn) playBtn.innerHTML = '<span class="mr-1">🔊</span>Đang đọc...';
+
+            playNextAudioChunk();
+        }
+
+        function playNextAudioChunk() {
+            if (isStoryPlaying && currentPlaylistIndex >= audioPlaylist.length && audioPlaylist.length > 2) markRead();
+            if (!isStoryPlaying || currentPlaylistIndex >= audioPlaylist.length) {
+                stopAudio();
+                return;
+            }
+
+            const chunk = audioPlaylist[currentPlaylistIndex];
+            mainAudio.src = `https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=en&q=${encodeURIComponent(chunk)}`;
+            mainAudio.playbackRate = parseFloat(speedSlider.value) || 0.8;
+
+            mainAudio.onended = () => {
+                currentPlaylistIndex++;
+                playNextAudioChunk();
+            };
+
+            mainAudio.onerror = () => {
+                currentPlaylistIndex++;
+                playNextAudioChunk();
+            };
+
+            mainAudio.play().catch(e => {
+                stopAudio();
+                showToast('Bé ấn lại để tiếp tục phát âm thanh nhé!', 'warning');
+            });
+        }
+
+        document.getElementById('playBtn').addEventListener('click', () => { 
+            if (!isStoryPlaying) speakText(storyText.value.trim()); 
+        });
+
+        let lastCursorClickTime = 0;
+        document.getElementById('playCursorBtn').addEventListener('click', () => {
+            const now = Date.now();
+            if (now - lastCursorClickTime < 400) return;
+            lastCursorClickTime = now;
+
+            const text = storyText.value;
+            if (!text.trim()) return showToast('Chưa có truyện!', 'warning');
+            let pos = storyText.selectionStart;
+            while (pos > 0 && /\S/.test(text[pos - 1])) pos--;
+            speakText(text.substring(pos).trim());
+        });
+
+        document.getElementById('stopBtn').addEventListener('click', stopAudio);
+        speedSlider.addEventListener('input', () => {
+            if (isStoryPlaying) mainAudio.playbackRate = parseFloat(speedSlider.value) || 0.8;
+        });
+
+        // ================== XUẤT OFFLINE (WORD & MP3) ==================
+        function exportToWord() {
+            const text = storyText.value.trim(); if (!text) return showToast('Trống!', 'warning');
+            const wordHtml = `<html xmlns:w='urn:schemas-microsoft-com:office:word'><body style="font-family: 'Comic Sans MS'; background: #fdf2f8; padding: 20px;"><h1 style="color:#ec4899;text-align:center;">🌟 MAGIC STORY READER 🌟</h1><div style="background:#fff;padding:20px;border:2px dashed #bfdbfe;">${text.split('\n').map(l => `<p style="font-size:14pt;font-weight:bold;color:#1e3a8a;margin:0 0 10px 0;">${String(l).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}</p>`).join('')}</div></body></html>`;
+            const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeff', wordHtml], { type: 'application/msword' }));
+            a.download = `Truyen_${Date.now()}.doc`; a.click();
+        }
+
+        async function exportToMP3() {
+            const text = storyText.value.trim();
+            if (!text) return showToast('Chưa có truyện để xuất MP3!', 'warning');
+            
+            const btn = document.getElementById('btnMp3');
+            btn.innerHTML = '⏳ Tải...'; btn.disabled = true;
+            showToast('Đang tạo âm thanh... Bé chờ chút nha! ⏳', 'success');
+            
+            let rawChunks = text.match(/[^.!?\n]+[.!?\n]*/g) || [text];
+            let chunks = [];
+            rawChunks.forEach(c => {
+                let txt = c.trim();
+                if(txt.length > 0) {
+                    if (txt.length <= 120) chunks.push(txt);
+                    else {
+                        let words = txt.split(' '); let temp = '';
+                        words.forEach(w => {
+                            if ((temp + ' ' + w).length < 120) temp += (temp ? ' ' : '') + w;
+                            else { chunks.push(temp); temp = w; }
+                        });
+                        if(temp) chunks.push(temp);
+                    }
+                }
+            });
+            
+            let audioBuffers = [];
+            let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+            try {
+                for(let i=0; i<chunks.length; i++) {
+                    let url = `https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=en&q=${encodeURIComponent(chunks[i])}`;
+                    let proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+                    let res = await fetch(proxyUrl);
+                    if(!res.ok) throw new Error('Proxy lỗi');
+                    
+                    let arrayBuffer = await res.arrayBuffer();
+                    let audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+                    audioBuffers.push(audioBuffer);
+                }
+
+                let totalLength = audioBuffers.reduce((sum, buffer) => sum + buffer.length, 0);
+                let finalBuffer = audioCtx.createBuffer(1, totalLength, audioCtx.sampleRate);
+                let offset = 0;
+                audioBuffers.forEach(buffer => {
+                    finalBuffer.copyToChannel(buffer.getChannelData(0), 0, offset);
+                    offset += buffer.length;
+                });
+
+                const wavBlob = bufferToWav(finalBuffer, totalLength);
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(wavBlob);
+                a.download = `Audio_Full_${Date.now()}.wav`;
+                a.click();
+                showToast('Tải Audio Toàn Bài thành công! 🎵', 'success');
+            } catch(e) {
+                showToast('Mở link nghe tạm thời...', 'warning');
+                window.open(`https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=en&q=${encodeURIComponent(chunks[0])}`, '_blank');
+            } finally {
+                btn.innerHTML = '🎵 MP3'; btn.disabled = false;
+            }
+        }
+        
+        function bufferToWav(abuffer, len) {
+            let numOfChan = abuffer.numberOfChannels, length = len * numOfChan * 2 + 44, buffer = new ArrayBuffer(length), view = new DataView(buffer), channels = [], i, sample, offset = 0, pos = 0;
+            const setU16 = (d) => { view.setUint16(pos, d, true); pos+=2; }; const setU32 = (d) => { view.setUint32(pos, d, true); pos+=4; };
+            setU32(0x46464952); setU32(length - 8); setU32(0x45564157); setU32(0x20746d66); setU32(16); setU16(1); setU16(numOfChan);
+            setU32(abuffer.sampleRate); setU32(abuffer.sampleRate * 2 * numOfChan); setU16(numOfChan * 2); setU16(16); setU32(0x61746164); setU32(length - pos - 4);
+            for(i=0; i<numOfChan; i++) channels.push(abuffer.getChannelData(i));
+            while(pos < length) { for(i=0; i<numOfChan; i++) { sample = Math.max(-1, Math.min(1, channels[i][offset])); sample = (0.5 + sample < 0 ? sample * 32768 : sample * 32767)|0; view.setInt16(pos, sample, true); pos += 2; } offset++; }
+            return new Blob([buffer], {type: "audio/wav"});
+        }
+
+        // ================== MARQUEE & TOAST ==================
+        const greetings = [
+            "Hello little angel! ✨",
+            "Keep up the great work! 🚀",
+            "Learning English is fun! 🎈"
+        ];
+        document.getElementById('greetingMarquee').innerText =
+            `Happy ${["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][new Date().getDay()]}! ${greetings[Math.floor(Math.random() * greetings.length)]}`;
+
+        function showToast(msg, type = 'success') {
+            clearTimeout(toastTimeout); toastMessage.textContent = msg;
+            toastMessage.className = `fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-4 py-2 rounded-full font-bold text-[10px] md:text-sm shadow-xl transition-all duration-300 text-center min-w-[200px] pointer-events-none`;
+            if (type === 'error') toastMessage.classList.add('bg-red-500', 'text-white');
+            else if (type === 'warning') toastMessage.classList.add('bg-yellow-400', 'text-yellow-900');
+            else toastMessage.classList.add('bg-green-500', 'text-white');
+            toastMessage.style.opacity = '1'; toastMessage.style.transform = 'translate(-50%, 10px)';
+            toastTimeout = setTimeout(() => { toastMessage.style.opacity = '0'; toastMessage.style.transform = 'translate(-50%, 0)'; }, 3000);
+        }
+
+        // ================== OCR ==================
+        let files = [], active = 0;
+
+        function kind(f) {
+            const n = f.name.toLowerCase();
+            if (f.type.startsWith('image/') || /\.(jpe?g|png)$/.test(n)) return 'img';
+            if (f.type === 'application/pdf' || n.endsWith('.pdf')) return 'pdf';
+            if (n.endsWith('.docx')) return 'docx';
+            if (/\.(txt|md)$/.test(n)) return 'txt';
+            return null;
+        }
+
+        function addFiles(list) {
+            const ok = [];
+            [...list].forEach(f => { if (kind(f)) ok.push(f); });
+            if (!ok.length) return;
+            active = files.length; files.push(...ok); renderFiles();
+        }
+
+        function renderFiles() {
+            $('fileChips').innerHTML = files.map((f, i) => `
+                <span class="inline-flex items-center rounded-full border border-pink-300 bg-white text-[10px] font-bold text-pink-700 max-w-full">
+                    <button type="button" onclick="active=${i};renderFiles()" class="px-1.5 py-0.5 truncate max-w-[80px]">${f.name}</button>
+                    <button type="button" onclick="files.splice(${i},1);renderFiles()" class="px-1 text-red-500">✕</button>
+                </span>
+            `).join('');
+        }
+        $('fileInput').addEventListener('change', e => { addFiles([...e.target.files]); e.target.value = ''; });
+
+        $('extractBtn').addEventListener('click', async () => {
+            if (!files.length) return showToast('Chọn file nha!', 'warning');
+            $('loadingStatus').classList.replace('hidden', 'flex'); $('extractBtn').disabled = true;
+
+            let worker = null; const parts = [];
+            try {
+                for (let i = 0; i < files.length; i++) {
+                    const f = files[i]; const k = kind(f);
+                    if (k === 'img') {
+                        if (!window.Tesseract) {
+                            await new Promise(ok => { let s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js'; s.onload = ok; document.head.appendChild(s); });
+                        }
+                        worker = worker || await Tesseract.createWorker('eng', 1);
+                        parts.push(await ocrImage(f, worker));
+                    } else if (k === 'pdf') {
+                        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+                        const pd = await pdfjsLib.getDocument({ data: await f.arrayBuffer() }).promise;
+                        for (let p = 1; p <= pd.numPages; p++) { const c = await (await pd.getPage(p)).getTextContent(); parts.push(c.items.map(x => x.str).join(' ')); }
+                    } else if (k === 'txt') {
+                        parts.push(await f.text());
+                    } else if (k === 'docx') {
+                        if (!window.mammoth) {
+                            await new Promise(ok => { let s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js'; s.onload = ok; document.head.appendChild(s); });
+                        }
+                        parts.push((await mammoth.extractRawText({ arrayBuffer: await f.arrayBuffer() })).value);
+                    }
+                }
+                storyText.value = parts.join('\n\n'); showToast('Xong!', 'success'); cleanBtn.click();
+            } catch (e) {
+                console.error(e); showToast('Lỗi đọc file!', 'error');
+            } finally {
+                if (worker) await worker.terminate();
+                $('extractBtn').disabled = false; $('loadingStatus').classList.replace('flex', 'hidden');
+            }
+        });
+
+        // ================== V2: LÀM SẠCH THÔNG MINH ==================
+        const DICT = new Set(`a an the and or but so if of to in on at by for with from as is are was were be been am do does did have has had will would can could should may might must not no yes it its he she we they you i me my your his her our their them him us this that these those there here what when where who why how which all any some many much more most very too also just only then than now up down out over under again once one two three four five six seven eight nine ten first said say says go goes went going gone come came get got make made take took see saw look looked like liked love loved want wanted know knew think thought give gave tell told ask asked find found work play played run ran walk walked eat ate drink sleep slept sit sat stand stood open closed help called call try tried feel felt keep kept let put big small little long short tall old new young good bad happy sad angry hungry tired scared brave kind nice funny pretty beautiful strong fast slow hot cold warm dark light bright day night morning evening time year today tomorrow yesterday home house room door window garden tree flower grass river sea sun moon star sky cloud rain snow wind mountain forest road town city school class friend friends mother father mom dad mum brother sister baby child children boy girl man woman people family king queen prince princess dragon monster giant fairy witch wizard magic story book page word words letter name water food bread milk apple cake candy fish bird dog cat mouse rabbit bear fox wolf lion tiger elephant monkey duck horse cow pig sheep frog turtle butterfly bee red blue green yellow orange pink purple black white brown gold silver head hand hands eyes eye face hair nose mouth ear ears arm leg legs foot feet heart voice smile laugh cry shout whisper jump fly swim climb fall hide hid seek wait stop start end finish begin began never always often sometimes every each other another because after before while during without into through about around away back behind near next between inside outside above below together alone everyone everything something nothing someone anyone both either neither same different important special secret treasure adventure journey dream wish hope moment suddenly finally quickly slowly quietly loudly lived lives live upon wonderful amazing great best better worse well oh hello goodbye thank thanks please sorry chapter title don't can't it's i'm i'll i've that's let's didn't isn't he's she's we're they're you're won't wasn't couldn't wouldn't there's what's who's fruit fruits sweet colorful vitamin vitamins seed seeds watermelon watermelons grape grapes whole juice juices salad salads healthy delicious taste`.split(/\s+/));
+        const known = w => {
+            if (DICT.has(w)) return true;
+            return [w.replace(/'s$/, ''), w.replace(/ies$/, 'y'), w.replace(/ied$/, 'y'), w.replace(/(es|s|ed|d|ly|er|est|ing)$/, ''), w.replace(/ing$/, 'e'), w.replace(/ed$/, 'e'), w.replace(/(.)\1(ing|ed|er|est)$/, '$1')].some(x => x.length > 1 && DICT.has(x));
+        };
+        const plaus = w => {
+            if (w.length < 3 || w.length > 18) return false;
+            const v = (w.match(/[aeiouy]/g) || []).length / w.length;
+            return v >= .25 && v <= .65 && !/[^aeiouy']{4,}|(.)\1\1|[aeiou]{4,}|q(?!u)|[jqxz]{2}/i.test(w);
+        };
+        function wscore(tok, first) {
+            const c = tok.replace(/^[^A-Za-z0-9']+|[^A-Za-z0-9']+$/g, '');
+            if (!c) return null;
+            if (/^\d+$/.test(c)) return .5;
+            if (/\d/.test(c)) return 0;
+            if (/[a-z][A-Z]/.test(c)) return 0;
+            const l = c.toLowerCase();
+            if (l.length === 1) return /^[ai]$/.test(l) ? .8 : 0;
+            if (known(l)) return 1;
+            if (!plaus(l)) return 0;
+            if (/^[A-Z]/.test(c) && !first) return .6;
+            return l.length >= 5 ? .6 : 0;
+        }
+        function smartClean(raw, keep) {
+            let junk = 0;
+            raw = raw.replace(/[‘’`´]/g, "'").replace(/[“”]/g, '"').replace(/(\w)-\n(\w)/g, '$1$2').replace(/(^|\s)[|lI](?=\s|$)/gm, '$1I').replace(/[^A-Za-z0-9.,!?'";:\-\s]/g, ' ');
+            const out = [];
+            raw.split('\n').forEach(line => {
+                const alpha = (line.match(/[A-Za-z]/g) || []).length, vis = line.replace(/\s/g, '').length;
+                if (!vis) return out.push('');
+                const toks = line.trim().split(/\s+/).map((t, i) => ({ t, s: wscore(t, i === 0) })).filter(x => x.s !== null);
+                if (!toks.length) return;
+                if (alpha / vis < .55 && toks.length > 1) { junk += toks.length; return; }
+                const avg = toks.reduce((a, x) => a + x.s, 0) / toks.length, good = toks.filter(x => x.s >= .6).length;
+                if (toks.length <= 2 ? !toks.every(x => x.s >= .6) : !(avg >= .5 && good >= 2)) { junk += toks.length; return; }
+                const kept = toks.filter(x => x.s > 0);
+                junk += toks.length - kept.length;
+                out.push(kept.map(x => x.t.replace(/^[^A-Za-z0-9'"]+(?=[A-Za-z0-9])/, '')).join(' '));
+            });
+            let t = out.join('\n');
+            if (!keep) t = t.replace(/\n[ \t]*\n/g, '\u0001').replace(/\n/g, ' ').replace(/\u0001+/g, '\n\n');
+            t = t.replace(/\s+([.,!?:;])/g, '$1').replace(/([.,!?:;])(?=[A-Za-z])/g, '$1 ').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim()
+                .replace(/(^|[.!?]\s+)([a-z])/g, (m, a, b) => a + b.toUpperCase()).replace(/\bi\b/g, 'I');
+            return { text: t, junk };
+        }
+
+        async function prepImg(f) {
+            const b = await createImageBitmap(f);
+            const s = b.width < 1400 ? 1400 / b.width : (b.width > 2400 ? 2400 / b.width : 1), mx = b.width * .02, my = b.height * .02;
+            const cv = document.createElement('canvas'); cv.width = (b.width - 2 * mx) * s; cv.height = (b.height - 2 * my) * s;
+            const cx = cv.getContext('2d'); cx.drawImage(b, mx, my, b.width - 2 * mx, b.height - 2 * my, 0, 0, cv.width, cv.height);
+            const im = cx.getImageData(0, 0, cv.width, cv.height), d = im.data, h = new Array(256).fill(0);
+            for (let i = 0; i < d.length; i += 4) { const g = (d[i] * .3 + d[i + 1] * .59 + d[i + 2] * .11) | 0; d[i] = g; h[g]++; }
+            const N = d.length / 4; let sum = 0; for (let i = 0; i < 256; i++) sum += i * h[i];
+            let sB = 0, wB = 0, best = 0, th = 128;
+            for (let i = 0; i < 256; i++) { wB += h[i]; if (!wB) continue; const wF = N - wB; if (!wF) break; sB += i * h[i]; const v = wB * wF * Math.pow(sB / wB - (sum - sB) / wF, 2); if (v > best) { best = v; th = i; } }
+            for (let i = 0; i < d.length; i += 4) { const v = d[i] > th ? 255 : 0; d[i] = d[i + 1] = d[i + 2] = v; d[i + 3] = 255; }
+            cx.putImageData(im, 0, 0); return cv;
+        }
+        async function ocrImage(f, worker) {
+            const run = async src => {
+                const d = (await worker.recognize(src)).data, ws = (d.words || []).filter(w => w.bbox);
+                if (!d.lines || !ws.length) return d.text;
+                const hs = ws.map(w => w.bbox.y1 - w.bbox.y0).sort((a, b) => a - b), m = hs[hs.length >> 1];
+                return d.lines.map(l => l.words.filter(w => w.confidence >= 55 && w.text.trim() && (w.bbox.y1 - w.bbox.y0) > m * .4 && (w.bbox.y1 - w.bbox.y0) < m * 2.8).map(w => w.text).join(' ')).join('\n');
+            };
+            try {
+                let t = await run(await prepImg(f));
+                if ((t.match(/[A-Za-z]{3,}/g) || []).length < 8) t = await run(f);
+                return t;
+            } catch (e) { return (await worker.recognize(f)).data.text; }
+        }
+
+        // ================== ĐỔI GIAO DIỆN ==================
+        $('themeBtn').addEventListener('click', () => {
+            $('themePanel').innerHTML = THEMES.map(t => `
+                <button type="button" data-t="${t.id}" class="text-left rounded p-1 border btn-bounce ${t.id === document.documentElement.dataset.theme ? 'border-pink-500 bg-pink-100' : 'border-pink-200'}">
+                    <span class="flex h-3 rounded overflow-hidden mb-1">
+                        <i class="flex-1" style="background:${t.bg}"></i>
+                        <i class="flex-1" style="background:${t.primary}"></i>
+                        <i class="flex-1" style="background:${t.secondary}"></i>
+                    </span>
+                    <span class="text-[10px] font-black">${t.icon} ${t.name}</span>
+                </button>
+            `).join('');
+            $('themePanel').classList.toggle('hidden');
+        });
+
+        $('themePanel').addEventListener('click', e => {
+            const b = e.target.closest('[data-t]');
+            if (b) { applyTheme(b.dataset.t); $('themePanel').classList.add('hidden'); }
+        });
+
+        document.addEventListener('click', e => {
+            if (!e.target.closest('#themePanel,#themeBtn')) { $('themePanel').classList.add('hidden'); }
+        });
+    
+        // ================== V3: BỔ SUNG / SỬA LỖI ==================
+        const WIN = ['🎉', '🎊', '⭐', '🏆', '🦄'], OOPS = ['🙈', '💫', '🫠', '🤡'];
+        const sfx = (f, d = .12) => { try { const c = sfx.c || (sfx.c = new (window.AudioContext || window.webkitAudioContext)()), o = c.createOscillator(), g = c.createGain(); o.frequency.value = f; g.gain.value = .07; o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime + d); } catch (e) {} };
+        const _burst = burst;
+        burst = (x, y, l, n) => { if (l === WIN) { sfx(660); setTimeout(() => sfx(880), 120); } else if (l === OOPS) sfx(200, .3); _burst(x, y, l, n); };
+        const LV = () => localStorage.getItem('magicLevel') || '1';
+
+        const SK = () => 'magicSess_' + currentKidId; let sessQ = null;
+        function saveSess() { try { localStorage.setItem(SK(), JSON.stringify({ q: currentSharedQuest && currentSharedQuest.id, r: [...sessionTracker.readStories], s: sessionTracker.sentencesPassed, g: sessionTracker.gamesPlayed, c: sessionTracker.scoreEarned })); } catch (e) {} }
+        function loadSess() { sessionTracker = { readStories: new Set(), sentencesPassed: 0, gamesPlayed: 0, scoreEarned: 0 }; try { const d = JSON.parse(localStorage.getItem(SK())); if (d && d.q === currentSharedQuest.id) sessionTracker = { readStories: new Set(d.r), sentencesPassed: d.s, gamesPlayed: d.g, scoreEarned: d.c }; } catch (e) {} }
+        const _usu = updateSessionUI; updateSessionUI = () => { _usu(); saveSess(); };
+        const _rq = renderQuestUI; renderQuestUI = () => { if (currentSharedQuest && sessQ !== currentSharedQuest.id) { sessQ = currentSharedQuest.id; loadSess(); } _rq(); };
+
+        function markRead() { sessionTracker.readStories.add(storyText.value.trim().slice(0, 30)); updateSessionUI(); burst(...ctr(), WIN, 10); talk('Bé nghe xong cả bài rồi! Giỏi quá! 📖🎉'); }
+
+        const _gsc = generateSentenceChallenge;
+        generateSentenceChallenge = () => {
+            _gsc();
+            if (window.SpeechRecognition || window.webkitSpeechRecognition) return;
+            document.querySelectorAll('.sentence-item .flex.gap-1').forEach(d => {
+                const b = document.createElement('button'); b.textContent = '😍 Bé đọc xong'; b.className = 'px-2 py-0.5 bg-pink-500 text-white text-[11px] font-black rounded-lg';
+                b.onclick = () => { b.disabled = true; b.textContent = '✅'; sessionTracker.sentencesPassed++; sessionTracker.scoreEarned += 5; updateSessionUI(); burst(...ctr(), WIN, 8); };
+                d.appendChild(b);
+            });
+        };
+
+        cleanBtn.addEventListener('click', () => {
+            if (!storyText.value.trim()) return showToast('Chưa có chữ nào bé ơi!', 'warning');
+            const r = smartClean(storyText.value, $('keepLayout').checked);
+            if (!r.text) return showToast('Máy không thấy chữ tiếng Anh nào 🙈 Thử ảnh rõ hơn nhé!', 'warning');
+            storyText.value = r.text;
+            showToast(r.junk ? `Đã đuổi ${r.junk} chữ ma ra khỏi nhà! 👻🧹` : 'Sạch bóng, không có chú ma nào! ✨', 'success');
+            const maxW = LV() === '1' ? 12 : 40;
+            allStorySentences = (r.text.match(/[^.!?\n]+[.!?]*/g) || []).map(s => s.trim()).filter(s => { const n = s.split(/\s+/).length; return n >= 4 && n <= maxW; });
+            generateSentenceChallenge(); extractVocabulary(r.text);
+            burst(innerWidth / 2, innerHeight / 3, ['👻', '💨', '🧹'], 10); navPulse('practice');
+            talk('Xong rồi! Bé bấm nút 🗣️ Luyện ở dưới để học từ và đọc câu nhé!');
+        });
+
+        const STOP = new Set('the and was were with that this they them then there their have has had for from but not are you his her she him its our out one all can will would could into over very just than when what where who why how said went came back down upon each been also some more most such only your about after before again under'.split(' '));
+        const tmo = (u, ms = 4500) => { const c = new AbortController(); setTimeout(() => c.abort(), ms); return fetch(u, { signal: c.signal }).then(r => r.json()); };
+        let vocOff = 0;
+        async function extractVocabulary(text, off = 0) {
+            lastExtractedText = text; vocOff = off;
+            if (!off) {
+                const cnt = {}, minL = LV() === '1' ? 4 : 6;
+                (text.toLowerCase().match(/\b[a-z]{4,}\b/g) || []).forEach(w => { if (!STOP.has(w) && (LOCAL_DICTIONARY[w] || known(w) || plaus(w))) cnt[w] = (cnt[w] || 0) + 1; });
+                masterCandidatePool = Object.keys(cnt).filter(w => w.length >= minL || LOCAL_DICTIONARY[w]).sort((a, b) => (!!LOCAL_DICTIONARY[b] - !!LOCAL_DICTIONARY[a]) || b.length - a.length);
+            }
+            const ws = masterCandidatePool.slice(off, off + 12);
+            if (!ws.length) { vocabList.innerHTML = '<span class="italic text-purple-400 text-sm">Hết từ khó rồi! Thử bài khác nhé 🎉</span>'; return; }
+            vocabList.innerHTML = '<span class="animate-pulse text-purple-500 text-sm">Đang chuẩn bị từ vựng... ⏳</span>';
+            const out = await Promise.all(ws.map(async w => {
+                const sm = text.match(new RegExp(`[^.?!\\n]*\\b${w}\\b[^.?!\\n]*[.?!]?`, 'i')), L = LOCAL_DICTIONARY[w];
+                let meaning = L ? L.m : '', pos = L ? L.p : '';
+                if (!meaning) try { const d = await tmo(`https://api.mymemory.translated.net/get?q=${w}&langpair=en|vi`), t = d && d.responseData && d.responseData.translatedText; if (t && !/MYMEMORY|QUERY|INVALID/i.test(t) && t.toLowerCase() !== w) meaning = t.toLowerCase(); } catch (e) {}
+                if (!pos) try { const p = (await tmo(`https://api.dictionaryapi.dev/api/v2/entries/en/${w}`, 3500))[0].meanings[0].partOfSpeech; pos = posMap[p] || p; } catch (e) {}
+                return { word: w, meaning: meaning || '(chạm để nghe)', pos: pos || 'Từ vựng', sentence: sm ? sm[0].trim() : '', ok: !!meaning };
+            }));
+            const good = out.filter(x => x.ok);
+            globalVocabData = good.length >= 4 ? good : out;
+            vocabList.innerHTML = out.map(i => `<div class="vocab-card px-3 py-2 bg-white border-2 border-purple-300 rounded-2xl shadow-sm cursor-pointer hover:bg-purple-100 flex flex-col items-center text-center select-none active:scale-95" onclick="playWordAudio('${i.word}', this)"><span class="text-purple-700 font-black text-base flex items-center gap-1">${i.word} <span class="speaker-icon">🔊</span></span><span class="text-xs text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full mt-1 font-bold capitalize">${i.pos}</span><span class="text-sm text-slate-600 font-bold border-t border-purple-100 w-full mt-1 pt-0.5 capitalize">${i.meaning}</span></div>`).join('') + `<button class="w-full py-2 bg-purple-500 text-white font-black rounded-2xl" onclick="extractVocabulary(lastExtractedText, (vocOff + 12) >= masterCandidatePool.length ? 0 : vocOff + 12)">🔄 Đổi 12 từ khác</button>`;
+            talk('Có từ mới rồi! Chạm vào từng từ để nghe đọc nha! 🔊');
         }
 
         function gQuiz() {
@@ -1470,27 +2169,13 @@
                 });
             }; nx();
         }
-
         if ($('cardQuizSection')) $('cardQuizSection').remove();
-        const GM = [
-            ['sent', '🧩', 'Ghép câu', '#059669'],
-            ['quiz', '❓', 'Đố vui', '#f97316'],
-            ['listen', '🎧', 'Nghe đoán', '#0ea5e9'],
-            ['flip', '🃏', 'Lật thẻ', '#8b5cf6'],
-            ['scr', '🔤', 'Xếp chữ', '#eab308'],
-            ['speak', '🎤', 'Tập nói', '#ec4899'],
-            ['speed', '⚡', 'Đua tốc độ', '#10b981']
-        ];
-        $('gameMenu').className = 'grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3';
+        const GM = [['quiz', '❓', 'Đố vui', '#f97316'], ['listen', '🎧', 'Nghe đoán', '#0ea5e9'], ['flip', '🃏', 'Lật thẻ', '#8b5cf6'], ['scr', '🔤', 'Xếp chữ', '#eab308'], ['speak', '🎤', 'Tập nói', '#ec4899'], ['speed', '⚡', 'Đua tốc độ', '#10b981']];
+        $('gameMenu').className = 'grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3';
         $('gameMenu').innerHTML = GM.map(g => `<button class="gtile" style="background:${g[3]}" onclick="playGame('${g[0]}')"><b>${g[1]}</b>${g[2]}</button>`).join('');
-        
         window.playGame = k => {
-            if (k !== 'sent' && V().length < 4) { 
-                showToast('Qua tab 📖 Đọc, chọn truyện rồi bấm "Sạch" để lấy từ vựng nhé!', 'warning'); 
-                return talk('Mình cần có từ vựng trước đã! Bé quay lại tab 📖 Đọc nha!'); 
-            }
-            clearInterval(GT); G.score = 0; G.k = k; 
-            ({ sent: gSent, quiz: gQuiz, listen: gListen, flip: gFlip, speak: gSpeak, scr: gScr, speed: gSpeed })[k]();
+            if (V().length < 4) { showToast('Qua tab 📖 Đọc, chọn truyện rồi bấm "Sạch" để lấy từ vựng nhé!', 'warning'); return talk('Mình cần có từ vựng trước đã! Bé quay lại tab 📖 Đọc nha!'); }
+            clearInterval(GT); G.score = 0; G.k = k; ({ quiz: gQuiz, listen: gListen, flip: gFlip, speak: gSpeak, scr: gScr, speed: gSpeed })[k]();
             area().scrollIntoView({ behavior: 'smooth', block: 'center' });
         };
 
@@ -1516,7 +2201,7 @@
             lb();
         })();
 
-        // ================== V3.1: NGHE HIỂU TỪNG CÂU ==================
+        // ================== V3.1: NGHE HIỂU TỪNG CÂU (TỐI ƯU CÂU HỎI & PHÁT ÂM) ==================
         const COLORS = ['red', 'blue', 'green', 'yellow', 'orange', 'pink', 'purple', 'black', 'white', 'brown', 'golden', 'gold', 'silver'];
         const NUMS = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10 };
         const C = { order: [], n: 0, s: '', qs: [], qi: 0, tries: 0, asked: 0, sum: 0, done: false };
@@ -1556,6 +2241,7 @@
         const isCol = w => COLORS.includes(w) && !/^gold/.test(w);
         const inS = (S, w) => S.has(w) || S.has(w.replace(/(e)?s$/, ''));
 
+        // Hàm sinh câu hỏi ngữ nghĩa chuẩn xác
         function genQs(s) {
             const cleaned = s.replace(/[,;]/g, ' , ').replace(/[^A-Za-z0-9', ]/g, ' ');
             const rawTokens = cleaned.split(/\s+/).filter(Boolean);
@@ -1605,6 +2291,7 @@
                     base = IRR[w];
                 } else if (VB.has(w)) {
                     if (w === 'like') {
+                        // Loại trừ 'like' khi là giới từ/so sánh (đứng sau dấu phẩy, đứng sau danh từ liệt kê)
                         let prevNonComma = null;
                         for (let p = idx - 1; p >= 0; p--) {
                             if (low[p] !== ',') { prevNonComma = low[p]; break; }
@@ -1623,6 +2310,7 @@
                 }
 
                 if (isV) {
+                    // Quét ngược tìm chủ ngữ chuẩn, bỏ qua trợ động từ và mệnh đề phụ trong dấu phẩy
                     let subj = null;
                     let inComma = false;
                     for (let k = idx - 1; k >= 0; k--) {
@@ -1648,7 +2336,7 @@
                 }
             });
 
-            // 6. Tính từ miêu tả
+            // 6. Tính từ miêu tả: Không bao giờ lấy tính từ để hỏi cho tính từ khác!
             const linkingVerbs = new Set(['is', 'are', 'was', 'were']);
             let lvIdx = -1;
             low.forEach((w, idx) => { if (linkingVerbs.has(w) && lvIdx === -1) lvIdx = idx; });
@@ -1666,12 +2354,14 @@
             low.forEach((w, idx) => {
                 if (isAdj(w) && !isCol(w)) {
                     let targetNoun = null;
+                    // Trường hợp 1: Đứng trước danh từ (attributive)
                     if (idx + 1 < low.length) {
                         const nextTok = low[idx + 1];
                         if (nextTok !== ',' && !isAdj(nextTok) && !AUX.has(nextTok) && !PREP.has(nextTok) && !CONJ.has(nextTok) && nextTok.length >= 3) {
                             targetNoun = nextTok;
                         }
                     }
+                    // Trường hợp 2: Đứng sau to-be (predicate), bổ nghĩa cho chủ ngữ ở trước to-be
                     if (!targetNoun && lvIdx >= 0 && idx > lvIdx && subjBeforeLv) {
                         targetNoun = subjBeforeLv;
                     }
@@ -1682,7 +2372,7 @@
                 }
             });
 
-            // 7. Màu sắc & Bộ phận
+            // 7. Màu sắc & Bộ phận (như seeds)
             const col = low.find(isCol);
             if (col) qs.push({ q: '🎨 Trong câu có màu sắc gì?', a: [col] });
             if (low.includes('seeds') || low.includes('seed')) {
@@ -1693,7 +2383,7 @@
             const av = low.filter(isAdv);
             if (av.length) qs.push({ q: '⚡ Hành động diễn ra như thế nào? (1 trạng từ)', a: av });
 
-            // Dự phòng điền khuyết
+            // Dự phòng điền khuyết nếu câu quá ngắn
             if (!qs.length) {
                 const cands = low.filter(x => x.length >= 4 && !STOP.has(x) && !/^\d/.test(x) && x !== ',');
                 if (cands.length) {
@@ -1725,10 +2415,12 @@
             const m = $('cpMic'); if (m) { m.textContent = '🎤'; m.classList.remove('bg-red-500'); m.classList.add('bg-pink-500'); }
         }
 
+        // Khử toàn bộ Hán tự / ký tự tiếng Trung do bàn phím hoặc voice engine nhận diện nhầm
         function cleanSpeechInput(text) {
             return String(text || '').replace(/[\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff]/g, '').replace(/[^a-zA-Z0-9\s'-]/g, ' ').replace(/\s+/g, ' ').trim();
         }
 
+        // LẮNG NGHE GIỌNG NÓI ANH-MỸ VÀ KHỬ LỖI TIẾNG TRUNG QUỐC
         function cpListen() {
             const SRx = window.SpeechRecognition || window.webkitSpeechRecognition, m = $('cpMic'), fb = $('cpFb');
             if (cpRec) { try { cpRec.stop(); } catch (e) { cpStopRec(); } return; }
