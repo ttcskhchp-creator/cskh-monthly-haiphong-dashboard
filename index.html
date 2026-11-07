@@ -2808,26 +2808,7 @@ setTimeout(async () => {                                // lấy cài đặt dù
   try{__gameMeaningCache=JSON.parse(localStorage.getItem(GAME_CACHE_KEY)||'{}')||{};}catch(e){}
   const __saveGameCache=()=>{try{const keys=Object.keys(__gameMeaningCache); if(keys.length>1200){keys.slice(0,keys.length-1200).forEach(k=>delete __gameMeaningCache[k]);}localStorage.setItem(GAME_CACHE_KEY,JSON.stringify(__gameMeaningCache));}catch(e){}};
   const __shuffle=a=>[...a].sort(()=>Math.random()-.5);
-  async function __resolveGameWord(word, sentence=''){
-    word=String(word||'').toLowerCase();
-    const local=LOCAL_DICTIONARY[word];
-    if(local?.m) return {word,meaning:local.m,pos:local.p||'Từ vựng',sentence,verifiedMeaning:true};
-    const existing=(globalVocabData||[]).find(x=>x.word?.toLowerCase()===word && x.verifiedMeaning && x.meaning);
-    if(existing) return {...existing,sentence:sentence||existing.sentence||''};
-    if(__gameMeaningCache[word]?.meaning) return {...__gameMeaningCache[word],sentence:sentence||__gameMeaningCache[word].sentence||''};
-    try{
-      const data=await tmo(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`,5200);
-      const entry=Array.isArray(data)?data[0]:null;
-      const m=entry?.meanings?.find(x=>x.definitions?.[0]?.definition);
-      const def=m?.definitions?.[0]?.definition||'';
-      if(!def || def.length>260) return null;
-      const tr=await tmo(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(def)}&langpair=en|vi`,5200);
-      const meaning=String(tr?.responseData?.translatedText||'').trim();
-      if(!meaning || meaning.length>360 || meaning.toLowerCase()===def.toLowerCase() || /MYMEMORY|QUERY|INVALID|PLEASE SELECT/i.test(meaning)) return null;
-      const item={word,meaning,pos:posMap[m.partOfSpeech]||m.partOfSpeech||'Từ vựng',sentence,verifiedMeaning:true};
-      __gameMeaningCache[word]=item; __saveGameCache(); return item;
-    }catch(e){return null;}
-  }
+  async function __resolveGameWord(word, sentence=''){ const r=await resolveMeaning(String(word||'').toLowerCase()); return r && r.verifiedMeaning ? {word:r.word,meaning:r.meaning,pos:r.pos,sentence,verifiedMeaning:true} : null; }
   async function __prepareGameWords(){
     const story=(storyText?.value||'');
     const storySentenceFor=w=>{
@@ -2842,6 +2823,7 @@ setTimeout(async () => {                                // lấy cài đặt dù
     const pickedStory=__shuffle(storyWords).slice(0,6);
     const pickedCommon=__shuffle(commonWords.filter(w=>!pickedStory.includes(w))).slice(0,10);
     const candidates=[...new Set([...pickedStory,...pickedCommon])].slice(0,14);
+    await prefetchCloud(candidates);
     const resolved=await Promise.all(candidates.map(w=>__resolveGameWord(w,storySentenceFor(w))));
     const verified=resolved.filter(x=>x?.verifiedMeaning && x.meaning);
     // Giữ thêm các từ đã được xác minh khi trích từ bài đọc hiện tại, phòng khi offline.
@@ -3063,6 +3045,112 @@ function fresh(arr, n) {                                // ưu tiên từ chưa 
     store.set(seenKey(), JSON.stringify(seen.filter(w => !out.some(o => o.word === w)).concat(out.map(o => o.word)).slice(-400)));
     return out;
 }
+
+
+// ================== V9: TRA NGHĨA ĐÁNG TIN CẬY (từ điển nội bộ → suy ra từ dạng gốc → Google kiểm chứng 2 chiều → kho chung) ==================
+const DICT_EXT2 = `N|watermelon=quả dưa hấu;kiwi=quả kiwi;plum=quả mận;apricot=quả mơ;avocado=quả bơ;papaya=quả đu đủ;lychee=quả vải;pomegranate=quả lựu;fig=quả sung;cucumber=quả dưa chuột;pumpkin=quả bí ngô;cabbage=cải bắp;lettuce=rau xà lách;broccoli=súp lơ xanh;mushroom=cây nấm;pepper=hạt tiêu;noodles=mì sợi;sausage=xúp xích;sunshine=ánh nắng;shade=bóng râm;vacation=kỳ nghỉ;picnic=buổi dã ngoại;popsicle=kem que;lemonade=nước chanh;smoothie=sinh tố;math=môn toán;science=môn khoa học;history=môn lịch sử;homework=bài tập về nhà;exam=kỳ thi;classroom=phòng học;notebook=quyển vở;ruler=cái thước kẻ;eraser=cục tẩy;scissors=cái kéo;glue=hồ dán;backpack=cái ba lô;football=bóng đá;basketball=bóng rổ;tennis=quần vợt;badminton=cầu lông;team=đội;coach=huấn luyện viên;race=cuộc đua;truck=xe tải;taxi=xe taxi;motorcycle=xe máy;helicopter=máy bay trực thăng;subway=tàu điện ngầm;ticket=tấm vé;station=nhà ga;airport=sân bay;bank=ngân hàng;hotel=khách sạn;restaurant=nhà hàng;museum=viện bảo tàng;theater=nhà hát;supermarket=siêu thị;office=văn phòng;factory=nhà máy;shorts=quần đùi;sandals=đôi dép quai hậu;umbrella=cái ô;sweater=áo len;pajamas=bộ đồ ngủ;uniform=bộ đồng phục;seeds=những hạt giống;computer=máy tính;phone=điện thoại;camera=máy ảnh;television=ti vi;radio=đài phát thanh;internet=mạng internet;movie=bộ phim;photo=bức ảnh;message=tin nhắn;newspaper=tờ báo;market=chợ;bakery=tiệm bánh mì;pharmacy=hiệu thuốc;farmer=người nông dân;mechanic=thợ máy;engineer=kỹ sư;scientist=nhà khoa học;artist=nghệ sĩ;actor=nam diễn viên;actress=nữ diễn viên;clown=chú hề;circus=rạp xiếc;robot=người máy;alien=người ngoài hành tinh;planet=hành tinh;earth=trái đất;space=không gian;universe=vũ trụ;volcano=núi lửa;desert=sa mạc;waterfall=thác nước;iceberg=tảng băng trôi;coral=san hô;seaweed=rong biển;shell=vỏ sò;anchor=cái neo;pearl=viên ngọc trai;treasure=kho báu;pirate=tên cướp biển;heaven=thiên đường;angel=thiên thần;ghost=con ma;monster=con quái vật;skeleton=bộ xương;candle=ngọn nến;fireworks=pháo hoa;balloon=quả bóng bay;ribbon=dải ruy băng;envelope=phong bì;stamp=con tem;calendar=quyển lịch;holiday=ngày lễ;weekend=cuối tuần;century=thế kỷ;minute=phút;hour=giờ;second=giây
+V|refresh=làm sảng khoái;cools=làm mát;enjoy=thưởng thức;shine=tỏa sáng;melt=tan chảy;freeze=đóng băng;boil=đun sôi;mix=trộn;stir=khuấy;slice=cắt lát;peel=gọt vỏ;squeeze=vắt;bite=cắn;chew=nhai;swallow=nuốt;lick=liếm;sip=nhấp từng ngụm;borrow=mượn;lend=cho mượn;invite=mời;celebrate=ăn mừng;decorate=trang trí;collect=sưu tầm;choose=chọn;decide=quyết định;imagine=tưởng tượng;believe=tin tưởng;explain=giải thích;practice=luyện tập;repeat=lặp lại;guess=đoán;search=tìm kiếm;discover=khám phá;explore=thám hiểm;protect=bảo vệ;surprise=làm ngạc nhiên;travel=du lịch;move=di chuyển;turn=quay;spin=xoay tròn;roll=lăn;slide=trượt;splash=té nước;float=nổi;sink=chìm;drop=đánh rơi;lift=nâng lên;shake=lắc;wave=vẫy tay;point=chỉ tay;clap=vỗ tay;hug=ôm;kiss=hôn;hurry=vội vàng;rush=lao nhanh;sneak=lẻn;crawl=bò;march=diễu hành;wander=đi lang thang;sail=đi thuyền;ride=cưỡi;drive=lái xe;park=đỗ xe;shop=mua sắm;order=gọi món;serve=phục vụ;wrap=gói;tie=buộc;knock=gõ cửa;ring=rung chuông;turn=quay;break=làm vỡ;fix=sửa chữa;grab=nắm lấy;snatch=giật lấy;steal=ăn trộm;escape=trốn thoát;fight=chiến đấu;defeat=đánh bại;rule=cai trị;guard=canh gác;punish=trừng phạt;forgive=tha thứ;thank=cảm ơn;greet=chào hỏi;introduce=giới thiệu;describe=miêu tả;compare=so sánh;notice=nhận thấy;wonder=tự hỏi;worry=lo lắng;enjoyed=đã thưởng thức;chose=đã chọn;shook=đã lắc;threw=đã ném;drove=đã lái xe;rode=đã cưỡi;stole=đã ăn trộm;fought=đã chiến đấu;forgave=đã tha thứ;hung=đã treo;swung=đã đu đưa
+A|easy=dễ dàng;refreshing=sảng khoái;juicy=mọng nước;delicious=ngon tuyệt;tasty=ngon miệng;crunchy=giòn;creamy=béo ngậy;spicy=cay;salty=mặn;sticky=dính;sunny=có nắng;rainy=có mưa;cloudy=nhiều mây;windy=có gió;snowy=có tuyết;foggy=có sương mù;stormy=có bão;nervous=hồi hộp;jealous=ghen tị;bored=chán;curious=tò mò;confused=bối rối;embarrassed=xấu hổ;disappointed=thất vọng;grateful=biết ơn;generous=hào phóng;honest=trung thực;patient=kiên nhẫn;creative=sáng tạo;talented=có tài;cheerful=vui tươi;grumpy=cáu kỉnh;mean=xấu tính;cruel=độc ác;wicked=độc ác;sneaky=lén lút;mighty=hùng mạnh;powerful=quyền lực;ancient=cổ xưa;modern=hiện đại;huge=khổng lồ;enormous=to lớn khủng khiếp;tiny=nhỏ xíu;round=tròn;flat=phẳng;straight=thẳng;crooked=cong queo;thick=dày;shallow=nông;deep=sâu;steep=dốc;slippery=trơn;shiny=sáng bóng;glowing=phát sáng;sparkling=lấp lánh;fluffy=mềm xốp;furry=có lông mịn;lucky=may mắn;unlucky=xui xẻo;ready=sẵn sàng;late=muộn;possible=có thể;impossible=không thể;ordinary=bình thường;perfect=hoàn hảo;terrific=tuyệt vời;awful=tồi tệ;wild=hoang dã;tame=thuần hóa;fierce=hung dữ;hairy=nhiều lông;handsome=đẹp trai;cute=dễ thương
+D|carefully=một cách cẩn thận;easily=một cách dễ dàng;badly=một cách tệ;well=tốt;hard=chăm chỉ;almost=gần như;maybe=có lẽ;perhaps=có lẽ;really=thật sự;quite=khá;enough=đủ;already=đã;still=vẫn;yet=chưa;ever=từng;everywhere=khắp nơi;nowhere=không nơi nào;somewhere=một nơi nào đó;anywhere=bất cứ đâu;forever=mãi mãi;tonight=tối nay;nearby=gần đó;downstairs=ở tầng dưới;upstairs=ở tầng trên;straight=thẳng;around=xung quanh;beside=bên cạnh;beyond=xa hơn;instead=thay vào đó;suddenly=đột nhiên`;
+(() => { const P = { N: 'Danh từ', V: 'Động từ', A: 'Tính từ', D: 'Trạng từ' }; DICT_EXT2.split('\n').forEach(l => { const i = l.indexOf('|'), pos = P[l.slice(0, i)]; l.slice(i + 1).split(';').forEach(e => { const [w, m] = e.split('='); if (w && m && !LOCAL_DICTIONARY[w]) LOCAL_DICTIONARY[w] = { m, p: pos }; }); }); _dw = null; })();
+
+// --- dạng gốc: eating → eat, seeds → seed ... ---
+function lemmas(w) {
+    const c = [], add = x => { if (x && x !== w && x.length >= 3 && !c.includes(x)) c.push(x); };
+    if (/ies$/.test(w)) add(w.slice(0, -3) + 'y');
+    if (/(ches|shes|sses|xes|zes|oes)$/.test(w)) add(w.slice(0, -2));
+    if (/s$/.test(w) && !/ss$/.test(w)) add(w.slice(0, -1));
+    if (/ied$/.test(w)) add(w.slice(0, -3) + 'y');
+    if (/ed$/.test(w)) { add(w.slice(0, -2)); add(w.slice(0, -1)); if (/(.)\1ed$/.test(w)) add(w.slice(0, -3)); }
+    if (/ing$/.test(w)) { add(w.slice(0, -3)); add(w.slice(0, -3) + 'e'); if (/(.)\1ing$/.test(w)) add(w.slice(0, -4)); }
+    if (/ly$/.test(w)) { add(w.slice(0, -2)); if (/ily$/.test(w)) add(w.slice(0, -3) + 'y'); }
+    if (/(er|est)$/.test(w)) { const b = w.replace(/(er|est)$/, ''); add(b); add(b + 'e'); if (/(.)\1$/.test(b)) add(b.slice(0, -1)); }
+    return c;
+}
+const VPOS = { noun: 'Danh từ', verb: 'Động từ', adjective: 'Tính từ', adverb: 'Trạng từ', preposition: 'Giới từ', pronoun: 'Đại từ', conjunction: 'Liên từ', interjection: 'Thán từ', determiner: 'Từ hạn định' };
+function kindOf(w, key, pos) {                           // dạng biến đổi của từ so với dạng gốc
+    if (key === w) return null;
+    if (/ing$/.test(w)) return 'ing'; if (/ed$/.test(w)) return 'ed'; if (/ly$/.test(w)) return 'ly';
+    if (/(er|est)$/.test(w) && pos === 'Tính từ') return /est$/.test(w) ? 'est' : 'er';
+    if (/s$/.test(w)) return pos === 'Danh từ' ? 'pl' : pos === 'Động từ' ? 's3' : null;
+    return null;
+}
+function compose(kind, pos, m) {
+    if (kind === 'pl') return 'những ' + m; if (kind === 'ing') return pos === 'Động từ' ? 'đang ' + m : m; if (kind === 'ed') return pos === 'Động từ' ? 'đã ' + m : m;
+    if (kind === 'ly') return pos === 'Trạng từ' ? m : 'một cách ' + m; if (kind === 'er') return m + ' hơn'; if (kind === 'est') return m + ' nhất'; return m;
+}
+function deriveLocal(w) {                                // suy ra nghĩa từ dạng gốc có trong từ điển nội bộ
+    for (const l of lemmas(w)) { const L = LOCAL_DICTIONARY[l]; if (!L) continue; const k = kindOf(w, l, L.p); if (!k) continue; if (k === 'ing' && L.p !== 'Động từ') continue; if (k === 'ed' && L.p !== 'Động từ') continue; return { meaning: compose(k, L.p, L.m), pos: k === 'ly' ? 'Trạng từ' : L.p }; }
+    return null;
+}
+// --- Google dịch (có từ điển + dịch ngược để kiểm chứng) ---
+const GTR = w => `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=vi&dt=t&dt=bd&q=${encodeURIComponent(w)}`;
+async function gdict(w) {
+    const d = await tmo(GTR(w), 6000);
+    return { main: (d?.[0] || []).map(x => x?.[0] || '').join('').trim().toLowerCase(), ents: (d?.[1] || []).map(e => ({ pos: e[0], items: (e[2] || []).map(it => ({ t: String(it[0] || '').toLowerCase(), back: (it[1] || []).map(b => String(b).toLowerCase()), f: it[3] || 0 })) })) };
+}
+function pickG(g, keys, prefPos) {                       // chỉ nhận nghĩa mà dịch ngược ra đúng từ gốc
+    let best = null;
+    for (const e of g.ents) { const ok = e.items.filter(it => it.back.some(b => keys.includes(b)) && it.t.length <= 30); if (!ok.length) continue; const sc = (prefPos && e.pos === prefPos ? 10 : 0) + ok.length; if (!best || sc > best.sc) best = { e, ok, sc }; }
+    if (!best) return null;
+    return { meaning: best.ok.sort((a, b) => b.f - a.f).slice(0, 2).map(x => x.t).join('; '), pos: VPOS[best.e.pos] || best.e.pos || 'Từ vựng' };
+}
+const agree = (a, b) => { const t = s => new Set(s.toLowerCase().replace(/[.,;!?]/g, ' ').split(/\s+/).filter(x => x.length >= 3)); const A = t(a), B = t(b); return [...A].some(x => B.has(x)); };
+const MEANK = 'magicMeanV2'; let MC = {}, cloudPut_ = {};
+try { MC = JSON.parse(store.get(MEANK) || '{}') || {}; } catch (e) {}
+const saveMC = () => { const ks = Object.keys(MC); if (ks.length > 3000) ks.slice(0, ks.length - 3000).forEach(k => delete MC[k]); store.set(MEANK, JSON.stringify(MC)); };
+async function prefetchCloud(words) {                    // 1 lượt hỏi kho nghĩa dùng chung cho cả nhóm từ
+    if (!db) return; const need = [...new Set(words)].filter(w => !LOCAL_DICTIONARY[w] && !MC[w]); if (!need.length) return;
+    try { const { data } = await db.from('word_meanings').select('word,m,p').in('word', need); (data || []).forEach(r => { MC[r.word] = { meaning: r.m, pos: r.p || 'Từ vựng', verifiedMeaning: true }; }); saveMC(); } catch (e) {}
+}
+function cloudPut(w, r) { if (!db || cloudPut_[w] || !r.verifiedMeaning) return; cloudPut_[w] = 1; try { db.from('word_meanings').upsert({ word: w, m: r.meaning.slice(0, 80), p: (r.pos || '').slice(0, 20) }, { onConflict: 'word', ignoreDuplicates: true }).then(() => {}, () => {}); } catch (e) {} }
+async function resolveMeaning(word) {
+    const w = String(word || '').toLowerCase().trim(); if (!/^[a-z]+(?:['-][a-z]+)?$/.test(w)) return null;
+    const L = LOCAL_DICTIONARY[w]; if (L) return { word: w, meaning: L.m, pos: L.p, verifiedMeaning: true };
+    const dv = deriveLocal(w); if (dv) return { word: w, ...dv, verifiedMeaning: true };
+    if (MC[w]) return { word: w, ...MC[w] };
+    const lem = lemmas(w).filter(l => W.has(l) || known(l)), pref = /(ing|ed)$/.test(w) ? 'verb' : /ly$/.test(w) ? 'adverb' : null; let res = null;
+    try {
+        const g = await gdict(w), p = pickG(g, [w, ...lem], pref);
+        if (p) { const key = [w, ...lem].find(k => g.ents.some(e => e.items.some(it => it.back.includes(k)))) || w; res = { meaning: compose(kindOf(w, key, p.pos), p.pos, p.meaning), pos: p.pos, verifiedMeaning: true }; }
+        for (const l of res ? [] : lem.slice(0, 2)) { const g2 = await gdict(l), p2 = pickG(g2, [l], pref); if (p2) { res = { meaning: compose(kindOf(w, l, p2.pos), p2.pos, p2.meaning), pos: p2.pos, verifiedMeaning: true }; break; } }
+        if (!res && g.main && g.main !== w) {                 // Google không có từ điển cho từ này: cần MyMemory đồng ý mới tin
+            let ok = false; try { const t = await tmo(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(w)}&langpair=en|vi`, 5000), v = t?.responseData?.translatedText || ''; ok = v && !/MYMEMORY|QUERY|INVALID/i.test(v) && agree(v, g.main); } catch (e) {}
+            res = { meaning: g.main, pos: 'Từ vựng', verifiedMeaning: ok };
+        }
+    } catch (e) {}
+    if (res) { MC[w] = { meaning: res.meaning, pos: res.pos, verifiedMeaning: res.verifiedMeaning }; saveMC(); cloudPut(w, res); return { word: w, ...res }; }
+    return null;
+}
+const vocabCard = i => `<div class="vocab-card px-3 py-2 bg-white border-2 border-purple-300 rounded-2xl shadow-sm cursor-pointer hover:bg-purple-100 flex flex-col items-center text-center select-none active:scale-95" onclick="playWordAudio('${i.word}', this)"><span class="text-purple-700 font-black text-base flex items-center gap-1">${i.word} <span class="speaker-icon">🔊</span></span><span class="text-xs text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full mt-1 font-bold">${i.pos}</span><span class="text-sm text-slate-600 font-bold border-t border-purple-100 w-full mt-1 pt-0.5">${i.meaning}</span>${i.verifiedMeaning ? '' : '<span class="text-[10px] text-amber-600">(tham khảo — chưa dùng cho câu đố)</span>'}</div>`;
+extractVocabulary = async function (text, off = 0) {
+    lastExtractedText = text; vocOff = off;
+    if (!off) {
+        const cnt = {}, minL = LV() === '1' ? 4 : 6;
+        (text.toLowerCase().match(/\b[a-z]{4,}\b/g) || []).forEach(w => { if (!STOP.has(w) && (LOCAL_DICTIONARY[w] || known(w) || plaus(w))) cnt[w] = (cnt[w] || 0) + 1; });
+        masterCandidatePool = Object.keys(cnt).filter(w => w.length >= minL || LOCAL_DICTIONARY[w]).sort((a, b) => (!!LOCAL_DICTIONARY[b] - !!LOCAL_DICTIONARY[a]) || b.length - a.length);
+    }
+    const ws = masterCandidatePool.slice(off, off + 12);
+    if (!ws.length) { vocabList.innerHTML = '<span class="italic text-purple-400 text-sm">Hết từ khó rồi! Thử bài khác nhé 🎉</span>'; return; }
+    vocabList.innerHTML = '<span class="animate-pulse text-purple-500 text-sm">Đang tra nghĩa các từ... ⏳</span>';
+    await prefetchCloud(ws);
+    const out = (await Promise.all(ws.map(async w => { const sm = text.match(new RegExp(`[^.?!\\n]*\\b${w}\\b[^.?!\\n]*[.?!]?`, 'i')), r = await resolveMeaning(w); return r ? { ...r, sentence: sm ? sm[0].trim() : '' } : null; }))).filter(Boolean);
+    const lost = ws.length - out.length;
+    out.sort((a, b) => (b.verifiedMeaning ? 1 : 0) - (a.verifiedMeaning ? 1 : 0));
+    globalVocabData = out.filter(x => x.verifiedMeaning);
+    vocabList.innerHTML = out.map(vocabCard).join('') + (lost ? `<div class="w-full text-[11px] text-slate-500 text-center">${lost} từ chưa tra được (máy chưa có mạng hoặc từ quá hiếm) — bé thử nút "Đổi 12 từ khác" hoặc ô "Tra từ" nhé.</div>` : '') + `<button class="w-full py-2 bg-purple-500 text-white font-black rounded-2xl" onclick="extractVocabulary(lastExtractedText, (vocOff + 12) >= masterCandidatePool.length ? 0 : vocOff + 12)">🔄 Đổi 12 từ khác</button>`;
+    talk('Có từ mới rồi! Chạm vào từng từ để nghe đọc nha! 🔊');
+};
+const _lk0 = lookupKidWord; $('kidWordSearch')?.removeEventListener('click', _lk0);
+lookupKidWord = async function () {
+    const input = $('kidWordInput'), out = $('kidWordResult'), word = (input?.value || '').trim().toLowerCase();
+    if (!/^[a-z]+(?:[-'][a-z]+)?$/.test(word)) { out.textContent = 'Bé nhập một từ tiếng Anh nhé (ví dụ: beautiful).'; return; }
+    out.textContent = 'Đang tra nghĩa trong từ điển... 📖'; await prefetchCloud([word]);
+    const r = await resolveMeaning(word);
+    if (!r) { const g = known(word) ? null : guess(word); out.innerHTML = g ? `Chưa thấy từ <b>${escapeKidHtml(word)}</b>. Có phải ý bé là <button type="button" class="font-black text-purple-700 underline" onclick="$('kidWordInput').value='${g}';lookupKidWord()">${g}</button> không?` : `Chưa tra được nghĩa của <b>${escapeKidHtml(word)}</b> (máy chưa có mạng hoặc từ quá hiếm). Bé thử từ khác nhé.`; return; }
+    out.innerHTML = `<div class="font-black text-purple-800 text-base">${escapeKidHtml(word)} <button type="button" class="ml-1" onclick="playWordAudio('${escapeKidHtml(word)}')">🔊 Nghe</button></div><div class="font-bold text-slate-700">${escapeKidHtml(r.meaning)}${r.pos ? ` <span class="text-xs text-purple-600">(${escapeKidHtml(r.pos)})</span>` : ''}</div><div class="text-[11px] ${r.verifiedMeaning ? 'text-emerald-600' : 'text-amber-600'}">${r.verifiedMeaning ? '✅ Nghĩa đã được kiểm tra' : '⚠️ Nghĩa tham khảo — bé hỏi thầy cô hoặc bố mẹ để chắc chắn nhé'}</div>`;
+};
+$('kidWordSearch')?.addEventListener('click', lookupKidWord);
 
 </script>
 </body>
