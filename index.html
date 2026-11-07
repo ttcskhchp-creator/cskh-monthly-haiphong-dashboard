@@ -2345,7 +2345,7 @@ function cpCheck(cands) {
     if (C.done) return; const q = C.qs[C.qi]; if (!cands.join('').trim()) return showToast('Bé nhập hoặc nói câu trả lời nhé!', 'warning');
     const fb = $('cpFb'), next = (label = '➡️ Câu tiếp theo') => { C.done = true; $('cpRow').innerHTML = `<button id="cpNext" class="col-span-2 py-3 bg-cyan-500 text-white font-black rounded-xl text-base">${label}</button>`; $('cpNext').onclick = cpNextSentence; $('cpIn').disabled = true; cpStat(); };
     if (cpOk(cands, q.a)) {
-        const pts = [10, 5, 2][C.tries], w = [1, .5, .25][C.tries]; C.asked++; C.sum += w; sessionTracker.scoreEarned += pts; updateSessionUI();
+        const pts = [10, 5, 2][C.tries], w = [1, .5, .25][C.tries]; C.asked++; C.sum += w; sessionTracker.scoreEarned += pts; sessionTracker.compOk = (sessionTracker.compOk || 0) + 1; updateSessionUI();
         fb.innerHTML = `<span class="text-green-600">🎉 Đúng rồi! "${q.a[0]}" +${pts}đ ${C.tries ? '' : '(hiểu ngay lần đầu!)'}</span>`; burst(...ctr(), WIN, 12); talk('Bé nghe hiểu giỏi quá! 👏'); next();
     } else {
         C.tries++;
@@ -2416,6 +2416,112 @@ setTimeout(async () => {                                // dọn dữ liệu cũ
     };
     $('cardStoryLibrary').appendChild(b);
 })();
+
+
+// ================== V5: ĐIỂM CHUẨN HẠNG + NHIỆM VỤ DÙNG ĐA CHỨC NĂNG ==================
+const CFG_DEF = {
+    ranks: [{ min: 0, title: '🌱 Mầm Nhú Tiếng Tây', score: 150 }, { min: 5, title: '⚡ Siêu Nhân Ngoại Ngữ', score: 160 }, { min: 10, title: '🧠 Nhà Thông Thái', score: 170 }, { min: 15, title: '🔍 Chuyên Gia Ngôn Ngữ', score: 180 }, { min: 20, title: '📚 Bác Học Ngôn Ngữ', score: 190 }, { min: 25, title: '👑 Giáo Sư Tiếng Anh', score: 200 }],
+    q: { stories: 1, sentences: 2, comp: 3, quiz: 1, games: 2, gameTypes: 2, vocab: 0 }
+};
+const cfgOk = c => c && Array.isArray(c.ranks) && c.ranks.length && c.q;
+let CFG = (() => { try { const c = JSON.parse(store.get('magicCfg')); if (cfgOk(c)) return { ranks: c.ranks, q: { ...CFG_DEF.q, ...c.q } }; } catch (e) {} return JSON.parse(JSON.stringify(CFG_DEF)); })();
+getKidRank = function (done) { let r = CFG.ranks[0]; for (const x of CFG.ranks) if (done >= x.min) r = x; return { title: r.title, minScore: r.score }; };
+
+const newSess = () => ({ readStories: new Set(), sentencesPassed: 0, gamesPlayed: 0, scoreEarned: 0, compOk: 0, quizPlays: 0, gameTypes: new Set(), vocabHeard: new Set() });
+function norm() { const s = sessionTracker; s.compOk = s.compOk || 0; s.quizPlays = s.quizPlays || 0; if (!(s.gameTypes instanceof Set)) s.gameTypes = new Set(); if (!(s.vocabHeard instanceof Set)) s.vocabHeard = new Set(); }
+saveSess = function () { norm(); const s = sessionTracker; store.set(SK(), JSON.stringify({ q: currentSharedQuest && currentSharedQuest.id, r: [...s.readStories], s: s.sentencesPassed, g: s.gamesPlayed, c: s.scoreEarned, o: s.compOk, z: s.quizPlays, t: [...s.gameTypes], v: [...s.vocabHeard] })); };
+loadSess = function () {
+    sessionTracker = newSess();
+    try { const d = JSON.parse(store.get(SK())); if (d && currentSharedQuest && d.q === currentSharedQuest.id) sessionTracker = { readStories: new Set(d.r), sentencesPassed: d.s, gamesPlayed: d.g, scoreEarned: d.c, compOk: d.o || 0, quizPlays: d.z || 0, gameTypes: new Set(d.t || []), vocabHeard: new Set(d.v || []) }; } catch (e) {}
+};
+function applyCfg() {                                   // đưa điểm chuẩn / số lượng từ cài đặt vào nhiệm vụ hiện tại (theo hạng của bé đang chọn)
+    const q = currentSharedQuest; if (!q) return; const c = CFG.q, kid = cachedKids.find(k => k.id === currentKidId) || cachedKids[0];
+    q.target_stories = c.stories; q.target_sentences = c.sentences; q.target_games = c.games; q.target_score = getKidRank((kid && kid.weekly_done) || 0).minScore;
+}
+function reqs() {
+    norm(); applyCfg(); const c = CFG.q, s = sessionTracker, q = currentSharedQuest || {};
+    return [
+        { ic: '📖', n: 'Nghe hết bài truyện', w: 'Tab 📖 Đọc → bấm "Đọc To" và nghe đến hết', h: s.readStories.size, d: c.stories, u: 'bài' },
+        { ic: '🗣️', n: 'Đọc đúng câu', w: 'Tab 🗣️ Luyện → "Thử thách đọc cả câu"', h: s.sentencesPassed, d: c.sentences, u: 'câu' },
+        { ic: '👂', n: 'Nghe hiểu: trả lời đúng', w: 'Tab 📖 Đọc → thẻ "Nghe hiểu từng câu"', h: s.compOk, d: c.comp, u: 'câu' },
+        { ic: '❓', n: 'Đố vui (đúng từ 2 câu)', w: 'Tab 🎮 Chơi → ❓ Đố vui', h: s.quizPlays, d: c.quiz, u: 'lượt' },
+        { ic: '🎮', n: 'Chơi game (không cần chơi hết)', w: 'Tab 🎮 Chơi → chọn vài trò 🎧 🃏 🔤 🎤 ⚡', h: s.gamesPlayed, d: c.games, u: 'lượt', x: { h: s.gameTypes.size, d: Math.min(c.gameTypes, c.games), u: 'loại khác nhau' } },
+        { ic: '🔤', n: 'Chạm nghe từ vựng', w: 'Tab 🗣️ Luyện → chạm vào từng thẻ từ', h: s.vocabHeard.size, d: c.vocab, u: 'từ' },
+        { ic: '⭐', n: 'Điểm đạt chuẩn', w: 'Cộng dồn từ các hoạt động bên trên', h: s.scoreEarned, d: q.target_score || 0, u: 'điểm' }
+    ].filter(r => r.d > 0).map(r => ({ ...r, ok: r.h >= r.d && (!r.x || r.x.h >= r.x.d) }));
+}
+const fnCount = () => { const c = CFG.q, a = [c.stories, c.sentences, c.comp, c.quiz, c.games, c.vocab].filter(x => x > 0).length; return { a, p: Math.round(a / 6 * 100) }; };
+function renderChecklist() {
+    const box = $('questContent'); if (!box || !currentSharedQuest) return; const R = reqs(), f = fnCount(), q = currentSharedQuest, done = (q.completed_kids || []).includes(currentKidId);
+    const g = $('cntReadStories') && $('cntReadStories').closest('.grid'); if (g) g.classList.add('hid');
+    box.innerHTML = `<div class="bg-amber-100 border-2 border-amber-300 rounded-xl p-2 text-[13px]">🎯 Bé phải dùng <b>${f.a}/6 chức năng (${f.p}%)</b> của trang. Làm đủ <b>tất cả</b> mục bên dưới mới được nộp điểm nhé!</div>
+    <div class="text-[12px]">📚 Truyện gợi ý hôm nay: <b class="text-blue-700">${(q.story_title || 'The Golden Goose').replace(/</g, '&lt;')}</b> (hoặc truyện khác)</div>` +
+        R.map(r => `<div class="flex items-start gap-2 p-2 rounded-xl border-2 ${r.ok ? 'bg-green-50 border-green-300' : 'bg-white border-amber-200'}"><span class="text-xl">${r.ok ? '✅' : r.ic}</span><div class="flex-1 min-w-0"><div class="text-[13px] font-black">${r.n}: <span class="${r.ok ? 'text-green-600' : 'text-orange-600'}">${Math.min(r.h, 9999)}/${r.d} ${r.u}</span>${r.x ? ` • <span class="${r.x.h >= r.x.d ? 'text-green-600' : 'text-orange-600'}">${r.x.h}/${r.x.d} ${r.x.u}</span>` : ''}</div><div class="text-[11px] text-slate-500 font-bold">${r.w}</div></div></div>`).join('') +
+        `<div class="text-[11px] bg-orange-50 border border-orange-200 rounded-xl p-2">⭐ <b>Cách kiếm điểm:</b> đọc đúng 1 câu +10 · nghe hiểu đúng +10 (lần 2: +5, lần 3: +2) · mỗi câu đúng trong game/đố vui +10 · nộp xong nhiệm vụ thưởng +30. Nghe bài truyện không có điểm nhưng bắt buộc.</div>`;
+    const bd = $('questStatusBadge'), miss = R.filter(r => !r.ok).length;
+    if (bd && !done) { bd.textContent = miss ? `Còn thiếu ${miss} mục ⏳` : 'Đã đủ! Bấm "Nộp Ghi Điểm" 🎉'; bd.className = 'text-xs font-black ' + (miss ? 'text-orange-600' : 'text-emerald-600'); }
+}
+const _usu2 = updateSessionUI; updateSessionUI = () => { applyCfg(); norm(); _usu2(); renderChecklist(); };
+const _rq2 = renderQuestUI; renderQuestUI = () => { applyCfg(); _rq2(); };
+const _claim = claimQuestReward;
+claimQuestReward = async function () {
+    if (!currentSharedQuest || (currentSharedQuest.completed_kids || []).includes(currentKidId)) return _claim.apply(this, arguments);
+    const m = reqs().filter(r => !r.ok); if (m.length) { const r = m[0]; showToast(`Còn thiếu: ${r.ic} ${r.n} (${r.h}/${r.d} ${r.u}${r.x && r.x.h < r.x.d ? `, ${r.x.h}/${r.x.d} ${r.x.u}` : ''})`, 'warning'); talk(`Bé làm tiếp nhé: ${r.w} 💪`); return; }
+    return _claim.apply(this, arguments);
+};
+getMissingStepsAdvice = function () {
+    if (!currentSharedQuest) return 'Bé hãy chọn một truyện trong kho để bắt đầu làm bài nha! 📖';
+    const m = reqs().filter(r => !r.ok); if (!m.length) return "Wao xuất sắc quá! Bé đã làm đủ các mục! Bấm '🏆 Nộp Ghi Điểm' để nhận thưởng ngay thôi! 🥳🎉";
+    return 'Nhiệm vụ còn thiếu: ' + m.map(r => `${r.ic} ${r.n} (${r.h}/${r.d} ${r.u})`).join(', ') + ' nha bé!';
+};
+award = function (n) {                                  // đếm riêng Đố vui và các game; phải có điểm tối thiểu mới tính lượt
+    norm(); const s = sessionTracker, quiz = G.k === 'quiz', need = quiz ? 20 : 10;
+    if (n >= need) { if (quiz) s.quizPlays++; else { s.gamesPlayed++; s.gameTypes.add(G.k); } }
+    else talk(quiz ? 'Đố vui cần đúng ít nhất 2 câu mới tính lượt. Bé chơi lại nhé! 💪' : 'Lượt này chưa tính vì chưa đủ 10 điểm. Chơi lại nhé! 💪');
+    if (n > 0) s.scoreEarned += n; updateSessionUI();
+};
+const _pw = window.playWordAudio;
+window.playWordAudio = function (w, el) { if (el && el.classList && el.classList.contains('vocab-card')) { norm(); sessionTracker.vocabHeard.add(w); updateSessionUI(); } return _pw.apply(this, arguments); };
+
+// --- bảng cài đặt cho Bố Mẹ ---
+const cfgSave = async c => {
+    store.set('magicCfg', JSON.stringify(c)); store.set('magicCfgAt', Date.now());
+    if (db) try { const { error } = await db.from('magic_settings').upsert({ id: 'cfg', data: c, updated_at: new Date().toISOString() }); if (error) throw error; return true; } catch (e) {}
+    return false;
+};
+function cfgRefresh() { try { updateKidDashboard(); } catch (e) {} renderQuestUI(); updateSessionUI(); try { loadLeaderboard(); } catch (e) {} }
+function openCfg() { if (prompt('Mã PIN của Bố Mẹ:') !== '6868') return showToast('Sai mã PIN!', 'error'); drawCfg(JSON.parse(JSON.stringify(CFG))); }
+function drawCfg(c) {
+    let m = $('cfgModal'); if (!m) { m = document.createElement('div'); m.id = 'cfgModal'; m.style.cssText = 'position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:10px'; document.body.appendChild(m); }
+    const inp = 'border-2 border-purple-200 rounded-lg px-2 py-1 text-sm font-bold w-full', fld = (k, l, mn, hint) => `<label class="block text-[12px]">${l}<input type="number" min="${mn}" data-q="${k}" value="${c.q[k]}" class="${inp}"><span class="text-[10px] text-slate-400 font-normal">${hint || ''}</span></label>`;
+    m.innerHTML = `<div class="bg-white rounded-3xl p-4 w-full max-w-lg max-h-[92vh] overflow-y-auto text-sm font-bold"><h3 class="font-black text-purple-700 text-base mb-2">⚙️ Cài điểm chuẩn & nhiệm vụ (Bố Mẹ)</h3>
+    <div class="font-black text-purple-600 mb-1">🏅 Các hạng & điểm chuẩn</div><div class="text-[10px] text-slate-400 font-normal mb-1">Số nhiệm vụ đã hoàn thành trong tuần để lên hạng · tên hạng · điểm chuẩn mỗi nhiệm vụ</div>
+    ${c.ranks.map((r, i) => `<div class="flex gap-1 mb-1 items-center"><input type="number" min="0" data-r="${i}" data-f="min" value="${r.min}" class="${inp}" style="width:4.2rem" ${i ? '' : 'disabled'}><input data-r="${i}" data-f="title" value="${r.title.replace(/"/g, '&quot;')}" class="${inp}"><input type="number" min="1" data-r="${i}" data-f="score" value="${r.score}" class="${inp}" style="width:5rem"><button data-del="${i}" class="px-2 text-red-500">🗑️</button></div>`).join('')}
+    <button id="cfgAdd" class="w-full py-1.5 mb-3 bg-purple-100 text-purple-700 rounded-xl text-xs font-black">➕ Thêm hạng mới</button>
+    <div class="font-black text-purple-600 mb-1">📋 Bé phải làm gì mỗi nhiệm vụ</div><div class="grid grid-cols-2 gap-2 mb-2">
+    ${fld('stories', '📖 Nghe hết bài (bài)', 1)}${fld('sentences', '🗣️ Đọc đúng câu (câu)', 1)}${fld('comp', '👂 Nghe hiểu đúng (câu)', 1)}${fld('quiz', '❓ Đố vui (lượt)', 1, 'tính khi đúng ≥2 câu')}${fld('games', '🎮 Chơi game (lượt)', 1, 'tính khi đạt ≥10 điểm')}${fld('gameTypes', '🎮 Số loại game khác nhau', 1, 'không cần chơi hết 5 loại')}${fld('vocab', '🔤 Chạm nghe từ vựng (từ)', 0, '0 = không bắt buộc')}</div>
+    <div id="cfgInd" class="bg-amber-50 border border-amber-200 rounded-xl p-2 text-[12px] mb-3"></div>
+    <div class="flex gap-2"><button id="cfgSaveBtn" class="flex-1 py-2 bg-green-500 text-white rounded-xl font-black">💾 Lưu</button><button id="cfgReset" class="py-2 px-3 bg-slate-100 rounded-xl">↩️ Mặc định</button><button id="cfgClose" class="py-2 px-3 bg-slate-100 rounded-xl">Đóng</button></div></div>`;
+    const ind = () => { const old = CFG; CFG = c; const f = fnCount(); CFG = old; $('cfgInd').innerHTML = `Bé sẽ dùng <b>${f.a}/6 chức năng (${f.p}%)</b> ${f.p >= 80 ? '✅ đạt yêu cầu từ 80%' : '❌ cần từ 80%'}. Bắt buộc: nghe bài, đọc câu, nghe hiểu, đố vui, chơi game.`; }; ind();
+    m.oninput = e => { const t = e.target; if (t.dataset.r != null) c.ranks[+t.dataset.r][t.dataset.f] = t.dataset.f === 'title' ? t.value : +t.value; else if (t.dataset.q) c.q[t.dataset.q] = +t.value; ind(); };
+    m.onclick = e => { const t = e.target; if (t.dataset.del != null) { if (c.ranks.length > 1) { c.ranks.splice(+t.dataset.del, 1); drawCfg(c); } } };
+    $('cfgAdd').onclick = () => { const l = c.ranks[c.ranks.length - 1]; c.ranks.push({ min: l.min + 5, title: '⭐ Hạng mới', score: l.score + 10 }); drawCfg(c); };
+    $('cfgReset').onclick = () => drawCfg(JSON.parse(JSON.stringify(CFG_DEF)));
+    $('cfgClose').onclick = () => m.remove();
+    $('cfgSaveBtn').onclick = async () => {
+        c.ranks.sort((a, b) => a.min - b.min); c.ranks[0].min = 0;
+        const bad = c.ranks.some((r, i) => !r.title.trim() || !(r.score >= 1) || !(r.min >= 0) || (i && r.min === c.ranks[i - 1].min));
+        if (bad) return showToast('Kiểm tra lại các hạng: tên không trống, điểm ≥ 1, số nhiệm vụ không trùng nhau!', 'warning');
+        const q = c.q; ['stories', 'sentences', 'comp', 'quiz', 'games', 'gameTypes'].forEach(k => q[k] = Math.max(1, Math.round(q[k] || 1))); q.vocab = Math.max(0, Math.round(q.vocab || 0)); q.gameTypes = Math.min(q.gameTypes, q.games, 5);
+        CFG = c; const cloud = await cfgSave(c); m.remove(); cfgRefresh();
+        showToast(cloud ? 'Đã lưu và đồng bộ lên Cloud ✅' : 'Đã lưu trên máy này ✅ (để dùng chung nhiều máy, chạy file supabase_setup.sql)', 'success');
+    };
+}
+(() => { const b = document.createElement('button'); b.id = 'cfgBtn'; b.type = 'button'; b.textContent = '⚙️ Cài điểm chuẩn hạng & nhiệm vụ (Bố Mẹ)'; b.className = 'w-full mt-2 py-2 text-xs bg-purple-100 text-purple-700 font-black rounded-xl'; b.onclick = openCfg; $('cardKidProfile').appendChild(b); })();
+setTimeout(async () => {                                // lấy cài đặt dùng chung từ Cloud (tối đa 1 giờ/lần)
+    if (!db || Date.now() - (+store.get('magicCfgAt') || 0) < 36e5) return; store.set('magicCfgAt', Date.now());
+    try { const { data } = await db.from('magic_settings').select('data').eq('id', 'cfg').maybeSingle(); if (data && cfgOk(data.data)) { CFG = { ranks: data.data.ranks, q: { ...CFG_DEF.q, ...data.data.q } }; store.set('magicCfg', JSON.stringify(CFG)); cfgRefresh(); } } catch (e) {}
+}, 3000);
 
         // KHỞI ĐỘNG HỆ THỐNG AN TOÀN
         document.addEventListener('DOMContentLoaded', () => {
