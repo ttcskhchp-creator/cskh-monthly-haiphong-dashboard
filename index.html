@@ -112,6 +112,19 @@
         #mb{pointer-events:none!important;max-width:200px!important;font-size:12px!important;padding:6px 10px!important}
         .hidden{display:none!important}
     </style>
+
+<style id="story-library-layout-fix">
+  #cardStoryLibrary { min-height: 300px; }
+  #storyList { scrollbar-width: thin; scrollbar-color: #a5b4fc #eef2ff; }
+  #storyList > div { min-height: 34px; }
+  @media (max-width: 1023px) {
+    #cardStoryLibrary { min-height: 280px; max-height: 46vh; }
+    #cardChooseFile #dropZone { min-height: 50px; }
+  }
+  @media (min-width: 1024px) {
+    #cardStoryLibrary { min-height: 340px; max-height: 560px; }
+  }
+</style>
 </head>
 <body class="p-2 md:p-6 flex flex-col items-center">
 
@@ -310,16 +323,16 @@
             </div>
 
             <!-- Chọn truyện -->
-            <div id="cardChooseFile" class="guide-card bg-white p-2 md:p-3 rounded-[1.5rem] shadow-lg border-4 border-pink-300 flex flex-col">
-                <h2 class="text-lg font-black text-pink-600 mb-2 flex items-center"><span class="text-xl mr-2">📸</span> 1. Chọn truyện</h2>
+            <div id="cardChooseFile" class="guide-card bg-white p-2 md:p-2.5 rounded-2xl shadow-md border-2 border-pink-200 flex flex-col">
+                <h2 class="text-sm md:text-base font-black text-pink-600 mb-1.5 flex items-center"><span class="text-base mr-1.5">📸</span> 1. Chọn truyện</h2>
                 <input type="file" id="fileInput" multiple accept="image/*,.pdf,.txt,.md,.docx,.doc,.html,.htm" class="sr-only">
-                <label id="dropZone" for="fileInput" class="flex flex-col items-center justify-center bg-slate-50 rounded-xl border-2 border-dashed border-slate-300 overflow-hidden min-h-[76px] mb-1 relative cursor-pointer hover:bg-slate-100 transition-colors">
-                    <p id="placeholderText" class="text-slate-400 text-sm md:text-base font-bold text-center px-4 py-4">Chạm để chọn <b>Ảnh, PDF, Word</b></p>
+                <label id="dropZone" for="fileInput" class="flex flex-col items-center justify-center bg-slate-50 rounded-lg border-2 border-dashed border-slate-300 overflow-hidden min-h-[54px] mb-1 relative cursor-pointer hover:bg-slate-100 transition-colors">
+                    <p id="placeholderText" class="text-slate-400 text-xs md:text-sm font-bold text-center px-3 py-2">Chạm để chọn <b>Ảnh, PDF, Word</b></p>
                     <div id="previewBox" class="w-full flex items-center justify-center p-2"></div>
                 </label>
                 <div id="fileInfo" class="hidden text-xs font-bold text-slate-500 mb-1 truncate"></div>
-                <div id="fileChips" class="flex flex-wrap gap-1 mb-2"></div>
-                <button id="extractBtn" class="w-full py-2 bg-pink-500 active:bg-pink-600 text-white text-base font-black rounded-xl shadow-md btn-bounce disabled:opacity-50 flex justify-center">🪄 Đọc chữ từ file</button>
+                <div id="fileChips" class="flex flex-wrap gap-1 mb-1"></div>
+                <button id="extractBtn" class="w-full py-1.5 bg-pink-500 active:bg-pink-600 text-white text-sm font-black rounded-lg shadow-sm btn-bounce disabled:opacity-50 flex justify-center">🪄 Đọc chữ từ file</button>
                 <div id="loadingStatus" class="hidden mt-2 flex-col items-center justify-center text-pink-600">
                     <div class="spinner mb-1"></div>
                     <p id="statusText" class="font-bold text-xs text-center">Đang nhìn chữ...</p>
@@ -327,12 +340,12 @@
             </div>
 
             <!-- Kho truyện -->
-            <div id="cardStoryLibrary" class="guide-card bg-indigo-50 p-2 md:p-3 rounded-[1.5rem] shadow-lg border-4 border-indigo-300 flex flex-col max-h-[145px]">
-                <div class="flex justify-between items-center mb-2">
-                    <h2 class="text-base font-black text-indigo-600 flex items-center"><span class="text-lg mr-2">☁️</span> Kho Truyện</h2>
-                    <button onclick="saveToCloud()" class="bg-indigo-500 text-white px-2 py-1 rounded-md text-xs font-bold btn-bounce shadow-sm hover:bg-indigo-600">💾 Lưu Bài</button>
+            <div id="cardStoryLibrary" class="guide-card bg-indigo-50 p-2 md:p-3 rounded-2xl shadow-lg border-2 border-indigo-300 flex flex-col min-h-[300px] max-h-[52vh]">
+                <div class="flex justify-between items-center mb-2 shrink-0 gap-2">
+                    <h2 class="text-sm md:text-base font-black text-indigo-600 flex items-center"><span class="text-base mr-1.5">☁️</span> Kho Truyện <span id="storyListCount" class="ml-1 text-[10px] font-bold text-indigo-400"></span></h2>
+                    <button onclick="saveToCloud()" class="bg-indigo-500 text-white px-2 py-1 rounded-md text-[10px] md:text-xs font-bold btn-bounce shadow-sm hover:bg-indigo-600 shrink-0">💾 Lưu bài</button>
                 </div>
-                <div id="storyList" class="space-y-1.5 overflow-y-auto pr-1 flex-grow">
+                <div id="storyList" class="space-y-1.5 overflow-y-auto overscroll-contain pr-1 flex-1 min-h-0">
                     <p class="text-indigo-400 font-bold text-[10px] italic text-center py-1">Đang tải danh sách...</p>
                 </div>
             </div>
@@ -2470,9 +2483,11 @@ fetchStories = async function () {
             .order('created_at', { ascending: false }).range(0, 49);
         if (error) throw error;
         if (!stories || !stories.length) {
-            listEl.innerHTML = '<p class="text-indigo-400 font-bold text-[10px] italic text-center py-2">Kho truyện chưa có bài nào.</p>';
+            const countEl = document.getElementById('storyListCount'); if (countEl) countEl.textContent = '(0)';
+            listEl.innerHTML = '<p class="text-indigo-400 font-bold text-xs italic text-center py-4">Kho truyện chưa có bài nào.</p>';
             renderQuestUI(); return;
         }
+        const countEl = document.getElementById('storyListCount'); if (countEl) countEl.textContent = `(${stories.length}${stories.length === 50 ? '+' : ''})`;
         listEl.innerHTML = stories.map(s => {
             const size = s.file_size ? ` · ${(s.file_size / 1024).toFixed(1)} KB` : '';
             return `<div class="bg-white p-1.5 rounded border border-indigo-100 flex justify-between items-center shadow-sm gap-2">
@@ -2488,27 +2503,46 @@ fetchStories = async function () {
         listEl.innerHTML = `<p class="text-red-600 text-[11px] font-bold">Không tải được kho truyện: ${escapeStoryHtml(err.message || 'Lỗi truy vấn')}.</p>`;
     }
 };
+function previewStoryAsset(blob, mime, title) {
+    const url = URL.createObjectURL(blob);
+    const old = document.getElementById('storyAssetPreview'); if (old) old.remove();
+    const wrap = document.createElement('div'); wrap.id = 'storyAssetPreview';
+    wrap.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(15,23,42,.88);display:flex;flex-direction:column;padding:12px;';
+    const head = document.createElement('div'); head.style.cssText='display:flex;justify-content:space-between;align-items:center;color:white;padding:8px;gap:12px;';
+    const name = document.createElement('b'); name.textContent = title || 'Tệp truyện';
+    const close = document.createElement('button'); close.textContent='Đóng ✕'; close.style.cssText='padding:8px 12px;border:0;border-radius:8px;background:white;font-weight:bold;';
+    close.onclick=()=>{URL.revokeObjectURL(url);wrap.remove();}; head.append(name,close); wrap.append(head);
+    let media;
+    if (mime.startsWith('image/')) { media=document.createElement('img'); media.src=url; media.style.cssText='max-width:100%;max-height:calc(100vh - 90px);object-fit:contain;margin:auto;'; }
+    else if (mime==='application/pdf') { media=document.createElement('iframe'); media.src=url; media.style.cssText='width:100%;height:calc(100vh - 90px);border:0;background:white;'; }
+    else if (mime.startsWith('audio/')) { media=document.createElement('audio'); media.controls=true; media.src=url; media.style.cssText='width:100%;margin:auto;'; }
+    else if (mime.startsWith('video/')) { media=document.createElement('video'); media.controls=true; media.src=url; media.style.cssText='max-width:100%;max-height:calc(100vh - 90px);margin:auto;'; }
+    else { URL.revokeObjectURL(url); throw new Error('Định dạng tệp này chưa có trình xem trong ứng dụng.'); }
+    wrap.append(media); document.body.append(wrap);
+}
 loadStory = async function (id) {
     if (!db || !id) return showToast('Chưa kết nối Cloud!', 'warning');
     try {
-        let content = store.get('magicStory_' + id);
-        if (!content) {
-            const { data, error } = await db.from('saved_stories')
-                .select('content,storage_path,title').eq('id', id).single();
-            if (error) throw error;
-            if (data.storage_path) {
-                const { data: blob, error: storageError } = await db.storage.from(STORY_BUCKET).download(data.storage_path);
-                if (storageError) throw storageError;
-                content = await blob.text();
-            } else {
-                // Tương thích các truyện cũ đang lưu trực tiếp trong cột content.
-                content = data.content || '';
+        const { data, error } = await db.from('saved_stories')
+            .select('content,storage_path,title,content_type').eq('id', id).single();
+        if (error) throw error;
+        if (data.storage_path) {
+            const { data: blob, error: storageError } = await db.storage.from(STORY_BUCKET).download(data.storage_path);
+            if (storageError) throw storageError;
+            const mime = data.content_type || blob.type || 'text/plain';
+            if (/^(application\/pdf|image\/|audio\/|video\/)/i.test(mime)) {
+                previewStoryAsset(blob, mime, data.title); showToast('Đã mở tệp từ kho ☁️', 'success'); return;
             }
+            const content = await blob.text();
+            if (!content) throw new Error('File truyện rỗng.');
+            cacheStory(id, content); storyText.value = content;
+        } else {
+            // Tương thích truyện cũ: nội dung vẫn còn trong cột content.
+            const content = data.content || '';
             if (!content) throw new Error('Truyện không có nội dung hoặc file đã bị thiếu.');
-            cacheStory(id, content);
+            cacheStory(id, content); storyText.value = content;
         }
-        storyText.value = content; textSource = 'cloud';
-        showToast('Đã tải truyện từ kho ☁️', 'success'); cleanBtn.click();
+        textSource = 'cloud'; showToast('Đã tải truyện từ kho ☁️', 'success'); cleanBtn.click();
     } catch (err) {
         console.error('loadStory:', err);
         showToast('Không tải được truyện: ' + (err.message || 'Lỗi truy xuất'), 'error');
@@ -2578,7 +2612,16 @@ setTimeout(async () => {                                // dọn dữ liệu cũ
         const { error } = await db.storage.from('dictionary').upload('english_words_10000.txt', blob, { upsert: true, contentType: 'text/plain; charset=utf-8', cacheControl: '31536000' });
         showToast(error ? 'Chưa nạp được: ' + error.message + ' (chạy file supabase_setup.sql trước nhé)' : 'Đã nạp 10.000 từ lên bucket "dictionary" ✅', error ? 'error' : 'success');
     };
-    $('cardStoryLibrary').appendChild(b);
+    b.className = 'inline-flex items-center gap-1 mt-1 px-2 py-1 text-[10px] font-bold bg-indigo-100 hover:bg-indigo-200 text-indigo-700 rounded-lg border border-indigo-200 shadow-sm';
+    b.textContent = '📚 Nạp từ điển';
+    b.title = 'Bố Mẹ: nạp từ điển 10.000 từ lên Storage dictionary';
+    const homeTask = $('cardQuestArea');
+    if (homeTask) {
+        const toolsRow = document.createElement('div');
+        toolsRow.className = 'flex justify-end mt-2 pt-1 border-t border-amber-200/70';
+        toolsRow.appendChild(b);
+        homeTask.appendChild(toolsRow);
+    }
 })();
 
 
