@@ -377,6 +377,8 @@
                     <input type="checkbox" id="keepLayout" checked class="w-3 h-3 accent-blue-500"> Giữ bố cục gốc
                 </label>
 
+                <div class="flex items-center gap-1 mb-1 w-full"><span class="text-[11px] font-black text-indigo-600 whitespace-nowrap">🎙️ Giọng:</span><select id="voiceMode" class="flex-1 min-w-0 text-[11px] font-bold border-2 border-indigo-200 rounded-lg px-1 py-1 bg-white"></select><button id="voiceTry" type="button" class="px-2 py-1 bg-indigo-500 text-white text-[11px] font-black rounded-lg">▶️ Thử</button></div>
+                <div id="voiceNow" class="text-[11px] font-bold text-indigo-500 min-h-[16px]"></div><div id="voiceHint" class="text-[10px] text-slate-400 mb-1"></div>
                 <!-- DÀN NÚT 1 HÀNG NGANG CHUẨN MOBILE -->
                 <div class="flex w-full gap-1 sm:gap-2">
                     <button id="cleanBtn" class="flex-1 py-2 px-1 bg-yellow-400 active:bg-yellow-500 text-yellow-900 text-[10px] sm:text-xs font-bold rounded-lg shadow-sm btn-bounce flex items-center justify-center whitespace-nowrap"><span class="mr-1">🧹</span>Sạch</button>
@@ -1290,7 +1292,7 @@
         };
 
         const G = { score: 0, k: '' }; let GT;
-        const V = () => globalVocabData.filter(v => v.word && v.verifiedMeaning === true);
+        const V = () => { const a = globalVocabData.filter(v => v.word && v.verifiedMeaning === true); return a.length >= 8 ? a : a.concat(dictTop(8 - a.length, a)); };
         const shuf = a => [...a].sort(() => Math.random() - .5);
         const area = () => $('gameArea');
         const ctr = () => [innerWidth / 2, innerHeight / 2];
@@ -1323,7 +1325,7 @@
         function gListen() {
             const list = V().filter(x => x && x.word && x.meaning);
             if (list.length < 2) return showToast('Cần ít nhất từ vựng để chơi!', 'warning');
-            const qs = shuf(list).slice(0, 6); 
+            const qs = fresh(list, 6); 
             let i = 0;
             let isProcessing = false;
 
@@ -1425,7 +1427,7 @@
         function gSpeed() {
             let t = 30; const pool = V(), el = area();
             const nx = () => {
-                const v = pick(pool), o = shuf([v, ...shuf(pool.filter(x => x !== v)).slice(0, 2)]);
+                const v = fresh(pool, 1)[0], o = shuf([v, ...shuf(pool.filter(x => x !== v)).slice(0, 2)]);
                 el.innerHTML = `<div class="flex justify-between text-[10px] text-sky-600"><span>⏱️ <b id="tm">${t}</b>s</span><span>${G.score}đ</span></div><div class="text-center text-xl font-black my-2">${v.word}</div><div class="grid gap-1.5">${o.map(x => `<button class="o py-1.5 bg-slate-50 border-2 border-sky-200 rounded-lg capitalize">${x.meaning}</button>`).join('')}</div>`;
                 el.querySelectorAll('.o').forEach((b, j) => b.onclick = () => { if (o[j] === v) { G.score += 10; burst(...ctr(), FUN, 5); } else { t = Math.max(0, t - 3); wig(el); } nx(); });
             };
@@ -1433,7 +1435,7 @@
         }
 
         function gFlip() {
-            const vs = shuf(V()).slice(0, 6), cs = shuf(vs.flatMap((v, k) => [{ k, t: v.word, en: 1 }, { k, t: v.meaning }]));
+            const vs = fresh(V(), 6), cs = shuf(vs.flatMap((v, k) => [{ k, t: v.word, en: 1 }, { k, t: v.meaning }]));
             let sel = [], lock = false, done = 0, moves = 0;
             area().innerHTML = `<div id="mv" class="text-[10px] text-sky-600 mb-1">Lượt: 0</div><div class="grid grid-cols-4 gap-1.5">${cs.map((c, i) => `<button class="cd h-14 rounded-lg bg-sky-300 text-white text-[10px] font-black leading-tight px-0.5 capitalize">❓</button>`).join('')}</div>`;
             const OPEN = 'bg-white text-sky-700 border-2 border-sky-300';
@@ -1449,7 +1451,7 @@
         }
 
         function gScr() {
-            const pl = V().filter(v => v.word.length <= 9), vs = shuf(pl.length >= 3 ? pl : V()).slice(0, 5); let i = 0, pk = [];
+            const pl = V().filter(v => v.word.length <= 9), vs = fresh(pl.length >= 3 ? pl : V(), 5); let i = 0, pk = [];
             const nx = () => {
                 if (i >= vs.length) return fin(); const v = vs[i], L = shuf(v.word.split('').map(c => ({ c }))); pk = [];
                 const r = () => {
@@ -1467,7 +1469,7 @@
         }
 
         function gSpeak() {
-            const vs = shuf(V()).slice(0, 5), SR = window.SpeechRecognition || window.webkitSpeechRecognition; let i = 0;
+            const vs = fresh(V(), 5), SR = window.SpeechRecognition || window.webkitSpeechRecognition; let i = 0;
             const nx = () => {
                 if (i >= vs.length) return fin(); const v = vs[i];
                 area().innerHTML = `<div class="text-center"><div class="text-[10px] text-sky-500">Câu ${i + 1}/${vs.length} • ${G.score}đ</div><div class="text-2xl font-black text-purple-700">${v.word}</div><div class="text-[11px] capitalize text-slate-500 mb-2">${v.meaning}</div><button onclick="window.playWordAudio('${v.word}')" class="px-3 py-1.5 bg-cyan-500 text-white rounded-lg">🔊 Nghe mẫu</button> ${SR ? '<button id="mic" class="px-3 py-1.5 bg-pink-500 text-white rounded-lg">🎤 Bé đọc</button>' : ''} <button id="sk" class="px-2 py-1.5 bg-slate-200 rounded-lg">⏭️</button><div id="sr" class="mt-2 min-h-[1.5rem]"></div></div>`;
@@ -1749,11 +1751,7 @@
             const cleanWord = String(word || '').trim();
             if (!cleanWord) return;
 
-            wordAudio.src = `https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=en&q=${encodeURIComponent(cleanWord)}`;
-            wordAudio.playbackRate = 0.9;
-            wordAudio.play().catch(e => {
-                showToast('Bé kiểm tra âm lượng hoặc tắt chế độ im lặng nhé!', 'warning');
-            });
+            speakWordRandom(cleanWord);
         };
 
         // --- 2. PHÁT BÀI ĐỌC (HẾT LẶP 2 LẦN) ---
@@ -2277,7 +2275,7 @@ async function extractVocabulary(text, off = 0) {
 
 // --- game: thêm Đố vui vào phòng game, menu to dễ bấm ---
 function gQuiz() {
-    const qs = shuf(V()).slice(0, 5); let i = 0;
+    const qs = fresh(V(), 5); let i = 0;
     const nx = () => {
         if (i >= qs.length) return fin();
         const v = qs[i], t = v.sentence ? i % 3 : i % 2, P = V(); let ans, txt, o;
@@ -2936,6 +2934,135 @@ setTimeout(async () => {                                // lấy cài đặt dù
   // Khôi phục trạng thái đã hoàn thành để không chúc mừng lặp lại khi tải lại trang.
   setTimeout(()=>{try{__guidePrev=JSON.parse(localStorage.getItem(__guideStateKey())||'{}')||{};}catch(e){__guidePrev={};}reqs().forEach(r=>{if(__guidePrev[r.key]===undefined)__guidePrev[r.key]=!!r.ok;});__guideReady=true;},1800);
 })();
+
+
+// ================== V8: TỪ ĐIỂN MỞ RỘNG (nghĩa biên soạn sẵn, đã kiểm tra) ==================
+const DICT_EXT = `N|dog=con chó;cat=con mèo;rabbit=con thỏ;bear=con gấu;fox=con cáo;wolf=con sói;lion=sư tử;tiger=con hổ;elephant=con voi;monkey=con khỉ;duck=con vịt;horse=con ngựa;cow=con bò;pig=con heo;sheep=con cừu;frog=con ếch;turtle=con rùa;butterfly=con bướm;bee=con ong;bird=con chim;fish=con cá;mouse=con chuột;dragon=con rồng;snake=con rắn;owl=con cú;deer=con nai;chicken=con gà;hen=gà mái;rooster=gà trống;goat=con dê;donkey=con lừa;squirrel=con sóc;crab=con cua;whale=cá voi;dolphin=cá heo;shark=cá mập;parrot=con vẹt;puppy=chó con;kitten=mèo con;lamb=cừu non;calf=bê con;camel=lạc đà;zebra=ngựa vằn;giraffe=hươu cao cổ;hippo=hà mã;kangaroo=chuột túi;koala=gấu túi;panda=gấu trúc;penguin=chim cánh cụt;eagle=đại bàng;swan=thiên nga;pigeon=chim bồ câu;ant=con kiến;spider=con nhện;worm=con giun;snail=ốc sên;lizard=thằn lằn;crocodile=cá sấu;octopus=bạch tuộc;seal=hải cẩu;otter=rái cá;hedgehog=con nhím;bat=con dơi;crow=con quạ;hawk=diều hâu;tortoise=rùa cạn;mosquito=con muỗi;ladybug=bọ rùa;insect=côn trùng;animal=động vật;pet=thú cưng
+N|teacher=giáo viên;doctor=bác sĩ;nurse=y tá;baker=thợ làm bánh;cook=đầu bếp;driver=tài xế;pilot=phi công;sailor=thủy thủ;soldier=người lính;fisherman=ngư dân;shepherd=người chăn cừu;miner=thợ mỏ;builder=thợ xây;painter=họa sĩ;singer=ca sĩ;dancer=vũ công;policeman=chú cảnh sát;fireman=lính cứu hỏa;worker=công nhân;captain=thuyền trưởng;merchant=thương nhân;student=học sinh;knight=hiệp sĩ;wizard=pháp sư;witch=phù thủy;fairy=cô tiên;giant=người khổng lồ;king=nhà vua;queen=nữ hoàng;prince=hoàng tử;princess=công chúa;elf=chú tiên;troll=yêu tinh;ogre=quỷ ăn thịt người;mermaid=nàng tiên cá;pirate=cướp biển;robber=tên cướp;thief=tên trộm;villager=dân làng;neighbor=hàng xóm;stranger=người lạ;guard=lính canh;servant=người hầu;hunter=thợ săn
+N|mother=mẹ;father=bố;mom=mẹ;dad=bố;brother=anh hoặc em trai;sister=chị hoặc em gái;grandma=bà;grandpa=ông;grandmother=bà;grandfather=ông;uncle=chú hoặc bác;aunt=cô hoặc dì;cousin=anh chị em họ;son=con trai;daughter=con gái;baby=em bé;child=đứa trẻ;children=trẻ em;boy=cậu bé;girl=cô bé;man=người đàn ông;woman=người phụ nữ;people=mọi người;family=gia đình;friend=người bạn;husband=chồng;wife=vợ;twin=anh chị em sinh đôi
+N|head=cái đầu;hair=tóc;face=khuôn mặt;eye=con mắt;ear=cái tai;nose=cái mũi;mouth=cái miệng;lip=đôi môi;tooth=cái răng;teeth=những chiếc răng;tongue=cái lưỡi;neck=cái cổ;shoulder=bờ vai;arm=cánh tay;elbow=khuỷu tay;hand=bàn tay;finger=ngón tay;thumb=ngón cái;chest=lồng ngực;back=cái lưng;stomach=cái bụng;leg=cái chân;knee=đầu gối;foot=bàn chân;feet=những bàn chân;toe=ngón chân;skin=làn da;bone=cái xương;heart=trái tim;blood=máu;voice=giọng nói;tail=cái đuôi;wing=cái cánh;feather=chiếc lông vũ;fur=bộ lông;paw=bàn chân thú;claw=móng vuốt;horn=cái sừng;beak=cái mỏ
+N|apple=quả táo;banana=quả chuối;orange=quả cam;grape=quả nho;lemon=quả chanh;peach=quả đào;pear=quả lê;cherry=quả anh đào;berry=quả mọng;strawberry=quả dâu tây;melon=quả dưa;mango=quả xoài;pineapple=quả dứa;coconut=quả dừa;carrot=củ cà rốt;potato=củ khoai tây;tomato=quả cà chua;onion=củ hành;garlic=củ tỏi;corn=bắp ngô;pea=hạt đậu;bean=hạt đậu;rice=cơm hoặc gạo;bread=bánh mì;butter=bơ;cheese=phô mai;egg=quả trứng;milk=sữa;water=nước;juice=nước ép;tea=trà;coffee=cà phê;sugar=đường;salt=muối;honey=mật ong;candy=kẹo;chocolate=sô cô la;cake=bánh ngọt;cookie=bánh quy;pie=bánh nướng;pizza=bánh pizza;soup=món súp;salad=món rau trộn;sandwich=bánh mì kẹp;meat=thịt;jam=mứt;cream=kem tươi;breakfast=bữa sáng;lunch=bữa trưa;dinner=bữa tối;snack=đồ ăn vặt;meal=bữa ăn;food=thức ăn;plate=cái đĩa;bowl=cái bát;cup=cái cốc;glass=cái ly;spoon=cái thìa;fork=cái dĩa;knife=con dao;bottle=cái chai;basket=cái giỏ;bag=cái túi;box=cái hộp
+N|tree=cái cây;flower=bông hoa;grass=cỏ;leaf=chiếc lá;leaves=những chiếc lá;branch=cành cây;root=rễ cây;seed=hạt giống;forest=khu rừng;woods=rừng cây;jungle=rừng rậm;garden=khu vườn;field=cánh đồng;meadow=đồng cỏ;farm=nông trại;hill=ngọn đồi;mountain=ngọn núi;valley=thung lũng;river=dòng sông;lake=cái hồ;pond=cái ao;sea=biển;ocean=đại dương;beach=bãi biển;sand=cát;shore=bờ biển;island=hòn đảo;cave=hang động;rock=tảng đá;stone=hòn đá;mud=bùn;path=lối mòn;road=con đường;bridge=cây cầu;street=đường phố;village=ngôi làng;town=thị trấn;city=thành phố;castle=lâu đài;palace=cung điện;tower=ngọn tháp;house=ngôi nhà;home=ngôi nhà;room=căn phòng;kitchen=nhà bếp;bedroom=phòng ngủ;bathroom=phòng tắm;door=cánh cửa;window=cửa sổ;wall=bức tường;floor=sàn nhà;roof=mái nhà;stairs=cầu thang;barn=chuồng trại;hut=túp lều;cottage=nhà nhỏ ở quê;tent=cái lều;shop=cửa hàng;store=cửa hàng;school=trường học;class=lớp học;library=thư viện;hospital=bệnh viện;church=nhà thờ;park=công viên;playground=sân chơi;zoo=sở thú;yard=cái sân;fence=hàng rào;gate=cái cổng;fountain=đài phun nước
+N|sun=mặt trời;moon=mặt trăng;star=ngôi sao;stars=những ngôi sao;sky=bầu trời;cloud=đám mây;clouds=những đám mây;rain=cơn mưa;snow=tuyết;wind=gió;storm=cơn bão;thunder=tiếng sấm;lightning=tia chớp;rainbow=cầu vồng;fog=sương mù;ice=nước đá;fire=ngọn lửa;smoke=khói;light=ánh sáng;shadow=cái bóng;weather=thời tiết;day=ban ngày;night=ban đêm;morning=buổi sáng;afternoon=buổi chiều;evening=buổi tối;noon=buổi trưa;midnight=nửa đêm;today=hôm nay;tomorrow=ngày mai;yesterday=hôm qua;week=tuần lễ;month=tháng;year=năm;season=mùa;spring=mùa xuân;summer=mùa hè;autumn=mùa thu;winter=mùa đông
+N|book=quyển sách;page=trang sách;story=câu chuyện;tale=truyện kể;letter=lá thư;word=từ ngữ;name=cái tên;picture=bức tranh;paper=tờ giấy;pencil=bút chì;pen=bút mực;crayon=bút sáp màu;desk=bàn học;chair=cái ghế;table=cái bàn;bed=cái giường;pillow=cái gối;blanket=cái chăn;lamp=cái đèn;clock=đồng hồ;mirror=cái gương;toy=đồ chơi;ball=quả bóng;doll=búp bê;kite=con diều;bike=xe đạp;bicycle=xe đạp;car=xe ô tô;bus=xe buýt;train=tàu hỏa;boat=con thuyền;ship=con tàu;plane=máy bay;airplane=máy bay;rocket=tên lửa;wagon=xe kéo;cart=xe đẩy;wheel=bánh xe;rope=sợi dây;ladder=cái thang;key=chìa khóa;lock=ổ khóa;bucket=cái xô;broom=cái chổi;hat=cái mũ;cap=mũ lưỡi trai;shirt=áo sơ mi;dress=cái váy;skirt=chân váy;pants=quần dài;shoe=chiếc giày;shoes=đôi giày;boots=đôi ủng;socks=đôi tất;coat=áo khoác;jacket=áo khoác ngắn;scarf=khăn quàng;gloves=đôi găng tay;glasses=cái kính;ring=chiếc nhẫn;crown=chiếc vương miện;sword=thanh kiếm;shield=cái khiên;coin=đồng xu;coins=những đồng xu;gold=vàng;jewel=viên ngọc;diamond=kim cương;map=bản đồ;flag=lá cờ;drum=cái trống;bell=cái chuông;candle=cây nến;torch=ngọn đuốc
+N|adventure=cuộc phiêu lưu;journey=hành trình;trip=chuyến đi;dream=giấc mơ;wish=điều ước;secret=bí mật;magic=phép thuật;spell=câu thần chú;wand=cây đũa phép;potion=thuốc thần;mystery=điều bí ẩn;danger=sự nguy hiểm;trouble=rắc rối;problem=vấn đề;idea=ý tưởng;plan=kế hoạch;lesson=bài học;game=trò chơi;party=bữa tiệc;gift=món quà;present=món quà;birthday=sinh nhật;holiday=kỳ nghỉ;festival=lễ hội;music=âm nhạc;song=bài hát;sound=âm thanh;noise=tiếng ồn;joy=niềm vui;fun=sự vui vẻ;fear=nỗi sợ;courage=lòng dũng cảm;kindness=lòng tốt;truth=sự thật;luck=sự may mắn;chance=cơ hội;reason=lý do;moment=khoảnh khắc;color=màu sắc;shape=hình dạng;circle=hình tròn;square=hình vuông;number=con số;size=kích cỡ
+V|go=đi;come=đến;see=nhìn thấy;look=nhìn;watch=xem;hear=nghe thấy;listen=lắng nghe;say=nói;tell=kể;ask=hỏi;answer=trả lời;call=gọi;shout=hét to;whisper=thì thầm;cry=khóc;laugh=cười;smile=mỉm cười;sing=hát;dance=nhảy múa;play=chơi;run=chạy;walk=đi bộ;jump=nhảy;climb=leo;swim=bơi;fly=bay;crawl=bò;hop=nhảy lò cò;kick=đá;throw=ném;catch=bắt;push=đẩy;pull=kéo;carry=mang;hold=cầm;give=cho;take=lấy;bring=mang đến;put=đặt;get=lấy được;make=làm ra;build=xây dựng;break=làm vỡ;open=mở;close=đóng;cut=cắt;fix=sửa chữa;wash=rửa;clean=lau dọn;cook=nấu ăn;bake=nướng bánh;eat=ăn;drink=uống;sleep=ngủ;wake=thức dậy;sit=ngồi;stand=đứng;lie=nằm;fall=ngã;hide=trốn;seek=tìm kiếm;find=tìm thấy;lose=làm mất;win=chiến thắng;try=thử;help=giúp đỡ;want=muốn;need=cần;like=thích;love=yêu thương;hate=ghét;hope=hy vọng;think=suy nghĩ;know=biết;learn=học;teach=dạy;read=đọc;write=viết;draw=vẽ;paint=tô màu;count=đếm;meet=gặp;visit=thăm;live=sống;work=làm việc;rest=nghỉ ngơi;wait=chờ đợi;stop=dừng lại;start=bắt đầu;begin=bắt đầu;end=kết thúc;finish=hoàn thành;leave=rời đi;stay=ở lại;return=trở về;follow=đi theo;chase=đuổi theo;share=chia sẻ;forget=quên;remember=nhớ;feel=cảm thấy;touch=chạm vào;taste=nếm;smell=ngửi;pick=hái;plant=trồng;grow=lớn lên;dig=đào;fill=làm đầy;pour=rót;wear=mặc;rescue=giải cứu;save=cứu;trick=lừa;promise=hứa;warn=cảnh báo;agree=đồng ý;marry=kết hôn;sell=bán;buy=mua;pay=trả tiền
+V|went=đã đi;came=đã đến;saw=đã nhìn thấy;said=đã nói;told=đã kể;found=đã tìm thấy;took=đã lấy;gave=đã cho;made=đã làm ra;ran=đã chạy;ate=đã ăn;drank=đã uống;slept=đã ngủ;woke=đã thức dậy;sat=đã ngồi;stood=đã đứng;fell=đã ngã;hid=đã trốn;lost=đã làm mất;won=đã chiến thắng;knew=đã biết;thought=đã nghĩ;flew=đã bay;swam=đã bơi;sang=đã hát;wrote=đã viết;drew=đã vẽ;met=đã gặp;brought=đã mang đến;bought=đã mua;caught=đã bắt;kept=đã giữ;left=đã rời đi;heard=đã nghe thấy;began=đã bắt đầu;built=đã xây dựng;held=đã cầm;taught=đã dạy;spoke=đã nói;felt=đã cảm thấy;dug=đã đào;grew=đã lớn lên;wore=đã mặc;sold=đã bán;paid=đã trả tiền;wanted=đã muốn;helped=đã giúp đỡ;looked=đã nhìn;walked=đã đi bộ;played=đã chơi;jumped=đã nhảy;climbed=đã leo;laughed=đã cười;smiled=đã mỉm cười;cried=đã khóc;shouted=đã hét to;whispered=đã thì thầm;asked=đã hỏi;answered=đã trả lời;called=đã gọi;opened=đã mở;closed=đã đóng;lived=đã sống;loved=đã yêu thương;liked=đã thích;needed=đã cần;wished=đã ước;hoped=đã hy vọng;learned=đã học;visited=đã thăm;waited=đã chờ đợi;stopped=đã dừng lại;started=đã bắt đầu;finished=đã hoàn thành;followed=đã đi theo;chased=đã đuổi theo;shared=đã chia sẻ;remembered=đã nhớ;touched=đã chạm vào;picked=đã hái;planted=đã trồng;filled=đã làm đầy;poured=đã rót;rescued=đã giải cứu;saved=đã cứu;tricked=đã lừa;promised=đã hứa;warned=đã cảnh báo;agreed=đã đồng ý;married=đã kết hôn;cooked=đã nấu ăn;baked=đã nướng bánh;washed=đã rửa;fixed=đã sửa chữa;carried=đã mang;pushed=đã đẩy;pulled=đã kéo;kicked=đã đá;tried=đã thử;danced=đã nhảy múa;listened=đã lắng nghe;watched=đã xem;worked=đã làm việc;stayed=đã ở lại;returned=đã trở về
+A|big=to lớn;small=nhỏ bé;little=nhỏ xíu;large=rộng lớn;huge=khổng lồ;tiny=bé tí xíu;tall=cao;short=thấp hoặc ngắn;long=dài;wide=rộng;narrow=hẹp;fat=béo;thin=gầy;heavy=nặng;fast=nhanh;slow=chậm;quick=nhanh nhẹn;old=già hoặc cũ;new=mới;young=trẻ;good=tốt;bad=xấu;great=tuyệt vời;best=tốt nhất;better=tốt hơn;worse=tệ hơn;nice=dễ thương;kind=tử tế;gentle=hiền lành;fierce=hung dữ;brave=dũng cảm;scared=sợ hãi;afraid=sợ;happy=vui vẻ;sad=buồn;angry=tức giận;hungry=đói;thirsty=khát;tired=mệt;sleepy=buồn ngủ;lazy=lười biếng;busy=bận rộn;clever=thông minh;smart=thông minh;wise=khôn ngoan;silly=ngớ ngẩn;foolish=dại dột;rich=giàu;poor=nghèo;lonely=cô đơn;proud=tự hào;shy=nhút nhát;polite=lịch sự;rude=thô lỗ;friendly=thân thiện;lovely=đáng yêu;beautiful=xinh đẹp;pretty=xinh xắn;ugly=xấu xí;strong=khỏe;weak=yếu;sweet=ngọt ngào;sour=chua;bitter=đắng;fresh=tươi;clean=sạch sẽ;dirty=bẩn;empty=trống rỗng;full=đầy;soft=mềm;hard=cứng;rough=thô ráp;smooth=mịn màng;sharp=sắc;loud=ồn ào;quiet=yên tĩnh;noisy=ồn ào;safe=an toàn;dangerous=nguy hiểm;magical=có phép thuật;wonderful=tuyệt diệu;terrible=kinh khủng;amazing=đáng kinh ngạc;special=đặc biệt;strange=kỳ lạ;funny=buồn cười;sick=ốm;healthy=khỏe mạnh;hot=nóng;cold=lạnh;warm=ấm áp;cool=mát mẻ;wet=ướt;dry=khô;dark=tối;bright=sáng chói;red=màu đỏ;blue=màu xanh dương;green=màu xanh lá;yellow=màu vàng;pink=màu hồng;purple=màu tím;black=màu đen;white=màu trắng;brown=màu nâu;gray=màu xám;grey=màu xám;silver=màu bạc;colorful=nhiều màu sắc;excited=háo hức;surprised=ngạc nhiên;worried=lo lắng;careful=cẩn thận;famous=nổi tiếng;real=có thật;true=đúng;same=giống nhau;different=khác nhau;important=quan trọng
+D|suddenly=đột nhiên;finally=cuối cùng;quickly=một cách nhanh chóng;slowly=một cách chậm rãi;quietly=một cách lặng lẽ;loudly=một cách ồn ào;happily=một cách vui vẻ;sadly=một cách buồn bã;bravely=một cách dũng cảm;carefully=một cách cẩn thận;gently=một cách nhẹ nhàng;softly=một cách êm ái;always=luôn luôn;never=không bao giờ;often=thường xuyên;sometimes=thỉnh thoảng;soon=sớm thôi;later=sau đó;early=sớm;again=một lần nữa;together=cùng nhau;alone=một mình;away=đi xa;near=ở gần;far=ở xa;inside=bên trong;outside=bên ngoài;once=một lần;twice=hai lần
+S|one=số một;two=số hai;three=số ba;four=số bốn;five=số năm;six=số sáu;seven=số bảy;eight=số tám;nine=số chín;ten=số mười;eleven=số mười một;twelve=số mười hai;twenty=số hai mươi;thirty=số ba mươi;hundred=một trăm;thousand=một nghìn`;
+(() => {
+    const P = { N: 'Danh từ', V: 'Động từ', A: 'Tính từ', D: 'Trạng từ', S: 'Số từ' };
+    DICT_EXT.split('\n').forEach(line => { const i = line.indexOf('|'), pos = P[line.slice(0, i)]; line.slice(i + 1).split(';').forEach(e => { const [w, m] = e.split('='); if (w && m && !LOCAL_DICTIONARY[w]) LOCAL_DICTIONARY[w] = { m, p: pos }; }); });
+})();
+
+// ================== V8: GIỌNG ĐỌC NGẪU NHIÊN (nhiều tuổi, giới tính, giọng vùng miền) ==================
+const PERSONAS = [
+    { id: 'mia', k: 0, ic: '👧', name: 'Bé Mia', age: 'bé gái', g: 'f', pitch: 1.5, rate: 1.0, acc: ['en-US', 'en-GB'] },
+    { id: 'leo', k: 1, ic: '👦', name: 'Bé Leo', age: 'bé trai', g: 'm', pitch: 1.4, rate: 1.0, acc: ['en-US', 'en-AU'] },
+    { id: 'emma', k: 2, ic: '👩', name: 'Cô Emma', age: 'phụ nữ trẻ', g: 'f', pitch: 1.1, rate: 1.0, acc: ['en-US', 'en-GB', 'en-AU'] },
+    { id: 'jack', k: 3, ic: '👨', name: 'Thầy Jack', age: 'đàn ông', g: 'm', pitch: 0.95, rate: 1.0, acc: ['en-US', 'en-GB', 'en-CA'] },
+    { id: 'priya', k: 4, ic: '👩🏽', name: 'Cô Priya', age: 'phụ nữ', g: 'f', pitch: 1.0, rate: .95, acc: ['en-IN', 'en-GB'] },
+    { id: 'ravi', k: 5, ic: '👨🏽', name: 'Chú Ravi', age: 'đàn ông', g: 'm', pitch: .9, rate: .95, acc: ['en-IN', 'en-GB'] },
+    { id: 'mar', k: 6, ic: '👵', name: 'Bà Margaret', age: 'bà lớn tuổi', g: 'f', pitch: .82, rate: .86, acc: ['en-GB', 'en-US'] },
+    { id: 'hen', k: 7, ic: '👴', name: 'Ông Henry', age: 'ông lớn tuổi', g: 'm', pitch: .78, rate: .86, acc: ['en-GB', 'en-US', 'en-AU'] }
+];
+const ACCENT = { 'en-US': 'Mỹ', 'en-GB': 'Anh', 'en-AU': 'Úc', 'en-IN': 'Ấn Độ', 'en-CA': 'Canada', 'en-IE': 'Ireland', 'en-ZA': 'Nam Phi', 'en-NZ': 'New Zealand' };
+const F_RE = /female|woman|girl|samantha|karen|moira|tessa|fiona|victoria|allison|ava\b|susan|zira|hazel|jenny|aria|sara|emma|libby|sonia|natasha|clara|heera|neerja|catherine|serena|kate|joanna|salli|kendra|kimberly|ivy|amy|olivia|nicole|zoe|ellen|veena|lekha|michelle|jane|libby|mia\b|nova|shimmer/i;
+const M_RE = /(^|[^fe])male\b|\bman\b|daniel|alex\b|fred\b|david|mark\b|george|guy\b|ryan|james|oliver|thomas|arthur|gordon|aaron|brian|matthew|joey|justin|russell|rishi|ravi|hemant|prabhat|eric|liam|christopher|roger|steffan|junior|ralph|bruce|albert|lee\b|onyx|echo\b|fable/i;
+let VOICES_EN = [];
+const loadVoices = () => { try { VOICES_EN = (speechSynthesis.getVoices() || []).filter(v => /^en/i.test(v.lang) && !/espeak|festival/i.test(v.name)); } catch (e) { VOICES_EN = []; } fillVoiceUI(); };
+const vGender = v => F_RE.test(v.name) ? 'f' : M_RE.test(v.name) ? 'm' : 'x';
+const vQual = v => (/natural|neural|online|premium|enhanced|siri/i.test(v.name) ? 3 : 0) + (/google/i.test(v.name) ? 2 : 0) + (/compact|novelty|bad|whisper|bells|boing|cellos|zarvox|trinoids/i.test(v.name) ? -4 : 0) + (v.localService ? 0 : 1);
+function resolveVoice(per) {
+    let pool = VOICES_EN.filter(v => vGender(v) === per.g), adj = 1;
+    if (!pool.length) pool = VOICES_EN.filter(v => vGender(v) === 'x');
+    if (!pool.length) { pool = VOICES_EN; adj = per.g === 'f' ? 1.3 : .78; }   // máy chỉ có giọng khác giới: đổi cao độ
+    const sc = v => vQual(v) + (5 - Math.max(0, per.acc.indexOf(v.lang.replace('_', '-')) < 0 ? 5 : per.acc.indexOf(v.lang.replace('_', '-'))));
+    const best = Math.max(...pool.map(sc)), top = pool.filter(v => sc(v) === best);       // giọng hợp vùng miền nhất; nếu nhiều giọng ngang nhau thì mỗi người một giọng
+    return { voice: top[per.k % top.length], adj };
+}
+// chọn người đọc: "túi" xáo trộn để đủ 8 giọng mới lặp lại, không bao giờ trùng giọng vừa đọc
+let vBag = [], vLast = null, storyPer = null;
+const vMode = () => store.get('magicVoiceMode') || 'each';
+function nextPersona() {
+    if (!vBag.length) vBag = shuf(PERSONAS);
+    let p = vBag.pop(); if (p === vLast && vBag.length) { const q = vBag.pop(); vBag.unshift(p); p = q; }
+    return vLast = p;
+}
+function pickPersonaFor(kind) {
+    const m = vMode(), fixed = PERSONAS.find(p => p.id === m); if (fixed) return fixed;
+    if (kind === 'story' && m === 'each' && storyPer && currentPlaylistIndex > 0) return storyPer;
+    const p = nextPersona(); if (kind === 'story') storyPer = p; return p;
+}
+let vToken = 0, vWatch = null;
+const clampN = (x, a, b) => Math.max(a, Math.min(b, x));
+function showVoiceNow(per, v) {
+    const el = $('voiceNow'); if (!el) return;
+    const acc = v ? 'giọng ' + (ACCENT[v.lang.replace('_', '-')] || v.lang) : 'giọng Google';
+    el.textContent = `🔊 Đang đọc: ${per.ic} ${per.name} (${per.age} • ${acc})`;
+}
+function speakWith(text, per, rate, cb = {}) {
+    const tok = ++vToken; clearTimeout(vWatch);
+    const guard = fn => (...a) => { if (tok !== vToken) return; clearTimeout(vWatch); fn && fn(...a); };
+    const est = text.length * 80 / clampN(rate * per.rate, .5, 1.5);
+    if (window.speechSynthesis && VOICES_EN.length) {
+        const pick = resolveVoice(per), u = new SpeechSynthesisUtterance(text);
+        u.voice = pick.voice; u.lang = pick.voice.lang; u.pitch = clampN(per.pitch * pick.adj, .3, 2); u.rate = clampN(rate * per.rate, .5, 1.5);
+        u.onend = guard(cb.onend); u.onerror = guard(e => { if (e && /interrupted|canceled/.test(e.error)) return; cb.onerror && cb.onerror(e); });
+        showVoiceNow(per, pick.voice);
+        vWatch = setTimeout(guard(cb.onend), est * 2.5 + 3000);          // đề phòng trình duyệt không báo "đã đọc xong"
+        try { speechSynthesis.cancel(); } catch (e) {}
+        setTimeout(() => { if (tok === vToken) speechSynthesis.speak(u); }, 40);
+    } else {                                                              // dự phòng: giọng Google, đổi cao độ để có nhiều giọng khác nhau
+        mainAudio.src = `https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=en&q=${encodeURIComponent(text)}`;
+        mainAudio.preservesPitch = false; mainAudio.webkitPreservesPitch = false;
+        mainAudio.playbackRate = clampN(rate * clampN(per.pitch, .85, 1.25), .5, 1.6);
+        mainAudio.onended = guard(cb.onend); mainAudio.onerror = guard(cb.onerror);
+        showVoiceNow(per, null);
+        mainAudio.play().catch(guard(cb.onerror));
+    }
+}
+const _stopA = stopAudio;
+stopAudio = function () { vToken++; clearTimeout(vWatch); try { speechSynthesis.cancel(); } catch (e) {} return _stopA.apply(this, arguments); };
+playNextAudioChunk = function () {
+    if (!isStoryPlaying) return;
+    if (currentPlaylistIndex >= audioPlaylist.length) { if (!storyListenFailed && isFullStoryPlayback) markRead(storyListenPlayedMs); stopAudio(); return; }
+    const chunk = audioPlaylist[currentPlaylistIndex], per = pickPersonaFor('story'), t0 = Date.now();
+    speakWith(chunk, per, parseFloat(speedSlider.value) || .8, {
+        onend: () => { storyListenPlayedMs += Date.now() - t0; currentPlaylistIndex++; playNextAudioChunk(); },
+        onerror: () => { storyListenFailed = true; stopAudio(); showToast('Âm thanh bị gián đoạn nên chưa tính lượt nghe. Bé thử nghe lại nhé!', 'warning'); }
+    });
+};
+playSentenceSample = function (enc) {
+    stopAudio(); speakWith(decodeURIComponent(enc), pickPersonaFor('sample'), .8, { onerror: () => showToast('Bật âm lượng lên nha bé!', 'warning') });
+};
+function speakWordRandom(w) { speakWith(w, pickPersonaFor('word'), .9, { onerror: () => showToast('Bé kiểm tra âm lượng hoặc tắt chế độ im lặng nhé!', 'warning') }); }
+function fillVoiceUI() {
+    const sel = $('voiceMode'); if (!sel) return; const cur = vMode();
+    sel.innerHTML = `<option value="each">🎲 Mỗi lần đọc một giọng mới</option><option value="sentence">🔀 Đổi giọng sau mỗi câu</option>` + PERSONAS.map(p => `<option value="${p.id}">${p.ic} ${p.name} (${p.age})</option>`).join('');
+    sel.value = cur; const h = $('voiceHint'); if (h) h.textContent = VOICES_EN.length ? `Máy có ${VOICES_EN.length} giọng tiếng Anh.` : 'Máy chưa có giọng tiếng Anh riêng: dùng giọng Google đổi cao độ. Cài thêm giọng tiếng Anh trong cài đặt máy sẽ tự nhiên hơn.';
+}
+if (window.speechSynthesis) { speechSynthesis.onvoiceschanged = loadVoices; loadVoices(); }
+$('voiceMode').onchange = e => { store.set('magicVoiceMode', e.target.value); vBag = []; showToast('Đã đổi cách chọn giọng đọc 🎙️', 'success'); };
+$('voiceTry').onclick = () => { stopAudio(); speakWith(pick(['Hello! Nice to meet you.', 'Let us read a story together.', 'Today is a beautiful day.']), pickPersonaFor('sample'), .9); };
+fillVoiceUI();
+
+// ================== V8: CHỌN TỪ MỚI, KHÔNG LẶP LẠI TỪ ĐÃ HỌC ==================
+let _dw = null;
+const dictWords = () => _dw || (_dw = Object.keys(LOCAL_DICTIONARY).filter(w => /^[a-z]{3,}$/.test(w) && !STOP.has(w)).map(w => ({ word: w, meaning: LOCAL_DICTIONARY[w].m, pos: LOCAL_DICTIONARY[w].p, sentence: '', verifiedMeaning: true, ok: true })));
+let _tuFor = null, _tu = [];
+function dictTop(n, base) { if (_tuFor !== globalVocabData) { _tuFor = globalVocabData; const have = new Set(base.map(x => x.word)); _tu = shuf(dictWords().filter(e => !have.has(e.word))).slice(0, 12); } return _tu.slice(0, n); }
+const seenKey = () => 'magicSeen_' + currentKidId;
+const seenList = () => { try { return JSON.parse(store.get(seenKey())) || []; } catch (e) { return []; } };
+function fresh(arr, n) {                                // ưu tiên từ chưa gặp → từ điển mở rộng chưa gặp → từ gặp lâu nhất
+    const seen = seenList(), ix = w => seen.indexOf(w), have = new Set(arr.map(x => x.word));
+    let out = shuf(arr.filter(x => ix(x.word) < 0)).slice(0, n);
+    if (out.length < n) out = out.concat(shuf(dictWords().filter(e => !have.has(e.word) && ix(e.word) < 0)).slice(0, n - out.length));
+    if (out.length < n) out = out.concat(arr.filter(x => !out.includes(x)).sort((a, b) => ix(a.word) - ix(b.word)).slice(0, n - out.length));
+    store.set(seenKey(), JSON.stringify(seen.filter(w => !out.some(o => o.word === w)).concat(out.map(o => o.word)).slice(-400)));
+    return out;
+}
 
 </script>
 </body>
