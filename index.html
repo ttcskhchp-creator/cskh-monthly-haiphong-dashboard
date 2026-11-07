@@ -2872,6 +2872,7 @@ setTimeout(async () => {                                // lấy cài đặt dù
     },20000);
   }
   function __stepAfterCompletion(key){
+    try{ window.__onCriterion&&window.__onCriterion(key); }catch(e){}
     const list=reqs(); const next=list.find(r=>!r.ok);
     if(next){
       talk(`🎉 Chúc mừng bé hoàn thành ${list.find(r=>r.key===key)?.n||'một tiêu chí'}! Bước tiếp theo: ${next.ic} ${next.n}. ${next.w}`);
@@ -2977,7 +2978,7 @@ function pickPersonaFor(kind) {
     if (kind === 'story' && m === 'each' && storyPer && currentPlaylistIndex > 0) return storyPer;
     const p = nextPersona(); if (kind === 'story') storyPer = p; return p;
 }
-let vToken = 0, vWatch = null;
+let vToken = 0, vWatch = null, chunkT0 = null, listenKey = '';
 const clampN = (x, a, b) => Math.max(a, Math.min(b, x));
 function showVoiceNow(per, v) {
     const el = $('voiceNow'); if (!el) return;
@@ -2991,31 +2992,43 @@ function speakWith(text, per, rate, cb = {}) {
     if (window.speechSynthesis && VOICES_EN.length) {
         const pick = resolveVoice(per), u = new SpeechSynthesisUtterance(text);
         u.voice = pick.voice; u.lang = pick.voice.lang; u.pitch = clampN(per.pitch * pick.adj, .3, 2); u.rate = clampN(rate * per.rate, .5, 1.5);
-        u.onend = guard(cb.onend); u.onerror = guard(e => { if (e && /interrupted|canceled/.test(e.error)) return; cb.onerror && cb.onerror(e); });
+        u.onend = guard(() => cb.onend && cb.onend(false)); u.onerror = guard(e => { if (e && /interrupted|canceled/.test(e.error)) return; cb.onerror && cb.onerror(e); });
         showVoiceNow(per, pick.voice);
-        vWatch = setTimeout(guard(cb.onend), est * 2.5 + 3000);          // đề phòng trình duyệt không báo "đã đọc xong"
+        vWatch = setTimeout(guard(() => cb.onend && cb.onend(true)), est * 2.5 + 3000);          // đề phòng trình duyệt không báo "đã đọc xong"
         try { speechSynthesis.cancel(); } catch (e) {}
         setTimeout(() => { if (tok === vToken) speechSynthesis.speak(u); }, 40);
     } else {                                                              // dự phòng: giọng Google, đổi cao độ để có nhiều giọng khác nhau
         mainAudio.src = `https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=en&q=${encodeURIComponent(text)}`;
         mainAudio.preservesPitch = false; mainAudio.webkitPreservesPitch = false;
         mainAudio.playbackRate = clampN(rate * clampN(per.pitch, .85, 1.25), .5, 1.6);
-        mainAudio.onended = guard(cb.onend); mainAudio.onerror = guard(cb.onerror);
+        mainAudio.onended = guard(() => cb.onend && cb.onend(false)); mainAudio.onerror = guard(cb.onerror);
         showVoiceNow(per, null);
         mainAudio.play().catch(guard(cb.onerror));
     }
 }
 const _stopA = stopAudio;
-stopAudio = function () { vToken++; clearTimeout(vWatch); try { speechSynthesis.cancel(); } catch (e) {} return _stopA.apply(this, arguments); };
+stopAudio = function () { vToken++; chunkT0 = null; clearTimeout(vWatch); try { speechSynthesis.cancel(); } catch (e) {} return _stopA.apply(this, arguments); };
+const nowKey = () => (storyText.value || '').trim().replace(/\s+/g, ' ').slice(0, 240);
 playNextAudioChunk = function () {
     if (!isStoryPlaying) return;
-    if (currentPlaylistIndex >= audioPlaylist.length) { if (!storyListenFailed && isFullStoryPlayback) markRead(storyListenPlayedMs); stopAudio(); return; }
-    const chunk = audioPlaylist[currentPlaylistIndex], per = pickPersonaFor('story'), t0 = Date.now();
-    speakWith(chunk, per, parseFloat(speedSlider.value) || .8, {
-        onend: () => { storyListenPlayedMs += Date.now() - t0; currentPlaylistIndex++; playNextAudioChunk(); },
-        onerror: () => { storyListenFailed = true; stopAudio(); showToast('Âm thanh bị gián đoạn nên chưa tính lượt nghe. Bé thử nghe lại nhé!', 'warning'); }
+    if (currentPlaylistIndex === 0) listenKey = nowKey();
+    if (currentPlaylistIndex >= audioPlaylist.length) {                        // truyện ngắn: nghe hết bài, tự kết thúc mới tính
+        chunkT0 = null; if (!storyListenFailed && isFullStoryPlayback) markRead(storyListenPlayedMs, true); stopAudio(); return;
+    }
+    const chunk = audioPlaylist[currentPlaylistIndex], per = pickPersonaFor('story'), rate = parseFloat(speedSlider.value) || .8, t0 = Date.now(), est = chunk.length * 80 / rate;
+    chunkT0 = t0;
+    speakWith(chunk, per, rate, {
+        onend: wd => { storyListenPlayedMs += wd ? Math.min(Date.now() - t0, est) : Date.now() - t0; chunkT0 = null; currentPlaylistIndex++; playNextAudioChunk(); },
+        onerror: () => { chunkT0 = null; storyListenFailed = true; stopAudio(); showToast('Âm thanh bị lỗi nên chưa tính lượt nghe. Bé thử nghe lại nhé!', 'warning'); }
     });
 };
+// đồng hồ nghe liên tục: đủ 60 giây thì tự dừng & tính 1 lượt; đổi bài giữa chừng thì không tính
+setInterval(() => {
+    if (!isStoryPlaying || !isFullStoryPlayback || storyListenFailed) return;
+    if (listenKey && listenKey !== nowKey()) { stopAudio(); showToast('Bé đổi bài giữa chừng nên chưa tính lượt nghe nhé!', 'warning'); return; }
+    const el = storyListenPlayedMs + (chunkT0 ? Date.now() - chunkT0 : 0);
+    if (el >= 60000) { markRead(el, false); stopAudio(); }
+}, 300);
 playSentenceSample = function (enc) {
     stopAudio(); speakWith(decodeURIComponent(enc), pickPersonaFor('sample'), .8, { onerror: () => showToast('Bật âm lượng lên nha bé!', 'warning') });
 };
@@ -3151,6 +3164,161 @@ lookupKidWord = async function () {
     out.innerHTML = `<div class="font-black text-purple-800 text-base">${escapeKidHtml(word)} <button type="button" class="ml-1" onclick="playWordAudio('${escapeKidHtml(word)}')">🔊 Nghe</button></div><div class="font-bold text-slate-700">${escapeKidHtml(r.meaning)}${r.pos ? ` <span class="text-xs text-purple-600">(${escapeKidHtml(r.pos)})</span>` : ''}</div><div class="text-[11px] ${r.verifiedMeaning ? 'text-emerald-600' : 'text-amber-600'}">${r.verifiedMeaning ? '✅ Nghĩa đã được kiểm tra' : '⚠️ Nghĩa tham khảo — bé hỏi thầy cô hoặc bố mẹ để chắc chắn nhé'}</div>`;
 };
 $('kidWordSearch')?.addEventListener('click', lookupKidWord);
+
+
+// ================== V10: CHÚC MỪNG + VÒNG QUAY THƯỞNG + BẢNG QUÀ ==================
+(() => {
+const st = document.createElement('style');
+st.textContent = `.mj-ov{position:fixed;inset:0;z-index:100010;display:flex;align-items:center;justify-content:center;background:rgba(15,23,42,.62);padding:10px;overflow:auto}
+.mj-card{width:100%;max-width:420px;border-radius:28px;overflow:hidden;position:relative;background:linear-gradient(#8ed1fc 0,#cdeeff 52%,#8fdc6a 52%,#58b83a 100%);box-shadow:0 20px 50px #0009;animation:mjPop .5s cubic-bezier(.2,1.4,.4,1)}
+@keyframes mjPop{from{transform:scale(.5);opacity:0}}@keyframes mjBounce{50%{transform:translateY(-10px)}}@keyframes mjFloat{50%{transform:translateY(-8px) rotate(6deg)}}@keyframes mjFall{to{transform:translateY(110vh) rotate(360deg)}}
+.mj-panel{margin:14px 14px 4px;border-radius:24px;background:linear-gradient(#92a8f8,#7b90ec);border:4px solid #fff;padding:12px;text-align:center;color:#fff;font-weight:900;box-shadow:inset 0 0 0 3px #aebcfd}
+.mj-panel h2{font-size:26px;text-shadow:0 3px 0 #4a5fd0,0 0 6px #4a5fd0;line-height:1.1}
+.mj-stars{display:flex;justify-content:center;gap:4px;margin:8px 0}.mj-stars svg{width:68px;height:68px;animation:mjBounce 1s infinite}
+.mj-res{display:flex;justify-content:space-around;font-size:20px;align-items:center}
+.mj-btn{display:block;width:calc(100% - 28px);margin:8px 14px;padding:12px;border-radius:20px;background:linear-gradient(#8fa6f7,#6f86ea);border:3px solid #fff;color:#fff;font-weight:900;font-size:18px;box-shadow:0 5px 0 #4a5fd0;text-shadow:0 2px 0 #4a5fd0}
+.mj-btn:active{transform:translateY(3px);box-shadow:none}.mj-x{display:block;text-align:center;cursor:pointer;margin:0 auto 10px;color:#fff;font-weight:800;text-decoration:underline}
+.mj-scene{position:relative;height:230px}.mj-scene .an{position:absolute;left:50%;bottom:0;width:190px;margin-left:-95px;animation:mjBounce 1.2s infinite}
+.mj-scene .sf{position:absolute;width:62px;animation:mjFloat 2s infinite}.mj-fall{position:fixed;top:-40px;z-index:100011;pointer-events:none;font-size:26px;animation:mjFall 3.2s linear forwards}
+.mj-mini{position:fixed;left:8px;right:8px;bottom:92px;z-index:100005;max-width:440px;margin:auto;background:#fff;border:4px solid #f59e0b;border-radius:22px;padding:10px;display:flex;gap:8px;align-items:center;box-shadow:0 10px 30px #0006;animation:mjPop .4s}
+.mj-mini svg.an{width:70px;height:84px;flex:none;animation:mjBounce 1s infinite}.mj-mini b{color:#c2410c}.mj-mini .t{font-size:13px;font-weight:800;color:#334155;line-height:1.35}
+.mj-mini button{margin-top:6px;margin-right:6px;padding:6px 12px;border-radius:12px;font-weight:900;font-size:13px}
+.mj-wheel{width:260px;height:260px;display:block;margin:6px auto}.mj-wh{padding:14px;text-align:center;background:linear-gradient(#fff7ed,#ffedd5)}
+.mj-wh .row{display:flex;gap:8px;margin:8px 0}.mj-wh .row button{flex:1;padding:11px 4px;border-radius:16px;font-weight:900;font-size:15px;color:#fff}`;
+document.head.appendChild(st);
+const esc = v => String(v || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+// --- nhân vật thú ngộ nghĩnh (vẽ bằng SVG) ---
+const ANIMALS = {
+    bear: { fur: '#c98f5a', in: '#f3d3ae', ear: 'round', nose: '#4a2f1b', shirt: '#4fa3e0' },
+    panda: { fur: '#ffffff', in: '#f3f4f6', ear: 'round', ec: '#262626', patch: 1, nose: '#262626', shirt: '#f472b6' },
+    bunny: { fur: '#f6efec', in: '#fbb6c9', ear: 'long', nose: '#f472b6', shirt: '#34d399' },
+    fox: { fur: '#f58a3a', in: '#fff1e0', ear: 'tri', nose: '#3b2412', shirt: '#a78bfa', muz: 1 }
+};
+function animalSVG(kind) {
+    const a = ANIMALS[kind || pick(Object.keys(ANIMALS))], ec = a.ec || a.fur;
+    const ears = a.ear === 'round' ? `<circle cx="62" cy="52" r="20" fill="${ec}"/><circle cx="138" cy="52" r="20" fill="${ec}"/><circle cx="62" cy="52" r="10" fill="${a.in}"/><circle cx="138" cy="52" r="10" fill="${a.in}"/>`
+        : a.ear === 'long' ? `<ellipse cx="72" cy="30" rx="15" ry="38" fill="${a.fur}" stroke="#d9cfcb" stroke-width="2"/><ellipse cx="128" cy="30" rx="15" ry="38" fill="${a.fur}" stroke="#d9cfcb" stroke-width="2"/><ellipse cx="72" cy="32" rx="7" ry="26" fill="${a.in}"/><ellipse cx="128" cy="32" rx="7" ry="26" fill="${a.in}"/>`
+            : `<path d="M50 70 L58 20 L92 52Z" fill="${a.fur}"/><path d="M150 70 L142 20 L108 52Z" fill="${a.fur}"/><path d="M60 56 L62 34 L80 50Z" fill="#3b2412"/><path d="M140 56 L138 34 L120 50Z" fill="#3b2412"/>`;
+    const eyeP = a.patch ? `<ellipse cx="78" cy="88" rx="13" ry="16" fill="#262626" transform="rotate(20 78 88)"/><ellipse cx="122" cy="88" rx="13" ry="16" fill="#262626" transform="rotate(-20 122 88)"/>` : '';
+    return `<svg class="an" viewBox="0 0 200 250" xmlns="http://www.w3.org/2000/svg"><g stroke="#00000022" stroke-width="2">
+<rect x="68" y="132" width="64" height="76" rx="20" fill="${a.shirt}"/><text x="100" y="178" font-size="17" font-weight="900" fill="#fff" text-anchor="middle" stroke="none">ABC</text>
+<rect x="36" y="76" width="22" height="70" rx="11" fill="${a.fur}" transform="rotate(-28 47 140)"/><rect x="142" y="76" width="22" height="70" rx="11" fill="${a.fur}" transform="rotate(28 153 140)"/>
+<circle cx="30" cy="80" r="15" fill="${a.fur}"/><circle cx="170" cy="80" r="15" fill="${a.fur}"/>
+<rect x="76" y="200" width="20" height="38" rx="10" fill="#3b82f6"/><rect x="104" y="200" width="20" height="38" rx="10" fill="#3b82f6"/><ellipse cx="84" cy="240" rx="16" ry="8" fill="#fbbf24"/><ellipse cx="116" cy="240" rx="16" ry="8" fill="#fbbf24"/>
+${ears}<circle cx="100" cy="92" r="52" fill="${a.fur}"/>${eyeP}${a.muz ? `<ellipse cx="100" cy="112" rx="30" ry="22" fill="${a.in}" stroke="none"/>` : ''}</g>
+<circle cx="80" cy="88" r="11" fill="#fff"/><circle cx="120" cy="88" r="11" fill="#fff"/><circle cx="82" cy="90" r="7" fill="#1f2937"/><circle cx="122" cy="90" r="7" fill="#1f2937"/><circle cx="85" cy="86" r="2.8" fill="#fff"/><circle cx="125" cy="86" r="2.8" fill="#fff"/>
+<circle cx="66" cy="108" r="8" fill="#fda4af" opacity=".7"/><circle cx="134" cy="108" r="8" fill="#fda4af" opacity=".7"/><ellipse cx="100" cy="104" rx="8" ry="6" fill="${a.nose}"/>
+<path d="M82 114 Q100 138 118 114Z" fill="#7f1d1d"/><path d="M90 124 Q100 134 110 124Z" fill="#fb7185"/></svg>`;
+}
+const starSVG = k => `<svg viewBox="0 0 100 100"><path d="M50 6 L62 36 L94 38 L69 58 L78 90 L50 72 L22 90 L31 58 L6 38 L38 36Z" fill="#fde047" stroke="#f59e0b" stroke-width="5" stroke-linejoin="round"/>${k % 2 ? '<path d="M34 50 L44 55 L34 60M66 50 L56 55 L66 60" stroke="#5b3a14" stroke-width="4" fill="none" stroke-linecap="round"/><ellipse cx="50" cy="68" rx="8" ry="6" fill="#ef4444"/>' : '<circle cx="39" cy="54" r="4.5" fill="#5b3a14"/><circle cx="61" cy="54" r="4.5" fill="#5b3a14"/><path d="M42 64 Q50 72 58 64" stroke="#5b3a14" stroke-width="4" fill="none" stroke-linecap="round"/>'}<circle cx="30" cy="64" r="5" fill="#fca5a5" opacity=".7"/><circle cx="70" cy="64" r="5" fill="#fca5a5" opacity=".7"/></svg>`;
+const rain = (list, n = 22) => { for (let i = 0; i < n; i++) { const e = document.createElement('span'); e.className = 'mj-fall'; e.textContent = pick(list); e.style.left = Math.random() * 100 + 'vw'; e.style.animationDelay = Math.random() * 1.2 + 's'; document.body.appendChild(e); setTimeout(() => e.remove(), 5000); } };
+const fanfare = () => [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => sfx(f, .18), i * 140));
+const closeOv = () => { document.querySelectorAll('.mj-ov,.mj-mini').forEach(x => x.remove()); };
+const TABFOR = { story: 'read', sentences: 'practice', comp: 'read', quiz: 'play', games: 'play', vocab: 'practice', score: 'play' };
+const ELFOR = { story: 'playBtn', sentences: 'sentenceChallengeArea', comp: 'cardComp', quiz: 'gameMenu', games: 'gameMenu', vocab: 'kidWordInput', score: 'gameMenu' };
+// --- hoàn thành 1 tiêu chí: chúc mừng + hiệu ứng + nói rõ bước tiếp theo ---
+function miniPop(done, next) {
+    closeOv(); fanfare(); burst(...ctr(), WIN, 22); rain(['⭐', '🎉', '✨'], 14);
+    const m = document.createElement('div'); m.className = 'mj-mini';
+    m.innerHTML = `${animalSVG()}<div class="t">🎉 Chúc mừng bé xong: <b>${esc(done ? done.n : 'một mục')}</b>!<br>👉 Bước tiếp theo: <b>${next.ic} ${esc(next.n)}</b><br>📍 ${esc(next.w)}<br><button id="mjGo" style="background:#f97316;color:#fff">Đi ngay ➡️</button><button id="mjX" style="background:#e2e8f0">Để sau</button></div>`;
+    document.body.appendChild(m);
+    $('mjX').onclick = () => m.remove();
+    $('mjGo').onclick = () => { m.remove(); setTab(TABFOR[next.key] || 'home'); setTimeout(() => { const el = $(ELFOR[next.key]); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 250); };
+    setTimeout(() => m.remove(), 14000);
+}
+// --- hoàn thành tiêu chí cuối: màn hình "Giỏi quá" kiểu minigame, nhân vật thú ---
+function goodJob(list) {
+    closeOv(); fanfare(); setTimeout(fanfare, 700); burst(...ctr(), WIN, 30); rain(['⭐', '🌟', '🎉', '🎊', '✨'], 30);
+    const o = document.createElement('div'); o.className = 'mj-ov'; const pts = sessionTracker.scoreEarned || 0;
+    o.innerHTML = `<div class="mj-card"><div class="mj-panel"><h2>Giỏi quá bé ơi!</h2><div style="font-size:14px">Kết quả của bé:</div><div class="mj-stars">${[0, 1, 2].map(i => `<div style="animation-delay:${i * .15}s">${starSVG(i)}</div>`).join('')}</div><div class="mj-res"><span><span style="color:#22c55e;font-size:26px">✔</span> ${list.length} / ${list.length} mục</span><span>⭐ ${pts} điểm</span></div></div>
+    <div class="mj-scene">${[[4, 150, 0], [22, 118, 1], [70, 150, 0], [78, 100, 1], [0, 60, 1], [84, 40, 0]].map(([l, b, k], i) => `<div class="sf" style="left:${l}%;bottom:${b - 100 + 20}px;animation-delay:${i * .3}s">${starSVG(k + i)}</div>`).join('')}${animalSVG()}</div>
+    <button class="mj-btn" id="mjSubmit">🏆 Nộp ghi điểm ngay!</button><a class="mj-x" id="mjClose">Đóng</a></div>`;
+    document.body.appendChild(o);
+    $('mjClose').onclick = () => o.remove();
+    $('mjSubmit').onclick = () => { o.remove(); setTab('home'); claimQuestReward(); };
+}
+window.__onCriterion = key => { try { const list = reqs(), done = list.find(r => r.key === key), next = list.find(r => !r.ok); next ? miniPop(done, next) : goodJob(list); } catch (e) {} };
+
+// --- quà & vòng quay ---
+const PRIZE_DEF = ['🌟 +20 điểm thưởng', '🍦 Một cây kem', '🎮 15 phút chơi game', '🍟 Một gói snack nhỏ', '📚 Chọn 1 truyện mới', '🧸 Một cái ôm thật chặt', '🥤 Một ly nước ép', '🎬 Xem 1 tập phim hoạt hình'];
+const prizeList = () => { try { const a = JSON.parse(store.get('magicPrizesCfg')); if (Array.isArray(a) && a.length >= 2) return a.slice(0, 12); } catch (e) {} return PRIZE_DEF; };
+const ptsOf = t => { const m = /\+(\d+)\s*điểm/i.exec(t); return m ? +m[1] : 0; };
+const spinKey = () => `magicSpin_${currentKidId}_${currentSharedQuest ? currentSharedQuest.id : 'x'}`;
+let prizeLog = []; try { prizeLog = JSON.parse(store.get('magicPrizeLog') || '[]') || []; } catch (e) {}
+function recordPrize(t) {
+    const kid = cachedKids.find(k => k.id === currentKidId) || {}, e = { k: currentKidId, n: kid.name || 'Bé', i: kid.icon || '🙂', t, at: Date.now() };
+    prizeLog.unshift(e); prizeLog = prizeLog.slice(0, 100); store.set('magicPrizeLog', JSON.stringify(prizeLog));
+    const p = ptsOf(t); if (p && kid.id) { kid.score = (kid.score || 0) + p; if (db) db.from('magic_kids').update({ score: kid.score, updated_at: new Date().toISOString() }).eq('id', currentKidId).then(() => {}, () => {}); }
+    if (db) db.from('kid_rewards').insert([{ kid_id: e.k, kid_name: e.n, prize: t.slice(0, 80) }]).then(() => {}, () => {});
+    loadLeaderboard();
+}
+const ago = at => { const m = Math.round((Date.now() - at) / 60000); return m < 2 ? 'vừa xong' : m < 60 ? m + ' phút trước' : m < 1440 ? Math.round(m / 60) + ' giờ trước' : Math.round(m / 1440) + ' ngày trước'; };
+const _ll = loadLeaderboard;
+loadLeaderboard = function () {
+    _ll.apply(this, arguments); const lb = $('leaderboardList'); if (!lb) return; let pb = $('prizeBoard'); if (!pb) { pb = document.createElement('div'); pb.id = 'prizeBoard'; pb.className = 'w-full mt-3'; lb.after(pb); }
+    pb.innerHTML = `<div class="text-xs font-black text-teal-800 mb-1">🎁 Quà đã quay được</div>` + (prizeLog.length ? prizeLog.slice(0, 8).map(e => `<div class="bg-white border border-teal-200 rounded-xl px-2 py-1 mb-1 text-[12px] font-bold flex justify-between gap-2"><span>${esc(e.i)} <b>${esc(e.n)}</b>: ${esc(e.t)}</span><span class="text-slate-400 whitespace-nowrap">${ago(e.at)}</span></div>`).join('') : '<div class="text-[11px] text-slate-500 italic">Chưa ai quay thưởng — hoàn thành nhiệm vụ để được quay nhé!</div>');
+};
+function wheelSVG(items) {
+    const n = items.length, sl = 360 / n, R = 100, cols = ['#fb7185', '#fbbf24', '#34d399', '#60a5fa', '#a78bfa', '#f472b6', '#fb923c', '#2dd4bf', '#818cf8', '#a3e635', '#f87171', '#38bdf8'];
+    let s = `<svg viewBox="-112 -118 224 224" class="mj-wheel"><g id="mjRot" style="transform-origin:0 0">`;
+    items.forEach((t, i) => {
+        const a0 = (i * sl - 90) * Math.PI / 180, a1 = ((i + 1) * sl - 90) * Math.PI / 180, am = ((i + .5) * sl - 90) * Math.PI / 180, em = Array.from(t)[0], icon = /[A-Za-z0-9]/.test(em) ? '🎁' : em, x = 66 * Math.cos(am), y = 66 * Math.sin(am);
+        s += `<path d="M0 0L${R * Math.cos(a0)} ${R * Math.sin(a0)}A${R} ${R} 0 0 1 ${R * Math.cos(a1)} ${R * Math.sin(a1)}Z" fill="${cols[i % 12]}" stroke="#fff" stroke-width="2.5"/><text x="${x}" y="${y}" font-size="${n > 8 ? 20 : 26}" text-anchor="middle" dominant-baseline="central" transform="rotate(${(i + .5) * sl} ${x} ${y})">${icon}</text>`;
+    });
+    return s + `</g><circle r="15" fill="#fff" stroke="#f59e0b" stroke-width="5"/><path d="M-11 -116 L11 -116 L0 -90Z" fill="#ef4444" stroke="#fff" stroke-width="3" stroke-linejoin="round"/></svg>`;
+}
+function showWheel() {
+    closeOv(); const items = prizeList(), n = items.length, sl = 360 / n, hasReal = !!store.get(spinKey()); let cur = 0, busy = false, tries = 0;
+    const o = document.createElement('div'); o.className = 'mj-ov';
+    o.innerHTML = `<div class="mj-card" style="background:#fff7ed"><div class="mj-wh"><h2 style="font-size:22px;font-weight:900;color:#c2410c">🎡 Vòng quay phần thưởng</h2><div style="font-size:12px;font-weight:700;color:#7c2d12">Bé hoàn thành nhiệm vụ nên được quay 1 lần thật. Quay thử trước cho vui nhé!</div>${wheelSVG(items)}<div id="mjRes" style="min-height:44px;font-weight:900;font-size:16px;color:#9a3412"></div><div class="row"><button id="mjTry" style="background:#6366f1">🎡 Quay thử (<span id="mjTn">0</span>)</button><button id="mjReal" style="background:#f97316">🎁 QUAY THƯỞNG</button></div><div style="font-size:11px;font-weight:700;color:#78350f;text-align:left">${items.map(esc).join(' • ')}</div><a class="mj-x" id="mjClose" style="color:#9a3412;margin-top:8px">Đóng</a></div></div>`;
+    document.body.appendChild(o); $('mjClose').onclick = () => o.remove(); if (!hasReal) { $('mjReal').disabled = true; $('mjReal').style.opacity = .45; $('mjReal').textContent = '✅ Đã quay'; }
+    const spin = (real) => {
+        if (busy) return; busy = true; const i = Math.floor(Math.random() * n), rot = $('mjRot');
+        cur = cur + 360 * 5 + ((((-(i + .5) * sl - cur) % 360) + 360) % 360); rot.style.transition = 'transform 4.2s cubic-bezier(.12,.7,.12,1)'; rot.style.transform = `rotate(${cur}deg)`;
+        $('mjRes').textContent = real ? '🎁 Đang quay thưởng thật...' : '🎡 Đang quay thử...';
+        let d = 90, t = 0; const tick = () => { sfx(500 + Math.random() * 200, .04); t += d; d *= 1.12; if (t < 4100) setTimeout(tick, d); }; tick();
+        setTimeout(() => {
+            busy = false; fanfare(); burst(...ctr(), WIN, real ? 30 : 10); const p = items[i];
+            if (real) { store.del(spinKey()); recordPrize(p); $('mjReal').disabled = true; $('mjReal').style.opacity = .45; $('mjReal').textContent = '✅ Đã quay'; rain(['🎁', '⭐', '🎉'], 26); $('mjRes').innerHTML = `🎉 Bé quay được: <span style="color:#dc2626">${esc(p)}</span><br><span style="font-size:12px">Đã ghi lên bảng thành tích${ptsOf(p) ? ` và cộng ${ptsOf(p)} điểm` : ''}!</span>`; talk('Bé quay trúng quà rồi! Giỏi quá! 🎁🥳'); }
+            else { tries++; $('mjTn').textContent = tries; $('mjRes').innerHTML = `Quay thử ra: ${esc(p)}<br><span style="font-size:12px;color:#64748b">(chỉ để thử, không tính quà)</span>`; }
+        }, 4350);
+    };
+    $('mjTry').onclick = () => spin(false); $('mjReal').onclick = () => { if (store.get(spinKey())) spin(true); };
+}
+// nút "quay thưởng" còn chờ (nếu bé lỡ đóng cửa sổ)
+const spinBtn = document.createElement('button'); spinBtn.id = 'spinPending'; spinBtn.type = 'button'; spinBtn.className = 'hid w-full py-3 rounded-2xl font-black text-white text-base bg-gradient-to-r from-orange-500 to-pink-500 shadow-lg animate-pulse'; spinBtn.textContent = '🎁 Bé còn 1 lượt quay thưởng! Bấm vào đây';
+spinBtn.onclick = showWheel; $('questContent').after(spinBtn);
+const refreshSpin = () => spinBtn.classList.toggle('hid', !store.get(spinKey()));
+const _us10 = updateSessionUI; updateSessionUI = function () { const r = _us10.apply(this, arguments); refreshSpin(); return r; };
+const _claim10 = claimQuestReward;
+claimQuestReward = async function () {
+    const q = currentSharedQuest, was = q && (q.completed_kids || []).includes(currentKidId), r = await _claim10.apply(this, arguments);
+    if (q && !was && (q.completed_kids || []).includes(currentKidId)) { store.set(spinKey(), '1'); refreshSpin(); setTimeout(showWheel, 900); }
+    return r;
+};
+// --- Bố Mẹ chỉnh danh sách quà ---
+const _dc10 = drawCfg;
+drawCfg = function (c) {
+    _dc10(c); const ind = $('cfgInd'); if (!ind) return; const b = document.createElement('div');
+    b.innerHTML = `<div class="font-black text-purple-600 mb-1">🎁 Quà trên vòng quay (mỗi dòng 1 quà, 2–12 quà)</div><textarea id="cfgPrizes" rows="6" class="border-2 border-purple-200 rounded-lg px-2 py-1 text-sm font-bold w-full">${prizeList().map(esc).join('\n')}</textarea><div class="text-[10px] text-slate-400 font-normal mb-1">Dòng có "+20 điểm" sẽ tự cộng điểm cho bé.</div><button id="cfgPrizeSave" class="w-full py-1.5 mb-3 bg-amber-100 text-amber-700 rounded-xl text-xs font-black">💾 Lưu danh sách quà</button>`;
+    ind.before(b);
+    $('cfgPrizeSave').onclick = async () => {
+        const a = $('cfgPrizes').value.split('\n').map(x => x.trim().slice(0, 60)).filter(Boolean).slice(0, 12); if (a.length < 2) return showToast('Cần ít nhất 2 quà!', 'warning');
+        store.set('magicPrizesCfg', JSON.stringify(a)); let cloud = false;
+        if (db) try { const { error } = await db.from('magic_settings').upsert({ id: 'prizes', data: { list: a }, updated_at: new Date().toISOString() }); cloud = !error; } catch (e) {}
+        showToast(cloud ? 'Đã lưu quà và đồng bộ Cloud ✅' : 'Đã lưu quà trên máy này ✅', 'success');
+    };
+};
+// --- đồng bộ Cloud (tối đa 1 lần/giờ): danh sách quà + lịch sử quà đã quay ---
+setTimeout(async () => {
+    if (!db || Date.now() - (+store.get('magicPrizeAt') || 0) < 36e5) { loadLeaderboard(); return; } store.set('magicPrizeAt', Date.now());
+    try { const { data } = await db.from('magic_settings').select('data').eq('id', 'prizes').maybeSingle(); if (data && Array.isArray(data.data && data.data.list) && data.data.list.length >= 2) store.set('magicPrizesCfg', JSON.stringify(data.data.list)); } catch (e) {}
+    try { const { data } = await db.from('kid_rewards').select('kid_id,kid_name,prize,created_at').order('created_at', { ascending: false }).limit(30); if (data && data.length) { prizeLog = data.map(r => ({ k: r.kid_id, n: r.kid_name, i: (cachedKids.find(k => k.id === r.kid_id) || {}).icon || '🙂', t: r.prize, at: Date.parse(r.created_at) })); store.set('magicPrizeLog', JSON.stringify(prizeLog)); } } catch (e) {}
+    loadLeaderboard();
+}, 3500);
+setTimeout(() => { try { loadLeaderboard(); refreshSpin(); } catch (e) {} }, 2500);
+window.__fun = { spinKey, prizeList };
+})();
 
 </script>
 </body>
