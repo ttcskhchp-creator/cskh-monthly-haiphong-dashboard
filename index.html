@@ -2754,6 +2754,189 @@ setTimeout(async () => {                                // lấy cài đặt dù
             syncKidsFromCloud();
             fetchStories();
         });
-    </script>
+    
+
+// ================== V7: NGHE TRUYỆN, GAME TỪ VỰNG, HƯỚNG DẪN TỪNG BƯỚC ==================
+(function(){
+  // 1) Nghe đủ 60 giây hoặc nghe hết bài (áp dụng ngoại lệ cho truyện ngắn).
+  //    Chỉ tính khi luồng TTS chạy liên tục; dừng/chuyển bài trước ngưỡng thì không tính.
+  const __originalMarkRead = markRead;
+  let __storyCountedThisPlay = false;
+  const __storyKey = () => (storyText?.value || '').trim().replace(/\s+/g,' ').slice(0,240);
+  markRead = function(listenedMs=0, completed=false){
+    const key=__storyKey();
+    if(!key || __storyCountedThisPlay || !isFullStoryPlayback) return;
+    if(!completed && listenedMs < 60000) return;
+    __storyCountedThisPlay=true;
+    if(sessionTracker.readStories.has(key)) return;
+    sessionTracker.readStories.add(key);
+    updateSessionUI();
+    burst(...ctr(), WIN, 12);
+    talk(completed && listenedMs < 60000
+      ? '🎉 Bài truyện ngắn đã phát hết! Bé được tính 1 lượt nghe rồi. Mình sang bước tiếp theo nhé!'
+      : '🎉 Bé đã nghe liên tục đủ 1 phút! Đã tính lượt nghe. Mình sang bước tiếp theo nhé!');
+  };
+  const __oldStopAudio = stopAudio;
+  stopAudio = function(){
+    // Nếu người học tự dừng trước 60 giây và chưa nghe hết bài thì không ghi nhận.
+    __oldStopAudio();
+    __storyCountedThisPlay=false;
+  };
+  // Đếm thời gian phát thực tế, đã hiệu chỉnh playbackRate; không đếm thời gian chờ giữa các câu.
+  mainAudio.addEventListener('timeupdate', function(){
+    if(!isStoryPlaying || !isFullStoryPlayback || __storyCountedThisPlay || storyListenFailed) return;
+    const elapsed=(storyListenPlayedMs||0)+(mainAudio.currentTime||0)*1000/(mainAudio.playbackRate||1);
+    if(elapsed>=60000){
+      markRead(elapsed,false);
+      stopAudio();
+    }
+  });
+  // Khi toàn bộ playlist tự phát đến hết, kể cả truyện ngắn dưới 1 phút, tính một lượt.
+  const __oldPlayNextAudioChunk = playNextAudioChunk;
+  playNextAudioChunk = function(){
+    if(isStoryPlaying && currentPlaylistIndex >= audioPlaylist.length){
+      const total=(storyListenPlayedMs||0);
+      if(isFullStoryPlayback && !storyListenFailed) markRead(total,true);
+    }
+    return __oldPlayNextAudioChunk();
+  };
+  const __oldSpeakText = speakText;
+  speakText = function(text,countAsFullStory=false){ __storyCountedThisPlay=false; return __oldSpeakText(text,countAsFullStory); };
+
+  // 2) Game lấy từ ngẫu nhiên trong 1.000 từ thông dụng đầu bảng xếp hạng,
+  //    ưu tiên thêm từ xuất hiện trong bài đang đọc. Chỉ dùng nghĩa đã xác minh.
+  const GAME_CACHE_KEY='magicGameVerifiedMeanings_v1';
+  let __gameMeaningCache={};
+  try{__gameMeaningCache=JSON.parse(localStorage.getItem(GAME_CACHE_KEY)||'{}')||{};}catch(e){}
+  const __saveGameCache=()=>{try{const keys=Object.keys(__gameMeaningCache); if(keys.length>1200){keys.slice(0,keys.length-1200).forEach(k=>delete __gameMeaningCache[k]);}localStorage.setItem(GAME_CACHE_KEY,JSON.stringify(__gameMeaningCache));}catch(e){}};
+  const __shuffle=a=>[...a].sort(()=>Math.random()-.5);
+  async function __resolveGameWord(word, sentence=''){
+    word=String(word||'').toLowerCase();
+    const local=LOCAL_DICTIONARY[word];
+    if(local?.m) return {word,meaning:local.m,pos:local.p||'Từ vựng',sentence,verifiedMeaning:true};
+    const existing=(globalVocabData||[]).find(x=>x.word?.toLowerCase()===word && x.verifiedMeaning && x.meaning);
+    if(existing) return {...existing,sentence:sentence||existing.sentence||''};
+    if(__gameMeaningCache[word]?.meaning) return {...__gameMeaningCache[word],sentence:sentence||__gameMeaningCache[word].sentence||''};
+    try{
+      const data=await tmo(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`,5200);
+      const entry=Array.isArray(data)?data[0]:null;
+      const m=entry?.meanings?.find(x=>x.definitions?.[0]?.definition);
+      const def=m?.definitions?.[0]?.definition||'';
+      if(!def || def.length>260) return null;
+      const tr=await tmo(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(def)}&langpair=en|vi`,5200);
+      const meaning=String(tr?.responseData?.translatedText||'').trim();
+      if(!meaning || meaning.length>360 || meaning.toLowerCase()===def.toLowerCase() || /MYMEMORY|QUERY|INVALID|PLEASE SELECT/i.test(meaning)) return null;
+      const item={word,meaning,pos:posMap[m.partOfSpeech]||m.partOfSpeech||'Từ vựng',sentence,verifiedMeaning:true};
+      __gameMeaningCache[word]=item; __saveGameCache(); return item;
+    }catch(e){return null;}
+  }
+  async function __prepareGameWords(){
+    const story=(storyText?.value||'');
+    const storySentenceFor=w=>{
+      const re=new RegExp(`[^.!?\\n]*\\b${w}\\b[^.!?\\n]*[.!?]?`,'i');
+      return story.match(re)?.[0]?.trim()||'';
+    };
+    const storyWords=[...new Set((story.toLowerCase().match(/\b[a-z]{3,14}\b/g)||[]))]
+      .filter(w=>W?.has(w)||LOCAL_DICTIONARY[w]||__gameMeaningCache[w]);
+    const commonWords=[...(W?.keys?.()||[])].slice(0,1000)
+      .filter(w=>/^[a-z]{3,14}$/.test(w) && (!STOP || !STOP.has(w)));
+    // 6 từ từ bài đang đọc (nếu có), phần còn lại lấy ngẫu nhiên trong 1.000 từ thông dụng.
+    const pickedStory=__shuffle(storyWords).slice(0,6);
+    const pickedCommon=__shuffle(commonWords.filter(w=>!pickedStory.includes(w))).slice(0,10);
+    const candidates=[...new Set([...pickedStory,...pickedCommon])].slice(0,14);
+    const resolved=await Promise.all(candidates.map(w=>__resolveGameWord(w,storySentenceFor(w))));
+    const verified=resolved.filter(x=>x?.verifiedMeaning && x.meaning);
+    // Giữ thêm các từ đã được xác minh khi trích từ bài đọc hiện tại, phòng khi offline.
+    const oldVerified=(globalVocabData||[]).filter(x=>x.verifiedMeaning&&x.meaning);
+    const merged=new Map(); [...oldVerified,...verified].forEach(x=>merged.set(x.word.toLowerCase(),x));
+    globalVocabData=[...merged.values()];
+    return globalVocabData.length;
+  }
+  const __basePlayGame=window.playGame;
+  window.playGame=async function(k){
+    showToast('Đang chọn từ vựng cho trò chơi... 🎲','success');
+    const count=await __prepareGameWords();
+    if(count<4){
+      showToast('Chưa có đủ 4 từ có nghĩa đã xác minh. Bé hãy mở một bài đọc có từ vựng hoặc kết nối Internet nhé.','warning');
+      talk('Mình cần ít nhất 4 từ đã xác minh nghĩa để tạo trò chơi chính xác nha!');
+      return;
+    }
+    return __basePlayGame(k);
+  };
+
+  // 3) Chúc mừng ngay khi hoàn thành một tiêu chí; chỉ rõ tiêu chí kế tiếp.
+  const __guideRoutes={story:'read',sentences:'practice',comp:'read',quiz:'play',games:'play',vocab:'practice',score:'play'};
+  let __guideTimer=null, __arrowNode=null, __guideTarget=null, __guideReady=false, __guidePrev={}, __guidePendingKey=null;
+  const __guideStateKey=()=>`magicGuideDone_${currentKidId}_${currentSharedQuest?.id||'none'}`;
+  function __clearGuideArrow(){if(__arrowNode){__arrowNode.remove();__arrowNode=null;}if(__guideTarget)__guideTarget.classList.remove('magic-guide-target');__guideTarget=null;}
+  function __armGuideArrow(key){
+    clearTimeout(__guideTimer); __clearGuideArrow(); __guidePendingKey=key;
+    __guideTimer=setTimeout(()=>{
+      let target=null;
+      if(key==='submit'){
+        if(document.body.dataset.tab!=='home') setTab('home');
+        target=document.getElementById('claimQuestBtn');
+      }else{
+        const tab=__guideRoutes[key]||'home';
+        target=document.querySelector(`#nav button[data-t="${tab}"]`);
+      }
+      if(!target)return;
+      __guideTarget=target; target.classList.add('magic-guide-target');
+      const rect=target.getBoundingClientRect();
+      const arrow=document.createElement('div'); arrow.className='magic-guide-arrow';
+      arrow.innerHTML=`<div class="magic-guide-caption">${key==='submit'?'BÉ BẤM NỘP BÀI Ở ĐÂY':'BÉ CHẠM VÀO ĐÂY ĐỂ LÀM TIẾP'}</div><div class="magic-guide-hand">${key==='submit'?'👇':'👇'}</div>`;
+      document.body.appendChild(arrow); __arrowNode=arrow;
+      const ar=arrow.getBoundingClientRect();
+      arrow.style.left=Math.max(8,Math.min(window.innerWidth-ar.width-8,rect.left+rect.width/2-ar.width/2))+'px';
+      arrow.style.top=Math.max(8,rect.top-ar.height-8)+'px';
+    },20000);
+  }
+  function __stepAfterCompletion(key){
+    const list=reqs(); const next=list.find(r=>!r.ok);
+    if(next){
+      talk(`🎉 Chúc mừng bé hoàn thành ${list.find(r=>r.key===key)?.n||'một tiêu chí'}! Bước tiếp theo: ${next.ic} ${next.n}. ${next.w}`);
+      __armGuideArrow(next.key);
+    }else{
+      talk('🏆 Tuyệt vời! Bé đã hoàn thành tất cả tiêu chí. Bây giờ bấm Nộp Ghi Điểm để nhận thưởng nhé!');
+      __armGuideArrow('submit');
+    }
+  }
+  const __guideStyle=document.createElement('style');
+  __guideStyle.textContent=`
+    .magic-guide-target{position:relative!important;z-index:100001!important;outline:5px solid #f59e0b!important;outline-offset:4px!important;animation:magicGuidePulse .8s infinite alternate!important;border-radius:14px!important}
+    .magic-guide-arrow{position:fixed;z-index:100002;pointer-events:none;text-align:center;filter:drop-shadow(0 4px 5px #0005);animation:magicGuideBounce .65s infinite alternate}
+    .magic-guide-caption{background:#fef08a;color:#7c2d12;border:3px solid #f97316;border-radius:14px;padding:7px 11px;font:bold 14px/1.25 system-ui;white-space:nowrap}
+    .magic-guide-hand{font-size:64px;line-height:1.05;color:#f97316;text-shadow:0 3px 0 white,0 0 8px white}
+    @keyframes magicGuideBounce{from{transform:translateY(0) scale(1)}to{transform:translateY(9px) scale(1.08)}}
+    @keyframes magicGuidePulse{from{outline-color:#f59e0b}to{outline-color:#ef4444}}
+  `;
+  document.head.appendChild(__guideStyle);
+  const __oldUpdate=updateSessionUI;
+  updateSessionUI=function(){
+    const result=__oldUpdate.apply(this,arguments);
+    try{
+      const now={}; reqs().forEach(r=>now[r.key]=!!r.ok);
+      if(!__guideReady){__guidePrev=now;__guideReady=true;try{localStorage.setItem(__guideStateKey(),JSON.stringify(now));}catch(e){}return result;}
+      const newlyDone=Object.keys(now).find(k=>now[k]&&!__guidePrev[k]);
+      __guidePrev=now; try{localStorage.setItem(__guideStateKey(),JSON.stringify(now));}catch(e){}
+      if(newlyDone) __stepAfterCompletion(newlyDone);
+    }catch(e){}
+    return result;
+  };
+  // Khi chuyển bé/nhiệm vụ, không dùng trạng thái hướng dẫn của bé trước.
+  const __oldSelectKid=onSelectKidChanged;
+  onSelectKidChanged=function(id){__guideReady=false;clearTimeout(__guideTimer);__clearGuideArrow();__guidePendingKey=null;return __oldSelectKid.apply(this,arguments);};
+  document.querySelectorAll('#nav button').forEach(btn=>btn.addEventListener('click',()=>{
+    const tab=btn.dataset.t;
+    const pendingTab=__guidePendingKey==='submit'?'home':__guideRoutes[__guidePendingKey];
+    if(tab===pendingTab){clearTimeout(__guideTimer);__clearGuideArrow();__guidePendingKey=null;}
+  }));
+  document.getElementById('claimQuestBtn')?.addEventListener('click',()=>{if(reqs().every(r=>r.ok)){clearTimeout(__guideTimer);__clearGuideArrow();__guidePendingKey=null;}});
+  window.addEventListener('resize',__clearGuideArrow);
+  // Khôi phục trạng thái đã hoàn thành để không chúc mừng lặp lại khi tải lại trang.
+  setTimeout(()=>{try{__guidePrev=JSON.parse(localStorage.getItem(__guideStateKey())||'{}')||{};}catch(e){__guidePrev={};}reqs().forEach(r=>{if(__guidePrev[r.key]===undefined)__guidePrev[r.key]=!!r.ok;});__guideReady=true;},1800);
+})();
+
+</script>
 </body>
 </html>
