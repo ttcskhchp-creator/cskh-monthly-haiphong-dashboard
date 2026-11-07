@@ -297,7 +297,7 @@
     <main class="w-full max-w-7xl grid grid-cols-1 lg:grid-cols-12 gap-4 flex-grow pb-8">
         
         <!-- CỘT TRÁI -->
-        <div class="lg:col-span-5 flex flex-col gap-4">
+        <div class="lg:col-span-4 flex flex-col gap-3">
             <!-- Bảng Điểm Bảng Vàng (Đồng bộ Cloud Supabase) -->
             <div id="cardLeaderboard" class="guide-card bg-teal-50 p-4 rounded-[1.5rem] shadow-lg border-4 border-teal-300 flex flex-col">
                 <div class="flex justify-between items-center mb-2">
@@ -310,10 +310,10 @@
             </div>
 
             <!-- Chọn truyện -->
-            <div id="cardChooseFile" class="guide-card bg-white p-4 md:p-6 rounded-[1.5rem] shadow-lg border-4 border-pink-300 flex flex-col">
+            <div id="cardChooseFile" class="guide-card bg-white p-2 md:p-3 rounded-[1.5rem] shadow-lg border-4 border-pink-300 flex flex-col">
                 <h2 class="text-lg font-black text-pink-600 mb-2 flex items-center"><span class="text-xl mr-2">📸</span> 1. Chọn truyện</h2>
                 <input type="file" id="fileInput" multiple accept="image/*,.pdf,.txt,.md,.docx,.doc,.html,.htm" class="sr-only">
-                <label id="dropZone" for="fileInput" class="flex flex-col items-center justify-center bg-slate-50 rounded-xl border-2 border-dashed border-slate-300 overflow-hidden min-h-[120px] mb-2 relative cursor-pointer hover:bg-slate-100 transition-colors">
+                <label id="dropZone" for="fileInput" class="flex flex-col items-center justify-center bg-slate-50 rounded-xl border-2 border-dashed border-slate-300 overflow-hidden min-h-[76px] mb-1 relative cursor-pointer hover:bg-slate-100 transition-colors">
                     <p id="placeholderText" class="text-slate-400 text-sm md:text-base font-bold text-center px-4 py-4">Chạm để chọn <b>Ảnh, PDF, Word</b></p>
                     <div id="previewBox" class="w-full flex items-center justify-center p-2"></div>
                 </label>
@@ -327,7 +327,7 @@
             </div>
 
             <!-- Kho truyện -->
-            <div id="cardStoryLibrary" class="guide-card bg-indigo-50 p-4 md:p-6 rounded-[1.5rem] shadow-lg border-4 border-indigo-300 flex flex-col max-h-[220px]">
+            <div id="cardStoryLibrary" class="guide-card bg-indigo-50 p-2 md:p-3 rounded-[1.5rem] shadow-lg border-4 border-indigo-300 flex flex-col max-h-[145px]">
                 <div class="flex justify-between items-center mb-2">
                     <h2 class="text-base font-black text-indigo-600 flex items-center"><span class="text-lg mr-2">☁️</span> Kho Truyện</h2>
                     <button onclick="saveToCloud()" class="bg-indigo-500 text-white px-2 py-1 rounded-md text-xs font-bold btn-bounce shadow-sm hover:bg-indigo-600">💾 Lưu Bài</button>
@@ -339,8 +339,8 @@
         </div>
 
         <!-- CỘT PHẢI -->
-        <div class="lg:col-span-7 flex flex-col gap-4 h-full">
-            <div id="cardReadingPanel" class="guide-card bg-white p-3 md:p-5 rounded-[1.5rem] shadow-lg border-4 border-blue-300 flex flex-col flex-grow">
+        <div class="lg:col-span-8 flex flex-col gap-3 h-full">
+            <div id="cardReadingPanel" class="guide-card bg-white p-3 md:p-4 rounded-[1.5rem] shadow-lg border-4 border-blue-300 flex flex-col flex-grow">
                 <div class="flex justify-between items-center mb-1">
                     <h2 class="text-base md:text-lg font-black text-blue-600 flex items-center"><span class="text-xl mr-1">📝</span> 2. Luyện nghe & Đọc</h2>
                     <div class="flex gap-1">
@@ -358,7 +358,7 @@
                 </div>
 
                 <p class="text-slate-400 text-[10px] md:text-xs font-bold mb-1">Mẹo: Đặt trỏ vào chữ để nghe từ đó!</p>
-                <textarea id="storyText" class="flex-grow w-full p-2 md:p-3 rounded-lg border-2 border-blue-200 focus:border-blue-400 outline-none text-sm md:text-base text-slate-700 leading-relaxed resize-none min-h-[150px] shadow-inner mb-2 bg-blue-50/50 font-semibold" placeholder="Chữ sẽ hiện ở đây..."></textarea>
+                <textarea id="storyText" class="flex-grow w-full p-2 md:p-3 rounded-lg border-2 border-blue-200 focus:border-blue-400 outline-none text-sm md:text-base text-slate-700 leading-relaxed resize-none min-h-[260px] shadow-inner mb-2 bg-blue-50/50 font-semibold" placeholder="Chữ sẽ hiện ở đây..."></textarea>
                 
                 <label class="flex items-center gap-1 text-[10px] md:text-xs font-bold text-blue-700 cursor-pointer mb-2 w-max">
                     <input type="checkbox" id="keepLayout" checked class="w-3 h-3 accent-blue-500"> Giữ bố cục gốc
@@ -391,6 +391,11 @@
                 <div class="flex justify-between items-center mb-2">
                     <h3 class="font-black text-purple-600 text-sm md:text-base flex items-center"><span class="mr-1">📚</span> Từ vựng Thông Minh:</h3>
                     <span id="rotationIndicator" class="text-[10px] font-bold text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full border border-purple-200 hidden">Vòng 1/5</span>
+                </div>
+                <div class="mb-3 grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2 bg-white/80 border border-purple-200 rounded-xl p-2">
+                    <input id="kidWordInput" type="search" autocomplete="off" placeholder="Con muốn tra từ tiếng Anh..." class="min-w-0 w-full rounded-lg border border-purple-200 px-3 py-2 text-sm font-bold outline-none focus:border-purple-500">
+                    <button id="kidWordSearch" type="button" class="rounded-lg bg-purple-600 text-white px-4 py-2 text-sm font-black">🔎 Tra từ</button>
+                    <div id="kidWordResult" class="sm:col-span-2 text-sm text-slate-600" aria-live="polite">Nhập một từ rồi chạm “Tra từ” để xem nghĩa và nghe phát âm.</div>
                 </div>
                 <div id="vocabList" class="flex flex-wrap gap-2 text-xs font-bold text-purple-700 transition-all duration-500">
                     <span class="italic font-normal text-purple-400 text-[10px]">Bấm "Làm sạch" để máy tìm từ khó!</span>
@@ -1263,7 +1268,7 @@
         };
 
         const G = { score: 0, k: '' }; let GT;
-        const V = () => globalVocabData.filter(v => v.word);
+        const V = () => globalVocabData.filter(v => v.word && v.verifiedMeaning === true);
         const shuf = a => [...a].sort(() => Math.random() - .5);
         const area = () => $('gameArea');
         const ctr = () => [innerWidth / 2, innerHeight / 2];
@@ -1673,9 +1678,17 @@
         let currentPlaylistIndex = 0;
         let isStoryPlaying = false;
         let wordAudio = new Audio();
+        let storyListenStartedAt = 0;
+        let storyListenPlayedMs = 0;
+        let isFullStoryPlayback = false;
+        let storyListenFailed = false;
 
         function stopAudio() {
             isStoryPlaying = false;
+            storyListenStartedAt = 0;
+            storyListenPlayedMs = 0;
+            isFullStoryPlayback = false;
+            storyListenFailed = false;
             audioPlaylist = [];
             currentPlaylistIndex = 0;
 
@@ -1722,7 +1735,7 @@
         };
 
         // --- 2. PHÁT BÀI ĐỌC (HẾT LẶP 2 LẦN) ---
-        function speakText(text) {
+        function speakText(text, countAsFullStory = false) {
             stopAudio();
             const rawText = String(text || '').trim();
             if (!rawText) return showToast('Chưa có nội dung để đọc!', 'warning');
@@ -1733,6 +1746,10 @@
 
             currentPlaylistIndex = 0;
             isStoryPlaying = true;
+            isFullStoryPlayback = countAsFullStory;
+            storyListenStartedAt = Date.now();
+            storyListenPlayedMs = 0;
+            storyListenFailed = false;
 
             const playBtn = document.getElementById('playBtn');
             if (playBtn) playBtn.innerHTML = '<span class="mr-1">🔊</span>Đang đọc...';
@@ -1741,8 +1758,9 @@
         }
 
         function playNextAudioChunk() {
-            if (isStoryPlaying && currentPlaylistIndex >= audioPlaylist.length && audioPlaylist.length > 2) markRead();
-            if (!isStoryPlaying || currentPlaylistIndex >= audioPlaylist.length) {
+            if (!isStoryPlaying) return;
+            if (currentPlaylistIndex >= audioPlaylist.length) {
+                if (!storyListenFailed && isFullStoryPlayback) markRead(storyListenPlayedMs);
                 stopAudio();
                 return;
             }
@@ -1752,13 +1770,16 @@
             mainAudio.playbackRate = parseFloat(speedSlider.value) || 0.8;
 
             mainAudio.onended = () => {
+                const rate = mainAudio.playbackRate || 1;
+                storyListenPlayedMs += (mainAudio.currentTime || 0) * 1000 / rate;
                 currentPlaylistIndex++;
                 playNextAudioChunk();
             };
 
             mainAudio.onerror = () => {
-                currentPlaylistIndex++;
-                playNextAudioChunk();
+                storyListenFailed = true;
+                stopAudio();
+                showToast('Âm thanh bị gián đoạn nên chưa tính lượt nghe. Bé thử nghe lại nhé!', 'warning');
             };
 
             mainAudio.play().catch(e => {
@@ -1768,7 +1789,7 @@
         }
 
         document.getElementById('playBtn').addEventListener('click', () => { 
-            if (!isStoryPlaying) speakText(storyText.value.trim()); 
+            if (!isStoryPlaying) speakText(storyText.value.trim(), true); 
         });
 
         // Ấn từ con trỏ: Ngắt ngay luồng cũ và đọc chuẩn xác không bị lặp
@@ -2122,7 +2143,18 @@ function loadSess() { sessionTracker = { readStories: new Set(), sentencesPassed
 const _usu = updateSessionUI; updateSessionUI = () => { _usu(); saveSess(); };
 const _rq = renderQuestUI; renderQuestUI = () => { if (currentSharedQuest && sessQ !== currentSharedQuest.id) { sessQ = currentSharedQuest.id; loadSess(); } _rq(); };
 onSelectKidChanged = id => { localStorage.setItem('magicCurrentKid', id); currentKidId = id; sessQ = null; renderKidSelector(); loadLeaderboard(); renderQuestUI(); showToast('Đã chuyển bé! 👋', 'success'); };
-function markRead() { sessionTracker.readStories.add(storyText.value.trim().slice(0, 30)); updateSessionUI(); burst(...ctr(), WIN, 10); talk('Bé nghe xong cả bài rồi! Giỏi quá! 📖🎉'); }
+function markRead(listenedMs = 0) {
+    if (listenedMs <= 60000) {
+        showToast(`Bé cần nghe liên tục ít nhất 1 phút nữa mới được tính. Hiện tại: ${Math.floor(listenedMs/1000)} giây.`, 'warning');
+        talk('Bài truyện cần được nghe liên tục trên 1 phút mới được tính nhé! Bé nghe hết bài nha! 🎧');
+        return;
+    }
+    const storyKey = storyText.value.trim().slice(0, 80);
+    if (!storyKey || sessionTracker.readStories.has(storyKey)) return;
+    sessionTracker.readStories.add(storyKey);
+    updateSessionUI(); burst(...ctr(), WIN, 10);
+    talk('Tuyệt vời! Bé đã nghe hết bài liên tục hơn 1 phút. Đã ghi nhận nhiệm vụ đọc truyện! 📖🎉');
+}
 
 // --- tự chấm khi trình duyệt không có micro nhận giọng ---
 const _gsc = generateSentenceChallenge;
@@ -2154,6 +2186,35 @@ cleanBtn.addEventListener('click', () => {
 
 const STOP = new Set('the and was were with that this they them then there their have has had for from but not are you his her she him its our out one all can will would could into over very just than when what where who why how said went came back down upon each been also some more most such only your about after before again under'.split(' '));
 const tmo = (u, ms = 4500) => { const c = new AbortController(); setTimeout(() => c.abort(), ms); return fetch(u, { signal: c.signal }).then(r => r.json()); };
+function escapeKidHtml(v) { return String(v || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+async function lookupKidWord() {
+    const input = $('kidWordInput'), out = $('kidWordResult');
+    const word = (input?.value || '').trim().toLowerCase();
+    if (!/^[a-z]+(?:[-'][a-z]+)?$/.test(word)) { out.textContent = 'Bé nhập một từ tiếng Anh nhé (ví dụ: beautiful).'; return; }
+    out.textContent = 'Đang tra nghĩa trong từ điển... 📖';
+    try {
+        const local = LOCAL_DICTIONARY[word];
+        let meaning = local?.m || '', pos = local?.p || '', example = '';
+        if (!meaning) {
+            const data = await tmo(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`, 6000);
+            const entry = Array.isArray(data) ? data[0] : null;
+            const m = entry?.meanings?.find(x => x.definitions?.[0]?.definition);
+            const def = m?.definitions?.[0]?.definition || '';
+            pos = posMap[m?.partOfSpeech] || m?.partOfSpeech || '';
+            example = m?.definitions?.[0]?.example || '';
+            if (def) {
+                const tr = await tmo(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(def)}&langpair=en|vi`, 6000);
+                const v = tr?.responseData?.translatedText || '';
+                if (v && !/MYMEMORY|QUERY|INVALID|PLEASE SELECT/i.test(v) && v.toLowerCase() !== def.toLowerCase()) meaning = v;
+            }
+        }
+        if (!meaning) { out.innerHTML = `Chưa tìm được nghĩa đáng tin cậy của <b>${escapeKidHtml(word)}</b>. Bé thử từ khác nhé.`; return; }
+        out.innerHTML = `<div class="font-black text-purple-800 text-base">${escapeKidHtml(word)} <button type="button" class="ml-1" onclick="playWordAudio('${escapeKidHtml(word)}')">🔊 Nghe</button></div><div class="font-bold text-slate-700">${escapeKidHtml(meaning)}</div>${pos ? `<div class="text-xs text-purple-600">${escapeKidHtml(pos)}</div>` : ''}${example ? `<div class="mt-1 text-xs italic text-slate-500">Ví dụ: ${escapeKidHtml(example)}</div>` : ''}`;
+    } catch (e) { out.textContent = 'Từ điển đang bận hoặc máy chưa có mạng. Bé thử lại sau nhé!'; }
+}
+$('kidWordSearch')?.addEventListener('click', lookupKidWord);
+$('kidWordInput')?.addEventListener('keydown', e => { if (e.key === 'Enter') lookupKidWord(); });
+
 let vocOff = 0;
 async function extractVocabulary(text, off = 0) {
     lastExtractedText = text; vocOff = off;
@@ -2167,14 +2228,28 @@ async function extractVocabulary(text, off = 0) {
     vocabList.innerHTML = '<span class="animate-pulse text-purple-500 text-sm">Đang chuẩn bị từ vựng... ⏳</span>';
     const out = await Promise.all(ws.map(async w => {
         const sm = text.match(new RegExp(`[^.?!\\n]*\\b${w}\\b[^.?!\\n]*[.?!]?`, 'i')), L = LOCAL_DICTIONARY[w];
-        let meaning = L ? L.m : '', pos = L ? L.p : '';
-        if (!meaning) try { const d = await tmo(`https://api.mymemory.translated.net/get?q=${w}&langpair=en|vi`), t = d && d.responseData && d.responseData.translatedText; if (t && !/MYMEMORY|QUERY|INVALID/i.test(t) && t.toLowerCase() !== w) meaning = t.toLowerCase(); } catch (e) {}
-        if (!pos) try { const p = (await tmo(`https://api.dictionaryapi.dev/api/v2/entries/en/${w}`, 3500))[0].meanings[0].partOfSpeech; pos = posMap[p] || p; } catch (e) {}
-        return { word: w, meaning: meaning || '(chạm để nghe)', pos: pos || 'Từ vựng', sentence: sm ? sm[0].trim() : '', ok: !!meaning };
+        let meaning = L ? L.m : '', pos = L ? L.p : '', verifiedMeaning = !!L;
+        // Với từ chưa có nghĩa biên soạn sẵn: lấy định nghĩa từ từ điển Anh trước,
+        // rồi dịch cả định nghĩa để giảm nhầm nghĩa do dịch một từ đứng riêng.
+        if (!meaning) try {
+            const entries = await tmo(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(w)}`, 5500);
+            const entry = Array.isArray(entries) ? entries[0] : null;
+            const m = entry?.meanings?.find(x => x.definitions?.[0]?.definition);
+            const definition = m?.definitions?.[0]?.definition || '';
+            if (m) pos = posMap[m.partOfSpeech] || m.partOfSpeech || '';
+            if (definition && definition.length < 280) {
+                const tr = await tmo(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(definition)}&langpair=en|vi`, 5500);
+                const translated = tr?.responseData?.translatedText || '';
+                if (translated && !/MYMEMORY|QUERY|INVALID|PLEASE SELECT/i.test(translated) && translated.toLowerCase() !== definition.toLowerCase() && translated.length < 360) {
+                    meaning = translated.trim(); verifiedMeaning = true;
+                }
+            }
+        } catch (e) {}
+        return { word: w, meaning: meaning || 'Chưa xác minh được nghĩa — không dùng trong câu đố', pos: pos || 'Từ vựng', sentence: sm ? sm[0].trim() : '', ok: !!meaning, verifiedMeaning };
     }));
-    const good = out.filter(x => x.ok);
-    globalVocabData = good.length >= 4 ? good : out;
-    vocabList.innerHTML = out.map(i => `<div class="vocab-card px-3 py-2 bg-white border-2 border-purple-300 rounded-2xl shadow-sm cursor-pointer hover:bg-purple-100 flex flex-col items-center text-center select-none active:scale-95" onclick="playWordAudio('${i.word}', this)"><span class="text-purple-700 font-black text-base flex items-center gap-1">${i.word} <span class="speaker-icon">🔊</span></span><span class="text-xs text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full mt-1 font-bold capitalize">${i.pos}</span><span class="text-sm text-slate-600 font-bold border-t border-purple-100 w-full mt-1 pt-0.5 capitalize">${i.meaning}</span></div>`).join('') + `<button class="w-full py-2 bg-purple-500 text-white font-black rounded-2xl" onclick="extractVocabulary(lastExtractedText, (vocOff + 12) >= masterCandidatePool.length ? 0 : vocOff + 12)">🔄 Đổi 12 từ khác</button>`;
+    // Chỉ những từ có nghĩa được xác minh mới tham gia trò chơi/câu đố.
+    globalVocabData = out.filter(x => x.verifiedMeaning);
+    vocabList.innerHTML = out.map(i => `<div class="vocab-card px-3 py-2 bg-white border-2 border-purple-300 rounded-2xl shadow-sm cursor-pointer hover:bg-purple-100 flex flex-col items-center text-center select-none active:scale-95" onclick="playWordAudio('${i.word}', this)"><span class="text-purple-700 font-black text-base flex items-center gap-1">${i.word} <span class="speaker-icon">🔊</span></span><span class="text-xs text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full mt-1 font-bold capitalize">${i.pos}</span><span class="text-sm text-slate-600 font-bold border-t border-purple-100 w-full mt-1 pt-0.5">${i.meaning}</span>${i.verifiedMeaning ? '' : '<span class="text-[10px] text-amber-600">Chưa dùng cho câu đố</span>'}</div>`).join('') + `<button class="w-full py-2 bg-purple-500 text-white font-black rounded-2xl" onclick="extractVocabulary(lastExtractedText, (vocOff + 12) >= masterCandidatePool.length ? 0 : vocOff + 12)">🔄 Đổi 12 từ khác</button>`;
     talk('Có từ mới rồi! Chạm vào từng từ để nghe đọc nha! 🔊');
 }
 
@@ -2203,7 +2278,7 @@ const GM = [['quiz', '❓', 'Đố vui', '#f97316'], ['listen', '🎧', 'Nghe đ
 $('gameMenu').className = 'grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3';
 $('gameMenu').innerHTML = GM.map(g => `<button class="gtile" style="background:${g[3]}" onclick="playGame('${g[0]}')"><b>${g[1]}</b>${g[2]}</button>`).join('');
 window.playGame = k => {
-    if (V().length < 4) { showToast('Qua tab 📖 Đọc, chọn truyện rồi bấm "Sạch" để lấy từ vựng nhé!', 'warning'); return talk('Mình cần có từ vựng trước đã! Bé quay lại tab 📖 Đọc nha!'); }
+    if (V().length < 4) { showToast('Chưa có đủ 4 từ đã xác minh nghĩa để tạo câu đố an toàn. Hãy thử truyện khác hoặc kết nối mạng nhé!', 'warning'); return talk('Mình cần ít nhất 4 từ có nghĩa đã được kiểm tra trước khi tạo câu đố nha!'); }
     clearInterval(GT); G.score = 0; G.k = k; ({ quiz: gQuiz, listen: gListen, flip: gFlip, speak: gSpeak, scr: gScr, speed: gSpeed })[k]();
     area().scrollIntoView({ behavior: 'smooth', block: 'center' });
 };
@@ -2441,22 +2516,41 @@ function applyCfg() {                                   // đưa điểm chuẩn
 function reqs() {
     norm(); applyCfg(); const c = CFG.q, s = sessionTracker, q = currentSharedQuest || {};
     return [
-        { ic: '📖', n: 'Nghe hết bài truyện', w: 'Tab 📖 Đọc → bấm "Đọc To" và nghe đến hết', h: s.readStories.size, d: c.stories, u: 'bài' },
-        { ic: '🗣️', n: 'Đọc đúng câu', w: 'Tab 🗣️ Luyện → "Thử thách đọc cả câu"', h: s.sentencesPassed, d: c.sentences, u: 'câu' },
-        { ic: '👂', n: 'Nghe hiểu: trả lời đúng', w: 'Tab 📖 Đọc → thẻ "Nghe hiểu từng câu"', h: s.compOk, d: c.comp, u: 'câu' },
-        { ic: '❓', n: 'Đố vui (đúng từ 2 câu)', w: 'Tab 🎮 Chơi → ❓ Đố vui', h: s.quizPlays, d: c.quiz, u: 'lượt' },
-        { ic: '🎮', n: 'Chơi game (không cần chơi hết)', w: 'Tab 🎮 Chơi → chọn vài trò 🎧 🃏 🔤 🎤 ⚡', h: s.gamesPlayed, d: c.games, u: 'lượt', x: { h: s.gameTypes.size, d: Math.min(c.gameTypes, c.games), u: 'loại khác nhau' } },
-        { ic: '🔤', n: 'Chạm nghe từ vựng', w: 'Tab 🗣️ Luyện → chạm vào từng thẻ từ', h: s.vocabHeard.size, d: c.vocab, u: 'từ' },
-        { ic: '⭐', n: 'Điểm đạt chuẩn', w: 'Cộng dồn từ các hoạt động bên trên', h: s.scoreEarned, d: q.target_score || 0, u: 'điểm' }
+        { key: 'story', ic: '📖', n: 'Nghe hết bài truyện', w: 'Tab 📖 Đọc → bấm "Đọc To" và nghe toàn bài liên tục ít nhất 1 phút', h: s.readStories.size, d: c.stories, u: 'bài' },
+        { key: 'sentences', ic: '🗣️', n: 'Đọc đúng câu', w: 'Tab 🗣️ Luyện → "Thử thách đọc cả câu"', h: s.sentencesPassed, d: c.sentences, u: 'câu' },
+        { key: 'comp', ic: '👂', n: 'Nghe hiểu: trả lời đúng', w: 'Tab 📖 Đọc → thẻ "Nghe hiểu từng câu"', h: s.compOk, d: c.comp, u: 'câu' },
+        { key: 'quiz', ic: '❓', n: 'Đố vui (đúng từ 2 câu)', w: 'Tab 🎮 Chơi → ❓ Đố vui', h: s.quizPlays, d: c.quiz, u: 'lượt' },
+        { key: 'games', ic: '🎮', n: 'Chơi game (không cần chơi hết)', w: 'Tab 🎮 Chơi → chọn vài trò 🎧 🃏 🔤 🎤 ⚡', h: s.gamesPlayed, d: c.games, u: 'lượt', x: { h: s.gameTypes.size, d: Math.min(c.gameTypes, c.games), u: 'loại khác nhau' } },
+        { key: 'vocab', ic: '🔤', n: 'Chạm nghe từ vựng', w: 'Tab 🗣️ Luyện → chạm vào từng thẻ từ', h: s.vocabHeard.size, d: c.vocab, u: 'từ' },
+        { key: 'score', ic: '⭐', n: 'Điểm đạt chuẩn', w: 'Tiếp tục luyện đọc, nghe hiểu và chơi game để cộng điểm', h: s.scoreEarned, d: q.target_score || 0, u: 'điểm' }
     ].filter(r => r.d > 0).map(r => ({ ...r, ok: r.h >= r.d && (!r.x || r.x.h >= r.x.d) }));
 }
+window.goQuestStep = function(key) {
+    const routes = {
+        story: ['read', 'playBtn'], sentences: ['practice', 'cardSentenceSection'],
+        comp: ['read', 'cardComp'], quiz: ['play', 'gameMenu'], games: ['play', 'gameMenu'],
+        vocab: ['practice', 'kidWordInput'], score: ['play', 'gameMenu']
+    };
+    const target = routes[key]; if (!target) return;
+    if (typeof setTab === 'function') setTab(target[0]);
+    const el = document.getElementById(target[1]);
+    if (el) { el.scrollIntoView({behavior:'smooth', block:'center'}); if (key === 'vocab') setTimeout(() => document.getElementById('kidWordInput')?.focus(), 250); }
+    if (key === 'story') talk('Bước này: chạm Đọc To và nghe hết bài liên tục trên 1 phút nhé!');
+    else if (key === 'sentences') talk('Bé đọc câu mẫu rồi bấm micro để đọc lại nhé!');
+    else if (key === 'comp') talk('Bé nghe câu hỏi rồi chọn hoặc nhập câu trả lời nha!');
+    else if (key === 'quiz') { talk('Chọn Đố vui và trả lời đúng ít nhất 2 câu nhé!'); if (typeof playGame === 'function' && V().length >= 4) playGame('quiz'); }
+    else if (key === 'games' || key === 'score') talk('Chọn một trò chơi, đạt ít nhất 10 điểm mỗi lượt nhé!');
+    else talk('Chạm vào thẻ từ để nghe phát âm nhé!');
+};
 const fnCount = () => { const c = CFG.q, a = [c.stories, c.sentences, c.comp, c.quiz, c.games, c.vocab].filter(x => x > 0).length; return { a, p: Math.round(a / 6 * 100) }; };
 function renderChecklist() {
     const box = $('questContent'); if (!box || !currentSharedQuest) return; const R = reqs(), f = fnCount(), q = currentSharedQuest, done = (q.completed_kids || []).includes(currentKidId);
     const g = $('cntReadStories') && $('cntReadStories').closest('.grid'); if (g) g.classList.add('hid');
+    const nextStep = R.find(r => !r.ok);
     box.innerHTML = `<div class="bg-amber-100 border-2 border-amber-300 rounded-xl p-2 text-[13px]">🎯 Bé phải dùng <b>${f.a}/6 chức năng (${f.p}%)</b> của trang. Làm đủ <b>tất cả</b> mục bên dưới mới được nộp điểm nhé!</div>
-    <div class="text-[12px]">📚 Truyện gợi ý hôm nay: <b class="text-blue-700">${(q.story_title || 'The Golden Goose').replace(/</g, '&lt;')}</b> (hoặc truyện khác)</div>` +
-        R.map(r => `<div class="flex items-start gap-2 p-2 rounded-xl border-2 ${r.ok ? 'bg-green-50 border-green-300' : 'bg-white border-amber-200'}"><span class="text-xl">${r.ok ? '✅' : r.ic}</span><div class="flex-1 min-w-0"><div class="text-[13px] font-black">${r.n}: <span class="${r.ok ? 'text-green-600' : 'text-orange-600'}">${Math.min(r.h, 9999)}/${r.d} ${r.u}</span>${r.x ? ` • <span class="${r.x.h >= r.x.d ? 'text-green-600' : 'text-orange-600'}">${r.x.h}/${r.x.d} ${r.x.u}</span>` : ''}</div><div class="text-[11px] text-slate-500 font-bold">${r.w}</div></div></div>`).join('') +
+    <div class="text-[12px]">📚 Truyện gợi ý hôm nay: <b class="text-blue-700">${(q.story_title || 'The Golden Goose').replace(/</g, '&lt;')}</b> (hoặc truyện khác)</div>
+    ${nextStep ? `<div class="rounded-xl bg-blue-50 border-2 border-blue-300 p-2 text-[12px] font-black text-blue-800">👉 BƯỚC TIẾP THEO: ${nextStep.ic} ${nextStep.n}<div class="font-bold text-blue-700 mt-1">${nextStep.w}</div><button type="button" onclick="goQuestStep('${nextStep.key}')" class="mt-2 px-4 py-2 rounded-lg bg-blue-600 text-white font-black">Đi tới bước này ➜</button></div>` : ''}` +
+        R.map(r => `<div class="flex items-center gap-2 p-2 rounded-xl border-2 ${r.ok ? 'bg-green-50 border-green-300' : 'bg-white border-amber-200'}"><span class="text-xl">${r.ok ? '✅' : r.ic}</span><div class="flex-1 min-w-0"><div class="text-[13px] font-black">${r.n}: <span class="${r.ok ? 'text-green-600' : 'text-orange-600'}">${Math.min(r.h, 9999)}/${r.d} ${r.u}</span>${r.x ? ` • <span class="${r.x.h >= r.x.d ? 'text-green-600' : 'text-orange-600'}">${r.x.h}/${r.x.d} ${r.x.u}</span>` : ''}</div><div class="text-[11px] text-slate-500 font-bold">${r.w}</div></div>${!r.ok ? `<button type="button" onclick="goQuestStep('${r.key}')" class="shrink-0 px-2 py-1 rounded-lg bg-indigo-100 text-indigo-700 text-[10px] font-black">Làm ngay</button>` : ''}</div>`).join('') +
         `<div class="text-[11px] bg-orange-50 border border-orange-200 rounded-xl p-2">⭐ <b>Cách kiếm điểm:</b> đọc đúng 1 câu +10 · nghe hiểu đúng +10 (lần 2: +5, lần 3: +2) · mỗi câu đúng trong game/đố vui +10 · nộp xong nhiệm vụ thưởng +30. Nghe bài truyện không có điểm nhưng bắt buộc.</div>`;
     const bd = $('questStatusBadge'), miss = R.filter(r => !r.ok).length;
     if (bd && !done) { bd.textContent = miss ? `Còn thiếu ${miss} mục ⏳` : 'Đã đủ! Bấm "Nộp Ghi Điểm" 🎉'; bd.className = 'text-xs font-black ' + (miss ? 'text-orange-600' : 'text-emerald-600'); }
