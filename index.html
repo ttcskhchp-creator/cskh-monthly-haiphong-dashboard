@@ -1048,8 +1048,15 @@
                 }
 
                 const kid = cachedKids.find(k => k.id === currentKidId) || cachedKids[0];
-                const newTotalScore = (kid.score || 0) + sessionTracker.scoreEarned + 30;
-                const newDone = ((kid && kid.weekly_done) || 0) + 1;
+                const am = q.attempts || (q.attempts = {});
+                const prevAward = am['aw_' + currentKidId] === kid.week_start ? (+am['award_' + currentKidId] || 0) : 0;
+                const thisAward = sessionTracker.scoreEarned + 30;
+                const newTotalScore = Math.max(0, (kid.score || 0) - prevAward + thisAward);      // làm lại: điểm lượt mới thay điểm lượt cũ
+                const newDone = ((kid && kid.weekly_done) || 0) + (prevAward ? 0 : 1);           // nhiệm vụ này chỉ tính 1 lần
+                am['award_' + currentKidId] = thisAward; am['aw_' + currentKidId] = kid.week_start;
+                if (db) await db.from('shared_quests').update({ attempts: am, completed_kids: completedKids }).eq('id', q.id);
+                try { localStorage.setItem('magicCurrentQuest', JSON.stringify(q)); } catch (e) {}
+                if (prevAward) showToast(`Điểm lượt làm lại (${thisAward}đ) đã THAY điểm cũ (${prevAward}đ)! 🔄`, 'success');
 
                 if (db) {
                     await db.from('magic_kids').update({
@@ -2393,7 +2400,7 @@ function genQs(s) {
     }
     return qs;
 }
-const cpOk = (cands, ans) => cands.some(t => { const n = t.toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/); return ans.some(x => n.some(w => w === x || w.replace(/(es|s)$/, '') === x.replace(/(es|s)$/, ''))); });
+const cpOk = (cands, ans) => window.__wm.any(cands, ans);
 const cpLevel = () => { const p = C.asked ? Math.round(C.sum / C.asked * 100) : 0; return { p, t: p >= 80 ? '🌟 Rất tốt' : p >= 50 ? '👍 Khá' : '💪 Cần nghe thêm' }; };
 function cpStat() { const l = cpLevel(); $('cpStat').textContent = C.asked ? `Hiểu ${l.p}% (${C.asked} câu) ${l.t}` : 'Chưa chơi'; }
 function cpNextSentence() {
@@ -2626,7 +2633,7 @@ setTimeout(async () => {                                // dọn dữ liệu cũ
 // ================== V5: ĐIỂM CHUẨN HẠNG + NHIỆM VỤ DÙNG ĐA CHỨC NĂNG ==================
 const CFG_DEF = {
     ranks: [{ min: 0, title: '🌱 Mầm Nhú Tiếng Tây', score: 150 }, { min: 5, title: '⚡ Siêu Nhân Ngoại Ngữ', score: 160 }, { min: 10, title: '🧠 Nhà Thông Thái', score: 170 }, { min: 15, title: '🔍 Chuyên Gia Ngôn Ngữ', score: 180 }, { min: 20, title: '📚 Bác Học Ngôn Ngữ', score: 190 }, { min: 25, title: '👑 Giáo Sư Tiếng Anh', score: 200 }],
-    q: { stories: 1, sentences: 2, comp: 3, quiz: 1, games: 2, gameTypes: 2, vocab: 0 }
+    q: { stories: 1, sentences: 2, comp: 3, quiz: 1, games: 2, gameTypes: 2, vocab: 0, fun: 1 }
 };
 const cfgOk = c => c && Array.isArray(c.ranks) && c.ranks.length && c.q;
 let CFG = (() => { try { const c = JSON.parse(store.get('magicCfg')); if (cfgOk(c)) return { ranks: c.ranks, q: { ...CFG_DEF.q, ...c.q } }; } catch (e) {} return JSON.parse(JSON.stringify(CFG_DEF)); })();
@@ -2659,7 +2666,7 @@ window.goQuestStep = function(key) {
     const routes = {
         story: ['read', 'playBtn'], sentences: ['practice', 'cardSentenceSection'],
         comp: ['read', 'cardComp'], quiz: ['play', 'gameMenu'], games: ['play', 'gameMenu'],
-        vocab: ['practice', 'kidWordInput'], score: ['play', 'gameMenu']
+        vocab: ['practice', 'kidWordInput'], fun: ['fun', 'cardFun'], score: ['play', 'gameMenu']
     };
     const target = routes[key]; if (!target) return;
     if (typeof setTab === 'function') setTab(target[0]);
@@ -2669,15 +2676,16 @@ window.goQuestStep = function(key) {
     else if (key === 'sentences') talk('Bé đọc câu mẫu rồi bấm micro để đọc lại nhé!');
     else if (key === 'comp') talk('Bé nghe câu hỏi rồi chọn hoặc nhập câu trả lời nha!');
     else if (key === 'quiz') { talk('Chọn Đố vui và trả lời đúng ít nhất 2 câu nhé!'); if (typeof playGame === 'function' && V().length >= 4) playGame('quiz'); }
+    else if (key === 'fun') talk('Bé vào thẻ Giải trí, bấm Chuyện nhiệm vụ, đọc và trả lời câu hỏi cuối bài nhé!');
     else if (key === 'games' || key === 'score') talk('Chọn một trò chơi, đạt ít nhất 10 điểm mỗi lượt nhé!');
     else talk('Chạm vào thẻ từ để nghe phát âm nhé!');
 };
-const fnCount = () => { const c = CFG.q, a = [c.stories, c.sentences, c.comp, c.quiz, c.games, c.vocab].filter(x => x > 0).length; return { a, p: Math.round(a / 6 * 100) }; };
+const fnCount = () => { const c = CFG.q, a = [c.stories, c.sentences, c.comp, c.quiz, c.games, c.vocab, c.fun].filter(x => x > 0).length; return { a, p: Math.round(a / 7 * 100) }; };
 function renderChecklist() {
     const box = $('questContent'); if (!box || !currentSharedQuest) return; const R = reqs(), f = fnCount(), q = currentSharedQuest, done = (q.completed_kids || []).includes(currentKidId);
     const g = $('cntReadStories') && $('cntReadStories').closest('.grid'); if (g) g.classList.add('hid');
     const nextStep = R.find(r => !r.ok);
-    box.innerHTML = `<div class="bg-amber-100 border-2 border-amber-300 rounded-xl p-2 text-[13px]">🎯 Bé phải dùng <b>${f.a}/6 chức năng (${f.p}%)</b> của trang. Làm đủ <b>tất cả</b> mục bên dưới mới được nộp điểm nhé!</div>
+    box.innerHTML = `<div class="bg-amber-100 border-2 border-amber-300 rounded-xl p-2 text-[13px]">🎯 Bé phải dùng <b>${f.a}/7 chức năng (${f.p}%)</b> của trang. Làm đủ <b>tất cả</b> mục bên dưới mới được nộp điểm nhé!</div>
     <div class="text-[12px]">📚 Truyện gợi ý hôm nay: <b class="text-blue-700">${(q.story_title || 'The Golden Goose').replace(/</g, '&lt;')}</b> (hoặc truyện khác)</div>
     ${nextStep ? `<div class="rounded-xl bg-blue-50 border-2 border-blue-300 p-2 text-[12px] font-black text-blue-800">👉 BƯỚC TIẾP THEO: ${nextStep.ic} ${nextStep.n}<div class="font-bold text-blue-700 mt-1">${nextStep.w}</div><button type="button" onclick="goQuestStep('${nextStep.key}')" class="mt-2 px-4 py-2 rounded-lg bg-blue-600 text-white font-black">Đi tới bước này ➜</button></div>` : ''}` +
         R.map(r => `<div class="flex items-center gap-2 p-2 rounded-xl border-2 ${r.ok ? 'bg-green-50 border-green-300' : 'bg-white border-amber-200'}"><span class="text-xl">${r.ok ? '✅' : r.ic}</span><div class="flex-1 min-w-0"><div class="text-[13px] font-black">${r.n}: <span class="${r.ok ? 'text-green-600' : 'text-orange-600'}">${Math.min(r.h, 9999)}/${r.d} ${r.u}</span>${r.x ? ` • <span class="${r.x.h >= r.x.d ? 'text-green-600' : 'text-orange-600'}">${r.x.h}/${r.x.d} ${r.x.u}</span>` : ''}</div><div class="text-[11px] text-slate-500 font-bold">${r.w}</div></div>${!r.ok ? `<button type="button" onclick="goQuestStep('${r.key}')" class="shrink-0 px-2 py-1 rounded-lg bg-indigo-100 text-indigo-700 text-[10px] font-black">Làm ngay</button>` : ''}</div>`).join('') +
@@ -2723,10 +2731,10 @@ function drawCfg(c) {
     ${c.ranks.map((r, i) => `<div class="flex gap-1 mb-1 items-center"><input type="number" min="0" data-r="${i}" data-f="min" value="${r.min}" class="${inp}" style="width:4.2rem" ${i ? '' : 'disabled'}><input data-r="${i}" data-f="title" value="${r.title.replace(/"/g, '&quot;')}" class="${inp}"><input type="number" min="1" data-r="${i}" data-f="score" value="${r.score}" class="${inp}" style="width:5rem"><button data-del="${i}" class="px-2 text-red-500">🗑️</button></div>`).join('')}
     <button id="cfgAdd" class="w-full py-1.5 mb-3 bg-purple-100 text-purple-700 rounded-xl text-xs font-black">➕ Thêm hạng mới</button>
     <div class="font-black text-purple-600 mb-1">📋 Bé phải làm gì mỗi nhiệm vụ</div><div class="grid grid-cols-2 gap-2 mb-2">
-    ${fld('stories', '📖 Nghe hết bài (bài)', 1)}${fld('sentences', '🗣️ Đọc đúng câu (câu)', 1)}${fld('comp', '👂 Nghe hiểu đúng (câu)', 1)}${fld('quiz', '❓ Đố vui (lượt)', 1, 'tính khi đúng ≥2 câu')}${fld('games', '🎮 Chơi game (lượt)', 1, 'tính khi đạt ≥10 điểm')}${fld('gameTypes', '🎮 Số loại game khác nhau', 1, 'không cần chơi hết 5 loại')}${fld('vocab', '🔤 Chạm nghe từ vựng (từ)', 0, '0 = không bắt buộc')}</div>
+    ${fld('stories', '📖 Nghe hết bài (bài)', 1)}${fld('sentences', '🗣️ Đọc đúng câu (câu)', 1)}${fld('comp', '👂 Nghe hiểu đúng (câu)', 1)}${fld('quiz', '❓ Đố vui (lượt)', 1, 'tính khi đúng ≥2 câu')}${fld('games', '🎮 Chơi game (lượt)', 1, 'tính khi đạt ≥10 điểm')}${fld('gameTypes', '🎮 Số loại game khác nhau', 1, 'không cần chơi hết 5 loại')}${fld('vocab', '🔤 Chạm nghe từ vựng (từ)', 0, '0 = không bắt buộc')}${fld('fun', '🎭 Giải trí: đọc chuyện (chuyện)', 0, 'chuyện cười/cổ tích/thần thoại giao ngẫu nhiên mỗi nhiệm vụ')}</div>
     <div id="cfgInd" class="bg-amber-50 border border-amber-200 rounded-xl p-2 text-[12px] mb-3"></div>
     <div class="flex gap-2"><button id="cfgSaveBtn" class="flex-1 py-2 bg-green-500 text-white rounded-xl font-black">💾 Lưu</button><button id="cfgReset" class="py-2 px-3 bg-slate-100 rounded-xl">↩️ Mặc định</button><button id="cfgClose" class="py-2 px-3 bg-slate-100 rounded-xl">Đóng</button></div></div>`;
-    const ind = () => { const old = CFG; CFG = c; const f = fnCount(); CFG = old; $('cfgInd').innerHTML = `Bé sẽ dùng <b>${f.a}/6 chức năng (${f.p}%)</b> ${f.p >= 80 ? '✅ đạt yêu cầu từ 80%' : '❌ cần từ 80%'}. Bắt buộc: nghe bài, đọc câu, nghe hiểu, đố vui, chơi game.`; }; ind();
+    const ind = () => { const old = CFG; CFG = c; const f = fnCount(); CFG = old; $('cfgInd').innerHTML = `Bé sẽ dùng <b>${f.a}/7 chức năng (${f.p}%)</b> ${f.p >= 80 ? '✅ đạt yêu cầu từ 80%' : '❌ cần từ 80%'}. Bắt buộc: nghe bài, đọc câu, nghe hiểu, đố vui, chơi game.`; }; ind();
     m.oninput = e => { const t = e.target; if (t.dataset.r != null) c.ranks[+t.dataset.r][t.dataset.f] = t.dataset.f === 'title' ? t.value : +t.value; else if (t.dataset.q) c.q[t.dataset.q] = +t.value; ind(); };
     m.onclick = e => { const t = e.target; if (t.dataset.del != null) { if (c.ranks.length > 1) { c.ranks.splice(+t.dataset.del, 1); drawCfg(c); } } };
     $('cfgAdd').onclick = () => { const l = c.ranks[c.ranks.length - 1]; c.ranks.push({ min: l.min + 5, title: '⭐ Hạng mới', score: l.score + 10 }); drawCfg(c); };
@@ -2736,7 +2744,8 @@ function drawCfg(c) {
         c.ranks.sort((a, b) => a.min - b.min); c.ranks[0].min = 0;
         const bad = c.ranks.some((r, i) => !r.title.trim() || !(r.score >= 1) || !(r.min >= 0) || (i && r.min === c.ranks[i - 1].min));
         if (bad) return showToast('Kiểm tra lại các hạng: tên không trống, điểm ≥ 1, số nhiệm vụ không trùng nhau!', 'warning');
-        const q = c.q; ['stories', 'sentences', 'comp', 'quiz', 'games', 'gameTypes'].forEach(k => q[k] = Math.max(1, Math.round(q[k] || 1))); q.vocab = Math.max(0, Math.round(q.vocab || 0)); q.gameTypes = Math.min(q.gameTypes, q.games, 5);
+        const q = c.q; ['stories', 'sentences', 'comp', 'quiz', 'games', 'gameTypes'].forEach(k => q[k] = Math.max(1, Math.round(q[k] || 1))); q.vocab = Math.max(0, Math.round(q.vocab || 0)); q.fun = Math.max(0, Math.round(q.fun == null ? 1 : q.fun)); q.gameTypes = Math.min(q.gameTypes, q.games, 5);
+        { const old = CFG; CFG = c; const fp = fnCount().p; CFG = old; if (fp < 80) return showToast('Bé cần dùng ít nhất 80% chức năng: hãy để Giải trí hoặc Từ vựng ít nhất 1.', 'warning'); }
         CFG = c; const cloud = await cfgSave(c); m.remove(); cfgRefresh();
         showToast(cloud ? 'Đã lưu và đồng bộ lên Cloud ✅' : 'Đã lưu trên máy này ✅ (để dùng chung nhiều máy, chạy file supabase_setup.sql)', 'success');
     };
@@ -2845,7 +2854,7 @@ setTimeout(async () => {                                // lấy cài đặt dù
   };
 
   // 3) Chúc mừng ngay khi hoàn thành một tiêu chí; chỉ rõ tiêu chí kế tiếp.
-  const __guideRoutes={story:'read',sentences:'practice',comp:'read',quiz:'play',games:'play',vocab:'practice',score:'play'};
+  const __guideRoutes={story:'read',sentences:'practice',comp:'read',quiz:'play',games:'play',vocab:'practice',fun:'fun',score:'play'};
   let __guideTimer=null, __arrowNode=null, __guideTarget=null, __guideReady=false, __guidePrev={}, __guidePendingKey=null;
   const __guideStateKey=()=>`magicGuideDone_${currentKidId}_${currentSharedQuest?.id||'none'}`;
   function __clearGuideArrow(){if(__arrowNode){__arrowNode.remove();__arrowNode=null;}if(__guideTarget)__guideTarget.classList.remove('magic-guide-target');__guideTarget=null;}
@@ -3214,8 +3223,8 @@ const starSVG = k => `<svg viewBox="0 0 100 100"><path d="M50 6 L62 36 L94 38 L6
 const rain = (list, n = 22) => { for (let i = 0; i < n; i++) { const e = document.createElement('span'); e.className = 'mj-fall'; e.textContent = pick(list); e.style.left = Math.random() * 100 + 'vw'; e.style.animationDelay = Math.random() * 1.2 + 's'; document.body.appendChild(e); setTimeout(() => e.remove(), 5000); } };
 const fanfare = () => [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => sfx(f, .18), i * 140));
 const closeOv = () => { document.querySelectorAll('.mj-ov,.mj-mini').forEach(x => x.remove()); };
-const TABFOR = { story: 'read', sentences: 'practice', comp: 'read', quiz: 'play', games: 'play', vocab: 'practice', score: 'play' };
-const ELFOR = { story: 'playBtn', sentences: 'sentenceChallengeArea', comp: 'cardComp', quiz: 'gameMenu', games: 'gameMenu', vocab: 'kidWordInput', score: 'gameMenu' };
+const TABFOR = { story: 'read', sentences: 'practice', comp: 'read', quiz: 'play', games: 'play', vocab: 'practice', fun: 'fun', score: 'play' };
+const ELFOR = { story: 'playBtn', sentences: 'sentenceChallengeArea', comp: 'cardComp', quiz: 'gameMenu', games: 'gameMenu', vocab: 'kidWordInput', fun: 'cardFun', score: 'gameMenu' };
 // --- hoàn thành 1 tiêu chí: chúc mừng + hiệu ứng + nói rõ bước tiếp theo ---
 function miniPop(done, next) {
     closeOv(); fanfare(); burst(...ctr(), WIN, 22); rain(['⭐', '🎉', '✨'], 14);
@@ -3279,7 +3288,7 @@ function showWheel() {
         let d = 90, t = 0; const tick = () => { sfx(500 + Math.random() * 200, .04); t += d; d *= 1.12; if (t < 4100) setTimeout(tick, d); }; tick();
         setTimeout(() => {
             busy = false; fanfare(); burst(...ctr(), WIN, real ? 30 : 10); const p = items[i];
-            if (real) { store.del(spinKey()); recordPrize(p); $('mjReal').disabled = true; $('mjReal').style.opacity = .45; $('mjReal').textContent = '✅ Đã quay'; rain(['🎁', '⭐', '🎉'], 26); $('mjRes').innerHTML = `🎉 Bé quay được: <span style="color:#dc2626">${esc(p)}</span><br><span style="font-size:12px">Đã ghi lên bảng thành tích${ptsOf(p) ? ` và cộng ${ptsOf(p)} điểm` : ''}!</span>`; talk('Bé quay trúng quà rồi! Giỏi quá! 🎁🥳'); }
+            if (real) { store.del(spinKey()); recordPrize(p); try { const q = currentSharedQuest; if (q) { (q.attempts || (q.attempts = {}))['spun_' + currentKidId] = 1; localStorage.setItem('magicCurrentQuest', JSON.stringify(q)); if (db) db.from('shared_quests').update({ attempts: q.attempts }).eq('id', q.id).then(() => {}, () => {}); } } catch (e) {} $('mjReal').disabled = true; $('mjReal').style.opacity = .45; $('mjReal').textContent = '✅ Đã quay'; rain(['🎁', '⭐', '🎉'], 26); $('mjRes').innerHTML = `🎉 Bé quay được: <span style="color:#dc2626">${esc(p)}</span><br><span style="font-size:12px">Đã ghi lên bảng thành tích${ptsOf(p) ? ` và cộng ${ptsOf(p)} điểm` : ''}!</span>`; talk('Bé quay trúng quà rồi! Giỏi quá! 🎁🥳'); }
             else { tries++; $('mjTn').textContent = tries; $('mjRes').innerHTML = `Quay thử ra: ${esc(p)}<br><span style="font-size:12px;color:#64748b">(chỉ để thử, không tính quà)</span>`; }
         }, 4350);
     };
@@ -3293,7 +3302,7 @@ const _us10 = updateSessionUI; updateSessionUI = function () { const r = _us10.a
 const _claim10 = claimQuestReward;
 claimQuestReward = async function () {
     const q = currentSharedQuest, was = q && (q.completed_kids || []).includes(currentKidId), r = await _claim10.apply(this, arguments);
-    if (q && !was && (q.completed_kids || []).includes(currentKidId)) { store.set(spinKey(), '1'); refreshSpin(); setTimeout(showWheel, 900); }
+    if (q && !was && (q.completed_kids || []).includes(currentKidId) && !(q.attempts && q.attempts['spun_' + currentKidId])) { store.set(spinKey(), '1'); refreshSpin(); setTimeout(showWheel, 900); }
     return r;
 };
 // --- Bố Mẹ chỉnh danh sách quà ---
@@ -3345,19 +3354,20 @@ const HELP = {
     'retap': '✅ Bé đã cho phép micro rồi! Chạm 🎤 thêm một lần nữa nhé.'
 };
 const joinSegs = a => { const out = []; a.forEach(t => { t = (t || '').trim(); if (!t) return; const p = out[out.length - 1]; if (p && t.toLowerCase().startsWith(p.toLowerCase())) out[out.length - 1] = t; else if (p && p.toLowerCase().includes(t.toLowerCase())) return; else out.push(t); }); return out.join(' '); };   // Android hay trả đoạn cộng dồn → bỏ trùng
+const FOREIGN = /[\u0400-\u04ff\u0590-\u06ff\u0e00-\u0e7f\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af\uff00-\uffef]/, LANGS = ['en-US', 'en-GB', 'en-IN', 'en-AU'];
 const FATAL = /not-allowed|service-not-allowed|audio-capture|language-not-supported|network/;
 let cur = null, preOk = false;
 const abort = () => { if (cur) { const c = cur; cur = null; c.kill(); } };
 // ---------- nghe & nhận giọng: đồng hồ đếm ngược, tự mở lại khi micro tắt sớm, xin quyền đúng cách ----------
 function listen(o) {
     abort(); try { stopAudio(); } catch (e) {}
-    let rec = null, done = false, ready = false, stopping = false, restarts = 0, err = '', tStart = 0, iv = null, rto = null, gto = null, acc = '', segF = '', segI = '', alts = [], resolve;
+    let rec = null, done = false, ready = false, stopping = false, restarts = 0, err = '', foreign = 0, langIdx = 0, tStart = 0, iv = null, rto = null, gto = null, acc = '', segF = '', segI = '', alts = [], resolve;
     let lastAct = Date.now(); const hardCap = (o.manual ? 120000 : 60000) * SC(), pr = new Promise(r => resolve = r); let maxMs = (o.manual ? 120000 : o.maxMs) * SC(); const text = () => (acc + ' ' + (segF || segI)).trim();
     const end = reason => {
         if (done) return; done = true; clearInterval(iv); clearTimeout(rto); clearTimeout(gto);
         try { if (rec) { rec.onresult = rec.onerror = rec.onend = rec.onstart = rec.onaudiostart = null; rec.abort(); } } catch (e) {}
         if (cur === ctl) cur = null; const t = text();
-        resolve({ text: t, alts: alts.length ? alts : (t ? [t] : []), reason: reason === 'ok' && !t ? 'silence' : reason, err });
+        resolve({ text: t, alts: alts.length ? alts : (t ? [t] : []), reason: reason === 'ok' && !t ? (foreign ? 'foreign' : 'silence') : reason, err });
     };
     const ctl = { promise: pr, stop() { if (done || stopping) return; stopping = true; o.onFinishing && o.onFinishing(); try { rec && rec.stop(); } catch (e) {} gto = setTimeout(() => end('ok'), 2600); }, kill() { end('stopped'); } };
     cur = ctl;
@@ -3366,9 +3376,11 @@ function listen(o) {
         iv = setInterval(() => { const el = Date.now() - tStart, left = maxMs - el; o.onTick && o.onTick(Math.max(0, left), maxMs, el); if (left <= 0) { if (o.extend && Date.now() - lastAct < 2200 && el < hardCap) { maxMs += 4000 * SC(); o.onExtend && o.onExtend(); } else { clearInterval(iv); ctl.stop(); } } }, 100);
     };
     const startRec = () => {
-        segF = ''; segI = ''; rec = new (SRC())(); rec.lang = 'en-US'; rec.interimResults = true; rec.continuous = !IOS; rec.maxAlternatives = 3;      // máy nghe liền mạch (trừ iPhone/iPad)
+        segF = ''; segI = ''; rec = new (SRC())(); rec.lang = LANGS[langIdx % LANGS.length]; rec.interimResults = true; rec.continuous = !IOS; rec.maxAlternatives = 3;      // máy nghe liền mạch (trừ iPhone/iPad)
         rec.onstart = () => { if (IOS) markReady(); }; rec.onaudiostart = markReady; rec.onspeechstart = rec.onsoundstart = () => { lastAct = Date.now(); if (!ready) markReady(); };
-        rec.onresult = e => { lastAct = Date.now(); const fs = []; let i = ''; for (let k = 0; k < e.results.length; k++) { const r = e.results[k]; if (r.isFinal) { fs.push(r[0].transcript); alts = [...r].map(a => a.transcript); } else i += ' ' + r[0].transcript; } segF = joinSegs(fs); segI = i.trim(); o.onText && o.onText(text()); if (segF && o.done && !stopping && o.done(text())) ctl.stop(); };
+        rec.onresult = e => { lastAct = Date.now(); const fs = []; let i = ''; let bad = false; for (let k = 0; k < e.results.length; k++) { const r = e.results[k], keep = [...r].map(a => a.transcript).filter(t => !FOREIGN.test(t)); if (!keep.length) { bad = true; continue; } if (r.isFinal) { fs.push(keep[0]); alts = keep; } else i += ' ' + keep[0]; }
+        if (bad) { foreign++; if (foreign <= 2 && !stopping && !segF && !acc) { langIdx++; try { rec.abort(); } catch (x) {} } }   // máy nghe ra tiếng khác: đổi giọng vùng khác và nghe lại
+        segF = joinSegs(fs); segI = i.trim(); o.onText && o.onText(text()); if (segF && o.done && !stopping && o.done(text())) ctl.stop(); };
         rec.onerror = e => { err = e.error || 'error'; if (FATAL.test(err)) end('error'); };
         rec.onend = () => {
             if (done) return; acc = text(); segF = segI = ''; if (stopping) return end('ok');
@@ -3414,15 +3426,49 @@ function record(o) {
     })();
     return { promise: pr, stop() { stopFn && stopFn(); }, kill() { stopFn && stopFn(); } };
 }
-// ---------- chấm điểm câu đọc: cho phép sai 1 chữ cái, bỏ dấu nháy, hiện từ nào đúng/sai ----------
-const nrm = t => String(t || '').toLowerCase().replace(/[’']/g, '').replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(Boolean);
+// ---------- chấm điểm câu đọc thông minh: đồng âm, nối từ, tách/ghép từ, từ nhỏ bị "nuốt" khi đọc nối ----------
+const HOMO = 'to,too,two|no,know|write,right,rite|see,sea|be,bee|by,buy,bye|for,four,fore|hear,here|new,knew|one,won|son,sun|their,there,theyre|your,youre|whole,hole|wood,would|meet,meat|mail,male|tail,tale|sail,sale|pair,pear,pare|bear,bare|dear,deer|flower,flour|hair,hare|read,red,reed|road,rode|sight,site|steal,steel|wait,weight|way,weigh|weak,week|wear,where,were|which,witch|break,brake|blue,blew|eight,ate|night,knight|nose,knows|not,knot|plain,plane|peace,piece|rain,reign|ring,wring|some,sum|stair,stare|toe,tow|waist,waste|aunt,ant|aloud,allowed|berry,bury|cell,sell|fair,fare|feet,feat|fur,fir|flea,flee|great,grate|hi,high|hour,our|need,knead|made,maid|main,mane|pain,pane|peak,peek|role,roll|root,route|scene,seen|seem,seam|so,sew,sow|sole,soul|steak,stake|tea,tee|tide,tied|vain,vein|whale,wail|wine,whine|eye,i|sent,scent,cent|pour,pore,poor|bored,board|die,dye|heard,herd|him,hymn|horse,hoarse|pray,prey|real,reel|rap,wrap|sauce,source|shore,sure|soar,sore|story,storey|sweet,suite|team,teem|tear,tier|throne,thrown|time,thyme|weather,whether|then,than|cant,cannot|dont,donot|its,itis|thats,thatis|lets,letus|im,iam|ill,iwill|youre,youare|were,weare|theyre,theyare|hes,heis|shes,sheis|whats,whatis|gonna,goingto|wanna,wantto|gotta,gottato|kinda,kindof|lotta,lotof|outta,outof|gimme,giveme|lemme,letme|dunno,donotknow|cause,because|cuz,because|em,them';
+const HG = new Map(); HOMO.split('|').forEach((g, i) => g.split(',').forEach(w => { if (!HG.has(w)) HG.set(w, new Set()); HG.get(w).add(i); }));
+const homo = (a, b) => { const A = HG.get(a), B = HG.get(b); if (!A || !B) return false; for (const x of A) if (B.has(x)) return true; return false; };
+const NUMW = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];
+const tok1 = w => { const t = String(w || '').toLowerCase().replace(/[’']/g, '').replace(/[^a-z0-9]/g, ''); return /^\d+$/.test(t) && +t < NUMW.length ? NUMW[+t] : t; };
+const nrm = t => String(t || '').toLowerCase().split(/\s+/).map(tok1).filter(Boolean);
 const lev = (a, b) => { const d = Array.from({ length: a.length + 1 }, (_, i) => [i]); for (let j = 1; j <= b.length; j++) d[0][j] = j; for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++) d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); return d[a.length][b.length]; };
-const near = (a, b) => a === b || a.replace(/s$/, '') === b.replace(/s$/, '') || (a.length >= 4 && b.length >= 4 && lev(a, b) <= 1);
-function scoreSentence(orig, heards) {
-    const ow = nrm(orig); let best = { pct: 0, marks: ow.map(() => false), heard: heards[0] || '' };
-    heards.filter(Boolean).forEach(h => { const hw = nrm(h), used = hw.map(() => false), marks = ow.map(w => { const k = hw.findIndex((x, i) => !used[i] && near(w, x)); if (k >= 0) { used[k] = true; return true; } return false; }); const pct = ow.length ? Math.round(marks.filter(Boolean).length / ow.length * 100) : 0; if (pct > best.pct) best = { pct, marks, heard: h }; });
-    return best;
+const stem = w => w.replace(/(ing|ed|es|s|ly)$/, '');
+const skel = w => w.replace(/^kn/, 'n').replace(/^wr/, 'r').replace(/ph/g, 'f').replace(/ck/g, 'k').replace(/gh/g, '').replace(/tion|sion/g, 'shn').replace(/[aeiouy]+/g, '*').replace(/(.)\1+/g, '$1');
+function wm(a, b) {                                                                       // độ giống của 2 từ: 0..1
+    if (!a || !b) return 0; if (a === b) return 1; if (homo(a, b)) return .95;
+    const L = Math.max(a.length, b.length), mn = Math.min(a.length, b.length); if (mn >= 3 && stem(a) === stem(b)) return .9;
+    const d = lev(a, b); if (L >= 4 && d <= 1) return .85; if (L >= 7 && d <= 2) return .8;
+    if (a.length >= 6 && b.length >= 6 && a[0] === b[0] && skel(a) === skel(b)) return .8;
+    if (b.length >= 3 && a.startsWith(b) && b.length >= a.length * .6) return .7;      // máy nghe cụt đuôi
+    if (a.length >= 3 && b.startsWith(a) && a.length >= b.length * .6) return .7;
+    return 0;
 }
+const SOFT = new Set('a an the of to in on at is are was were and or it its he she we they i my his her your our their this that for with as be am do does did'.split(' '));
+function align(ow, hw) {                                                                  // xếp thẳng hàng 2 dãy từ, cho phép bỏ, ghép 2 từ nghe thành 1 hoặc ngược lại
+    const n = ow.length, m = hw.length, dp = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(0)), bt = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(null));
+    for (let i = 1; i <= n; i++) for (let j = 0; j <= m; j++) {
+        let best = dp[i - 1][j], op = ['so', 0];
+        if (j > 0 && dp[i][j - 1] > best) { best = dp[i][j - 1]; op = ['sh', 0]; }
+        if (j > 0) { const w = wm(ow[i - 1], hw[j - 1]); if (w >= .65 && dp[i - 1][j - 1] + w > best) { best = dp[i - 1][j - 1] + w; op = ['m', w]; } }
+        if (j > 1) { const w = wm(ow[i - 1], hw[j - 2] + hw[j - 1]); if (w >= .8 && dp[i - 1][j - 2] + w > best) { best = dp[i - 1][j - 2] + w; op = ['h2', w]; } }
+        if (i > 1 && j > 0) { const w = wm(ow[i - 2] + ow[i - 1], hw[j - 1]); if (w >= .8 && dp[i - 2][j - 1] + 2 * w > best) { best = dp[i - 2][j - 1] + 2 * w; op = ['o2', w]; } }
+        dp[i][j] = best; bt[i][j] = op;
+    }
+    const marks = ow.map(() => false), wt = ow.map(() => 0); let i = n, j = m;
+    while (i > 0 || j > 0) { if (i === 0) { j--; continue; } const [o, w] = bt[i][j]; if (o === 'so') i--; else if (o === 'sh') j--; else if (o === 'm') { marks[i - 1] = true; wt[i - 1] = w; i--; j--; } else if (o === 'h2') { marks[i - 1] = true; wt[i - 1] = w; i--; j -= 2; } else { marks[i - 1] = marks[i - 2] = true; wt[i - 1] = wt[i - 2] = w; i -= 2; j--; } }
+    for (let k = 0; k < n; k++) if (!marks[k] && SOFT.has(ow[k]) && (k === 0 || marks[k - 1]) && (k === n - 1 || marks[k + 1])) { marks[k] = true; wt[k] = .5; }   // đọc nối: từ nhỏ như a/the/of hay bị nuốt
+    return { marks, wt };
+}
+function scoreSentence(orig, heards) {
+    const spans = String(orig).split(/\s+/), toks = spans.map(tok1), idx = toks.map((t, i) => t ? i : -1).filter(i => i >= 0), ow = idx.map(i => toks[i]);
+    const run = h => { const { marks, wt } = align(ow, nrm(h)), full = spans.map(() => true), w2 = spans.map(() => 1); idx.forEach((si, k) => { full[si] = marks[k]; w2[si] = wt[k]; }); const pct = ow.length ? Math.round(wt.reduce((a, b) => a + b, 0) / ow.length * 100) : 0; return { pct, marks: full, heard: h }; };
+    const list = heards.filter(Boolean).slice(0, 6).map(run); if (!list.length) return { pct: 0, marks: spans.map(() => false), heard: '' };
+    const best = list.reduce((a, b) => b.pct > a.pct ? b : a), un = spans.map((_, i) => list.some(r => r.marks[i])), unPct = Math.round(un.filter(Boolean).length / spans.length * 100 * .95);   // gộp các cách nghe khác nhau của máy
+    return unPct > best.pct ? { pct: unPct, marks: un, heard: best.heard } : best;
+}
+const anyMatch = (cands, answers) => cands.some(t => { const tk = nrm(t); return answers.some(ans => { const a = tok1(ans); return tk.some((w, i) => wm(w, a) >= .8 || (i + 1 < tk.length && wm(w + tk[i + 1], a) >= .8)); }); });
 const setBtn = (btn, on, label) => { btn.textContent = on ? '⏹️ Xong rồi' : label; btn.classList.toggle('bg-red-500', on); btn.classList.toggle('bg-pink-500', !on); };
 const cdUI = el => ({ show() { el.classList.remove('hid'); el.innerHTML = '<div class="mic-bar"><i></i></div><span></span>'; }, tick(l, t, el2) { const i = el.querySelector('i'), s = el.querySelector('span'); if (!i) return; if (this.manual) { i.style.width = '100%'; i.style.background = '#22c55e'; s.textContent = `⏺️ Đã thu ${Math.floor(el2 / 1000 / SC())} giây`; return; } i.style.width = (l / t * 100) + '%'; i.style.background = l < 3000 * SC() ? '#ef4444' : l < 6000 * SC() ? '#f59e0b' : '#22c55e'; s.textContent = `⏱️ Còn ${Math.ceil(l / 1000 / SC())} giây`; }, hide() { el.classList.add('hid'); el.innerHTML = ''; } });
 // ---------- Thử thách đọc cả câu ----------
@@ -3492,6 +3538,7 @@ recordSentenceVoice = async function (btn, enc) {
         const env = (+item.dataset.env || 0) + 1; item.dataset.env = env;
         fb.innerHTML = `<span class="text-red-500">${HELP[r.err] || '😕 Micro gặp trục trặc. Bé thử lại nhé.'}</span>` + (env >= 2 || /unsupported|language-not-supported|service-not-allowed/.test(r.err) ? '<button onclick="useRecorder(this)" class="mt-1 w-full py-2 bg-sky-500 text-white font-black rounded-lg">🎙️ Dùng chế độ thu âm dự phòng</button>' : ''); return;
     }
+    if (r.reason === 'foreign') return failSentence(item, '🌏 Máy nghe thấy tiếng khác (giống tiếng Trung hoặc âm thanh xung quanh) chứ chưa phải giọng bé đọc tiếng Anh. Bé tránh nơi ồn, cầm micro gần miệng hơn, đọc to và rõ rồi thử lại nhé!');
     if (r.reason === 'silence') return failSentence(item, '🙉 Máy chưa nghe thấy giọng bé. Bé cầm điện thoại gần miệng hơn, đọc to và rõ rồi thử lại nhé!');
     const sc = scoreSentence(sentence, [...r.alts, r.text]), need = words >= 12 ? 65 : 70;
     item.querySelectorAll('.sent-text span').forEach((s, i) => { s.className = sc.marks[i] ? 'ok' : 'bad'; });
@@ -3537,7 +3584,7 @@ gSpeak = function () {
             ctl = listen({ maxMs: 8000, extend: true, onPrep: x => sr.textContent = x, onReady: () => { sr.innerHTML = '<span class="text-pink-600 animate-pulse">🎤 Bé nói đi!</span>'; cdu.show(); }, onTick: (l, t) => cdu.tick(l, t), onText: t => sr.textContent = '👂 ' + t });
             const r = await ctl.promise; ctl = null; cdu.hide(); mic.textContent = '🎤 Bé nói'; if (r.reason === 'stopped') return;
             if (r.reason === 'error') { sr.innerHTML = `<span class="text-red-500">${r.err === 'retap' ? HELP.retap : (HELP[r.err] || 'Micro gặp trục trặc, bé thử lại nhé.')}</span>`; return; }
-            const ok = [...r.alts, r.text].some(a => nrm(a).some(w => near(w, v.word)));
+            const ok = anyMatch([...r.alts, r.text], [v.word]);
             if (ok) { sr.innerHTML = '🎉 Chuẩn luôn!'; burst(...ctr(), WIN, 12); go(10); }
             else { fails++; sr.innerHTML = r.reason === 'silence' ? '🙉 Chưa nghe thấy bé nói, thử lại nhé!' : `🤔 Máy nghe là "${esc2(r.text)}" — thử lại nhé!`; wig(area()); if (fails >= 3) sr.innerHTML += '<div class="mt-1 p-2 bg-amber-50 border-2 border-amber-300 rounded-xl">Bé nói vài lần chưa được rồi 😊 <b>Thử lại</b> hoặc bấm <b>⏭️ Bỏ qua</b> để đổi từ khác nhé!</div>'; }
         };
@@ -3552,7 +3599,239 @@ window.micTest = async () => {
     $('mtMsg').textContent = r.voicedMs > 600 * SC() ? `✅ Micro tốt! Máy nghe được giọng bé ${(r.voicedMs / 1000).toFixed(1)} giây. Bé nghe lại nhé:` : '⚠️ Gần như không nghe thấy giọng bé. Bé kiểm tra micro có bị che không, nói to hơn, hoặc cho phép micro trong Cài đặt nhé. Nghe lại bản thu:';
     $('mtOut').innerHTML = r.url ? `<audio controls src="${r.url}" class="w-full mt-1"></audio>` : '';
 };
+window.__wm = { wm, score: scoreSentence, any: anyMatch };
 window.__mic = { listen, record, scoreSentence, abort };
+})();
+
+
+// ================== V13: THẺ GIẢI TRÍ (chuyện cười, cổ tích, thần thoại) + NHIỆM VỤ NGẪU NHIÊN ==================
+(() => {
+const FN = `P|the=cái hoặc những (đứng trước danh từ);a=một;an=một;of=của;to=đến hoặc để;in=ở trong;on=ở trên;at=ở tại;by=bởi hoặc bên cạnh;for=cho hoặc vì;with=cùng với;from=từ;into=vào trong;over=bên trên;under=bên dưới;up=lên;down=xuống;out=ra ngoài;off=tắt hoặc rời;about=về hoặc khoảng;after=sau khi;before=trước khi;between=ở giữa;through=xuyên qua;without=không có;against=chống lại;behind=phía sau;beside=bên cạnh;across=băng qua;around=xung quanh;along=dọc theo;toward=hướng về;upon=ở trên
+C|and=và;but=nhưng;or=hoặc;so=vì vậy;because=bởi vì;if=nếu;when=khi;while=trong khi;then=sau đó;than=hơn;that=rằng hoặc đó;as=như hoặc khi;until=cho đến khi;although=mặc dù
+R|i=tôi;you=bạn;he=anh ấy;she=cô ấy;it=nó;we=chúng ta;they=họ;me=tôi;him=anh ấy;her=cô ấy;us=chúng ta;them=họ;my=của tôi;your=của bạn;his=của anh ấy;its=của nó;our=của chúng ta;their=của họ;this=cái này;these=những cái này;those=những cái kia;who=ai;what=cái gì;where=ở đâu;why=tại sao;how=như thế nào;which=cái nào
+X|is=thì hoặc là;are=thì hoặc là;am=thì hoặc là;was=đã là;were=đã là;be=thì hoặc là;been=đã là;do=làm;does=làm;did=đã làm;have=có;has=có;had=đã có;will=sẽ;would=sẽ hoặc muốn;can=có thể;could=đã có thể;should=nên;must=phải;may=có thể;might=có thể;not=không;no=không;yes=vâng;all=tất cả;some=một vài;any=bất kỳ;many=nhiều;much=nhiều;more=nhiều hơn;most=nhiều nhất;every=mỗi;each=mỗi;other=khác;another=một cái khác;both=cả hai;there=ở đó;here=ở đây;now=bây giờ;once=một lần hoặc ngày xưa;too=cũng hoặc quá;also=cũng;just=vừa hoặc chỉ;only=chỉ;still=vẫn;even=thậm chí;ever=từng;very=rất;never=không bao giờ;always=luôn luôn;please=làm ơn;thank=cảm ơn;hello=xin chào;let=để cho;oh=ôi;wow=ôi chao;okay=được rồi`;
+const PF = { P: 'Giới từ', C: 'Liên từ', R: 'Đại từ', X: 'Từ chức năng' };
+FN.split('\n').forEach(l => { const i = l.indexOf('|'), pos = PF[l.slice(0, i)]; l.slice(i + 1).split(';').forEach(e => { const [w, m] = e.split('='); if (w && m && !LOCAL_DICTIONARY[w]) LOCAL_DICTIONARY[w] = { m, p: pos }; }); }); _dw = null;
+// ---------- 100+ chuyện cười: emoji|câu hỏi|câu trả lời (từ chính để *đánh dấu*) ----------
+const JOKES = `🐔|Why did the chicken cross the road?|To get to the *other* side.
+🍌|Why did the banana go to the doctor?|Because it was not *peeling* well.
+🐄|What do you call a sleeping cow?|A *bulldozer*.
+🐝|What do you call a bee that cannot make up its mind?|A *maybe*.
+🐻|What do you call a bear with no teeth?|A *gummy* bear.
+🍯|Why do bees have sticky hair?|Because they use *honeycombs*.
+🐷|What do you call a pig that does karate?|A pork *chop*.
+🎬|What do cows do for fun?|They go to the *moo*-vies.
+🐸|Why are frogs so happy?|They eat whatever *bugs* them.
+🦖|What do you call a sleeping dinosaur?|A dino-*snore*.
+🐦|Why do birds fly south in winter?|Because it is too far to *walk*.
+🐱|What is a cat's favorite color?|*Purr*-ple.
+🥩|What do you call a cow with no legs?|Ground *beef*.
+🦆|What did the duck say when she bought lipstick?|Put it on my *bill*.
+🐿️|How do you catch a squirrel?|Climb a tree and act like a *nut*.
+🐭|Why did the cat sit on the computer?|To keep an eye on the *mouse*.
+👻|What is a ghost's favorite fruit?|*Boo*-berries.
+🎹|Why do fish not play the piano?|Because you cannot *tuna* fish.
+🐒|What kind of key opens a banana?|A *mon*-key.
+🚀|Why did the cow go to space?|To see the *Milky* Way.
+🏝️|Where do sheep go on holiday?|The *Baa*-hamas.
+🕵️|What do you call an alligator in a vest?|An *investigator*.
+💕|What do you call two birds in love?|*Tweet*-hearts.
+🕷️|Why did the spider go on the computer?|To check his *website*.
+☁️|What do you call a sheep with no legs?|A *cloud*.
+🧀|What do you call cheese that is not yours?|*Nacho* cheese.
+🍪|Why did the cookie go to the doctor?|Because it felt *crumby*.
+🥗|Why did the tomato turn red?|Because it saw the salad *dressing*.
+🍇|What did the grape say when it got stepped on?|Nothing, it just let out a little *whine*.
+🍝|What do you call a fake noodle?|An *impasta*.
+🍊|Why did the orange stop rolling?|It ran out of *juice*.
+🥚|How do you make an egg laugh?|Tell it a *yolk*.
+🍓|Why did the strawberry cry?|Because its mom was in a *jam*.
+🥬|What did the lettuce say to the celery?|Stop *stalking* me.
+⛄|What do you get when you cross a snowman and a vampire?|*Frostbite*.
+📘|Why was the math book sad?|Because it had too many *problems*.
+🕶️|Why did the teacher wear sunglasses?|Because her students were so *bright*.
+➕|What is a math teacher's favorite season?|*Sum*-mer.
+7️⃣|Why was six afraid of seven?|Because seven *ate* nine.
+🪜|Why did the student bring a ladder to school?|Because he wanted to go to *high* school.
+📚|What building has the most stories?|The *library*.
+✏️|Why did the pencil go to school?|To get *sharper*.
+🚲|Why could the bicycle not stand up by itself?|It was two-*tired*.
+⏰|What has hands but cannot clap?|A *clock*.
+🧺|What gets wetter the more it dries?|A *towel*.
+🎹|What has keys but cannot open locks?|A *piano*.
+🪡|What has one eye but cannot see?|A *needle*.
+🪮|What has teeth but cannot bite?|A *comb*.
+🌊|What runs but never walks?|A *river*.
+🤧|What can you catch but not throw?|A *cold*.
+🍾|What has a neck but no head?|A *bottle*.
+🎂|What goes up but never comes down?|Your *age*.
+🖼️|Why did the picture go to jail?|Because it was *framed*.
+🪃|What do you call a boomerang that will not come back?|A *stick*.
+🌾|Why did the scarecrow win an award?|He was outstanding in his *field*.
+🏖️|What did the ocean say to the beach?|Nothing, it just *waved*.
+🌸|What did the big flower say to the little flower?|Hi, *bud*!
+🌕|Why is the moon not hungry?|Because it is *full*.
+🧱|What did one wall say to the other wall?|I will meet you at the *corner*.
+🍄|What kind of room has no doors?|A *mushroom*.
+💧|What do you call a snowman in summer?|A *puddle*.
+❄️|What falls in winter but never gets hurt?|*Snow*.
+🌙|How does the moon cut his hair?|*Eclipse* it.
+☀️|Why did the sun go to school?|To get *brighter*.
+💻|Why was the computer cold?|It left its *windows* open.
+🤖|What do robots eat for a snack?|Micro-*chips*.
+📱|Why did the smartphone need glasses?|It lost all its *contacts*.
+🧹|What did the mother broom say to the baby broom?|It is time to go to *sweep*.
+👃|Why can a nose not be twelve inches long?|Because then it would be a *foot*.
+🚂|What do you call a train carrying bubble gum?|A *chew*-chew train.
+🏝️|Where do pencils go on vacation?|*Pencil*-vania.
+🎵|What kind of music do mummies listen to?|*Wrap* music.
+🛗|Why do ghosts like elevators?|It lifts their *spirits*.
+🧙|What is a witch's favorite subject at school?|*Spelling*.
+🏖️|What do you call a witch who lives at the beach?|A *sand*-witch.
+💀|What did the skeleton say before eating?|*Bone* appetit.
+0️⃣|What did the zero say to the eight?|Nice *belt*!
+🐕|What kind of dog loves taking baths?|A *shampoo*-dle.
+☀️|Why do bananas put on sunscreen?|Because they *peel*.
+🎳|What do you call a cat that loves to bowl?|An *alley* cat.
+🎩|What do you call a dog magician?|A *labracadabrador*.
+🎉|Why did the mushroom go to the party?|Because he was a fun *guy*.
+🐘|What do you call an elephant that does not matter?|An *irrelephant*.
+🐈|What do you call a pile of kittens?|A *meowtain*.
+🦷|Why did the tree go to the dentist?|To get a *root* canal.
+🍂|What did the tree say to autumn?|*Leaf* me alone.
+🚛|What has four wheels and flies?|A garbage *truck*.
+🥷|What kind of shoes do ninjas wear?|*Sneakers*.
+🔔|Why do cows wear bells?|Because their *horns* do not work.
+⛈️|What does a cloud wear under his raincoat?|*Thunder*wear.
+⛰️|What do you call a funny mountain?|*Hill*-arious.
+🏦|Why is a river rich?|Because it has two *banks*.
+🦕|What do you call a dinosaur with a big vocabulary?|A *thesaurus*.
+🧈|Why did the kid throw butter out of the window?|To see a *butterfly*.
+🏗️|What kind of bird works at a construction site?|A *crane*.
+🐆|Why can a leopard not hide?|Because he is always *spotted*.
+🐰|What do you call a rabbit who tells jokes?|A *funny* bunny.
+🐜|Why was the baby ant confused?|Because all his uncles were *ants*.
+🐟|What do you call a fish wearing a bowtie?|*Sofishticated*.
+🎼|Why did the music teacher need a ladder?|To reach the high *notes*.
+🐍|What is a snake's favorite subject?|*Hiss*-tory.
+🍞|Why do bakers work so hard?|Because they *knead* the dough.
+🌽|What did the baby corn say to the mama corn?|Where is *pop* corn?
+🤠|What do you call a happy cowboy?|A *jolly* rancher.
+🏴‍☠️|What is a pirate's favorite subject at school?|*Arrr*ithmetic.
+🦒|Why do giraffes have long necks?|Because their feet *smell*.
+🦆|What do you call a duck that gets all A's?|A *wise* quacker.
+🚦|What did one traffic light say to the other?|Do not look, I am *changing*.
+🧹|What did the janitor say when he jumped out of the closet?|*Supplies*!
+🐻|What do you call a bear in the rain?|A *drizzly* bear.
+🐄|What do you call a cow in an earthquake?|A *milkshake*.
+⭐|What kind of fish only comes out at night?|A *starfish*.`.split('\n').map((l, i) => { const [art, q, a] = l.split('|'); return { id: 'j' + i, type: 'joke', art, q, a }; });
+// ---------- chuyện cổ tích / thần thoại: tên, loại, emoji, các đoạn [emoji, nội dung], câu hỏi [hỏi, đúng, sai1, sai2] ----------
+const T = (id, type, title, art, panels, qs) => ({ id, type, title, art, panels, qs });
+const TALES = [
+    T('t1', 'tale', 'The Tortoise and the Hare', '🐢🐇', [['🐇', 'A hare laughed at a slow tortoise. "I can run faster than you!" he said.'], ['🏁', 'The tortoise said, "Let us have a race." All the animals came to watch.'], ['💤', 'The hare ran fast. Then he sat under a tree and fell asleep.'], ['🏆', 'The tortoise walked slowly and never stopped. He crossed the line first and won the race.']], [['Who won the race?', 'The tortoise', 'The hare', 'The fox'], ['What did the hare do under the tree?', 'He slept', 'He sang', 'He ate']]),
+    T('t2', 'tale', 'The Boy Who Cried Wolf', '🐺🐑', [['⛰️', 'A shepherd boy watched the sheep on a hill. He was bored.'], ['📣', 'He shouted, "Wolf! Wolf!" The villagers ran to help, but there was no wolf.'], ['😠', 'He did it again, and the villagers were very angry.'], ['🐺', 'One day a real wolf came. The boy cried for help, but nobody came. The sheep ran away.']], [['What did the boy shout?', 'Wolf', 'Fire', 'Thief'], ['Why did nobody come at last?', 'The boy had lied before', 'It was night', 'They were sleeping']]),
+    T('t3', 'tale', 'The Ant and the Grasshopper', '🐜🦗', [['🎻', 'In summer, a grasshopper sang and played all day. An ant worked hard and carried food home.'], ['🙅', '"Come and play!" said the grasshopper. "No," said the ant. "I must get ready for winter."'], ['❄️', 'Winter came. It was cold and the grasshopper had no food.'], ['🤝', 'The ant shared some food with him. The grasshopper learned to work hard.']], [['What did the ant carry home?', 'Food', 'Toys', 'Stones'], ['What did the grasshopper learn?', 'To work hard', 'To sing louder', 'To sleep more']]),
+    T('t4', 'tale', 'The Lion and the Mouse', '🦁🐭', [['🦁', 'A little mouse ran over a sleeping lion. The lion woke up and caught her.'], ['🙏', '"Please let me go," said the mouse. "One day I will help you." The lion laughed, but he let her go.'], ['🕸️', 'Later, hunters caught the lion in a net. He roared loudly.'], ['✂️', 'The mouse heard him. She chewed the rope and set the lion free.']], [['Who helped the lion?', 'The mouse', 'The fox', 'The bird'], ['What did the mouse chew?', 'The rope', 'A leaf', 'A stick']]),
+    T('t5', 'tale', 'The Fox and the Grapes', '🦊🍇', [['🍇', 'A hungry fox saw sweet grapes high on a vine.'], ['🦘', 'He jumped and jumped, but he could not reach them.'], ['😒', '"Those grapes are sour anyway," he said, and walked away.']], [['What did the fox want?', 'Grapes', 'Apples', 'Fish'], ['Could the fox reach the grapes?', 'No', 'Yes', 'Maybe']]),
+    T('t6', 'tale', 'The Three Little Pigs', '🐷🐷🐷', [['🏠', 'Three little pigs built three houses: one of straw, one of sticks, and one of bricks.'], ['🐺', 'A big bad wolf huffed and puffed and blew down the straw house and the stick house.'], ['🧱', 'The two pigs ran to the brick house. The wolf huffed and puffed, but the house did not fall.'], ['🎉', 'The wolf ran away, and the three pigs were safe.']], [['Which house was the strongest?', 'The brick house', 'The straw house', 'The stick house'], ['Who blew down the houses?', 'The wolf', 'The fox', 'The bear']]),
+    T('t7', 'tale', 'Goldilocks and the Three Bears', '👧🐻', [['🏡', 'Goldilocks found a little house in the forest. Nobody was at home.'], ['🥣', 'She ate the baby bear\'s porridge. It was just right.'], ['🪑', 'She sat on the baby bear\'s chair and it broke. Then she fell asleep in his bed.'], ['🏃', 'The three bears came home. Goldilocks woke up and ran away.']], [['What did Goldilocks eat?', 'Porridge', 'Pizza', 'Cake'], ['What broke?', 'The baby bear\'s chair', 'The window', 'The door']]),
+    T('t8', 'tale', 'The Ugly Duckling', '🦆🦢', [['🥚', 'A mother duck had many eggs. One duckling looked different, and the others laughed at him.'], ['😢', 'He felt sad and swam away alone. Winter was cold and long.'], ['🦢', 'In spring, he saw himself in the water. He was a beautiful white swan.']], [['What did the duckling become?', 'A swan', 'A goose', 'A hen'], ['When did he see himself in the water?', 'In spring', 'In winter', 'At night']]),
+    T('t9', 'tale', 'Cinderella', '👸👠', [['🧹', 'Cinderella lived with her stepmother and two stepsisters. She worked hard every day.'], ['🧚', 'A fairy gave her a beautiful dress and glass shoes. "Go to the ball, but come home by midnight," said the fairy.'], ['💃', 'She danced with the prince, but at midnight she ran away and lost one shoe.'], ['💖', 'The prince found her with the shoe. They were happy together.']], [['What did Cinderella lose?', 'A glass shoe', 'A ring', 'A crown'], ['When must she come home?', 'By midnight', 'By noon', 'By morning']]),
+    T('t10', 'tale', 'Little Red Riding Hood', '🧣🐺', [['🧣', 'A girl in a red hood walked through the forest to visit her grandmother.'], ['🐺', 'A wolf met her and ran to the house first. He pretended to be her grandmother.'], ['🪓', '"What big teeth you have!" she said. A woodcutter heard her and chased the wolf away.']], [['What color was her hood?', 'Red', 'Blue', 'Green'], ['Who chased the wolf away?', 'A woodcutter', 'A farmer', 'A king']]),
+    T('m1', 'myth', 'King Midas', '👑✨', [['👑', 'King Midas loved gold more than anything. A god gave him one wish.'], ['✨', 'He wished that everything he touched would turn to gold. At first he was very happy.'], ['😭', 'But his food turned to gold, and so did his daughter. Midas cried and begged the god to take the wish back.'], ['💛', 'The god forgave him. Midas learned that love is better than gold.']], [['What did King Midas love most?', 'Gold', 'Music', 'Horses'], ['What did Midas learn?', 'Love is better than gold', 'Gold is the best', 'Food is boring']]),
+    T('m2', 'myth', 'Pandora\'s Box', '📦🕊️', [['📦', 'The gods gave Pandora a mysterious box. "Never open it," they said.'], ['👀', 'Pandora was very curious. One day she opened the lid a little.'], ['🌪️', 'Out flew all the troubles into the world. Pandora closed the box quickly, but one thing stayed inside: hope.']], [['What stayed inside the box?', 'Hope', 'Gold', 'Fire'], ['Why did Pandora open the box?', 'She was curious', 'She was hungry', 'She was sleepy']]),
+    T('m3', 'myth', 'Icarus and the Sun', '🪶☀️', [['🪶', 'Icarus and his father made wings from feathers and wax so they could fly.'], ['☀️', '"Do not fly too high," said his father. "The sun will melt the wax."'], ['🌊', 'Icarus loved flying and went higher and higher. The wax melted and he fell into the sea.']], [['What were the wings made of?', 'Feathers and wax', 'Paper and glue', 'Wood and rope'], ['What melted the wax?', 'The sun', 'The rain', 'The sea']]),
+    T('m4', 'myth', 'Hercules and the Lion', '💪🦁', [['💪', 'Hercules was the strongest hero in Greece. A king asked him to defeat a giant lion.'], ['🏹', 'Arrows could not hurt the lion, so Hercules used his strong arms to catch it.'], ['🏆', 'He won, and he wore the lion skin to show how brave he was.']], [['Who was the strongest hero?', 'Hercules', 'Zeus', 'Apollo'], ['What could not hurt the lion?', 'Arrows', 'Water', 'Flowers']]),
+    T('m5', 'myth', 'The Legend of Banh Chung', '🍚🎋', [['👑', 'Long ago, the king asked his sons to bring the best food for the New Year.'], ['😴', 'Lang Lieu, a poor prince, had a dream. A fairy told him to make square cakes from rice, beans, and meat.'], ['🍃', 'He wrapped the cakes in green leaves and cooked them all night. The king loved them.'], ['🎉', 'The king named them banh chung and chose Lang Lieu to be the next king.']], [['What shape was banh chung?', 'Square', 'Round', 'Triangle'], ['Who became the next king?', 'Lang Lieu', 'The oldest son', 'The cook']]),
+    T('m6', 'myth', 'The Legend of the Watermelon', '🍉🏝️', [['🏝️', 'Mai An Tiem was sent to a lonely island with his family. They had very little food.'], ['🐦', 'One day a bird dropped some black seeds. They planted the seeds, and red, sweet fruits grew.'], ['🍉', 'The family sold the juicy fruits and lived happily. The king forgave Mai An Tiem.']], [['What fruit grew on the island?', 'Watermelon', 'Mango', 'Banana'], ['What dropped the seeds?', 'A bird', 'The wind', 'A boy']])
+];
+const ALL = [...JOKES, ...TALES], TYPES = { joke: 'chuyện cười 😂', tale: 'chuyện cổ tích 🧚', myth: 'thần thoại / truyền thuyết ⚡' };
+// ---------- nhiệm vụ ngẫu nhiên: mỗi nhiệm vụ được giao 1 loại chuyện ----------
+const hash = s => [...String(s || '')].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7);
+const assigned = () => ['joke', 'tale', 'joke', 'myth', 'joke', 'tale'][hash(currentSharedQuest && currentSharedQuest.id) % 6];
+const FK = () => `magicFun_${currentKidId}_${currentSharedQuest ? currentSharedQuest.id : 'x'}_${((currentSharedQuest && currentSharedQuest.attempts) || {})[currentKidId] || 0}`;
+const _norm = norm; norm = function () { _norm(); if (!sessionTracker.funByType) sessionTracker.funByType = {}; };
+const _ls = loadSess; loadSess = function () { _ls(); try { sessionTracker.funByType = JSON.parse(store.get(FK()) || '{}') || {}; } catch (e) { sessionTracker.funByType = {}; } };
+const _reqs = reqs;
+reqs = function () {
+    const list = _reqs(); if (!currentSharedQuest || !(CFG.q.fun > 0)) return list; norm();
+    const t = assigned(), h = sessionTracker.funByType[t] || 0, it = { key: 'fun', ic: '🎭', n: `Giải trí: đọc 1 ${TYPES[t]} và trả lời câu hỏi cuối bài`, w: 'Tab 🎭 Giải trí → bấm "🎯 Chuyện nhiệm vụ", bấm từ lạ để xem nghĩa, rồi trả lời câu hỏi cuối bài', h, d: CFG.q.fun, u: 'chuyện' };
+    it.ok = h >= it.d; const k = list.findIndex(r => r.key === 'score'); k < 0 ? list.push(it) : list.splice(k, 0, it); return list;
+};
+function funDone(type) { norm(); sessionTracker.funByType[type] = (sessionTracker.funByType[type] || 0) + 1; store.set(FK(), JSON.stringify(sessionTracker.funByType)); updateSessionUI(); }
+// ---------- giao diện ----------
+const css = document.createElement('style');
+css.textContent = `#nav{grid-template-columns:repeat(5,1fr)!important}#nav button{font-size:21px!important}.fun-art{border-radius:22px;padding:14px 8px;text-align:center;font-size:54px;line-height:1.1;position:relative;overflow:hidden;margin-bottom:8px}.fun-art span{display:inline-block;animation:mjFloat 2.4s infinite}.fun-art span:nth-child(2n){animation-delay:.6s}.fun-art:before,.fun-art:after{content:'✨';position:absolute;font-size:20px;opacity:.7;animation:mjFloat 3s infinite}.fun-art:before{left:10px;top:8px}.fun-art:after{right:12px;bottom:8px}
+.fun-panel{display:flex;gap:10px;align-items:center;margin:8px 0;padding:8px;border-radius:16px;background:#fff7ed;border:2px solid #fed7aa}.fun-panel .pic{font-size:40px;min-width:56px;text-align:center;animation:mjFloat 3s infinite}.fun-txt{font-size:17px;line-height:1.65;font-weight:700;color:#1e293b}.fw{cursor:pointer;border-bottom:2px dotted #c084fc;padding:0 1px;border-radius:4px}.fw:active,.fw.on{background:#fde68a}
+#fwPop{position:fixed;z-index:100020;max-width:290px;background:#fff;border:3px solid #a855f7;border-radius:16px;padding:8px 10px;box-shadow:0 10px 30px #0005;font-size:14px;font-weight:800;animation:mjPop .25s}#fwPop b{font-size:18px;color:#7e22ce}.fun-opt{display:block;width:100%;text-align:left;margin:6px 0;padding:10px 12px;border-radius:14px;border:3px solid #e9d5ff;background:#fff;font-weight:800;font-size:15px;min-height:46px}.fun-opt.ok{background:#bbf7d0;border-color:#22c55e}.fun-opt.bad{background:#fecaca;border-color:#ef4444}`;
+document.head.appendChild(css);
+const card = document.createElement('div'); card.id = 'cardFun'; card.className = 'guide-card hid bg-white p-3 rounded-[1.5rem] shadow-lg border-4 border-pink-300';
+card.innerHTML = `<div class="flex items-center justify-between gap-2 mb-2"><h2 class="font-black text-pink-600 text-base md:text-lg">🎭 Thẻ giải trí vui</h2><span id="funBadge" class="text-[11px] font-black bg-pink-100 text-pink-700 px-2 py-1 rounded-full"></span></div><div id="funMission" class="text-[12px] font-bold text-slate-600 mb-2"></div><div class="grid grid-cols-2 gap-1.5 mb-2"><button id="fnMis" class="py-2 bg-pink-500 text-white rounded-xl font-black text-sm">🎯 Chuyện nhiệm vụ</button><button id="fnRnd" class="py-2 bg-orange-400 text-white rounded-xl font-black text-sm">🎲 Chuyện ngẫu nhiên</button><button data-ft="joke" class="fnT py-1.5 bg-yellow-100 text-yellow-800 rounded-xl font-black text-xs">😂 Chuyện cười</button><button data-ft="tale" class="fnT py-1.5 bg-purple-100 text-purple-800 rounded-xl font-black text-xs">🧚 Cổ tích</button><button data-ft="myth" class="fnT py-1.5 bg-sky-100 text-sky-800 rounded-xl font-black text-xs col-span-2">⚡ Thần thoại & truyền thuyết</button></div><div id="funStage" class="text-sm text-slate-500">Bấm một nút ở trên để mở chuyện. Chạm vào từng từ để xem nghĩa và nghe đọc nhé! 👆</div>`;
+$('cardGameSection').after(card); TABS.cardFun = 'fun'; card.classList.toggle('hid', document.body.dataset.tab !== 'fun');
+const nb = document.createElement('button'); nb.dataset.t = 'fun'; nb.innerHTML = '🎭<span>Giải trí</span>'; nb.onclick = () => setTab('fun'); document.querySelector('#nav button[data-t="play"]').after(nb);
+const pal = [['#fde68a', '#fca5a5'], ['#bae6fd', '#c4b5fd'], ['#bbf7d0', '#fde68a'], ['#fbcfe8', '#bfdbfe'], ['#fed7aa', '#fecdd3'], ['#ddd6fe', '#a7f3d0']];
+const seenK = () => 'magicFunSeen_' + currentKidId, seenL = () => { try { return JSON.parse(store.get(seenK())) || []; } catch (e) { return []; } };
+const esc3 = v => String(v || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const words = t => { let out = '', last = 0; String(t).replace(/[A-Za-z][A-Za-z'’-]*/g, (w, i) => { out += esc3(t.slice(last, i)) + `<span class="fw">${w}</span>`; last = i + w.length; return w; }); return out + esc3(String(t).slice(last)); };
+const artHTML = (art, i) => { const [a, b] = pal[i % pal.length]; return `<div class="fun-art" style="background:linear-gradient(135deg,${a},${b})">${[...art.replace(/\uFE0F/g, '')].length > 0 ? art.match(/\p{Extended_Pictographic}(\u200d\p{Extended_Pictographic})*|\d\uFE0F?\u20E3/gu).map(e => `<span>${e}</span>`).join('') : ''}</div>`; };
+let readTok = 0;
+function readAloud(texts) {                              // đọc cả chuyện, mỗi câu một giọng khác nhau
+    stopAudio(); const tok = ++readTok, sents = texts.join(' ').match(/[^.!?]+[.!?]+["”]?|[^.!?]+$/g) || [];
+    const next = i => { if (tok !== readTok || i >= sents.length) return; speakWith(sents[i].trim(), pickPersonaFor('sample'), .85, { onend: () => next(i + 1), onerror: () => {} }); }; next(0);
+}
+const pop = () => $('fwPop');
+async function wordTap(el) {
+    document.querySelectorAll('.fw.on').forEach(x => x.classList.remove('on')); el.classList.add('on'); const w = el.textContent.toLowerCase().replace(/’/g, "'").replace(/^'+|'+$/g, '');
+    speakWordRandom(w); let p = pop(); if (!p) { p = document.createElement('div'); p.id = 'fwPop'; document.body.appendChild(p); }
+    p.innerHTML = `<b>${esc3(w)}</b> 🔊<div id="fwM" style="font-weight:700;color:#475569">⏳ Đang tra nghĩa...</div>`;
+    const r = el.getBoundingClientRect(); p.style.left = Math.max(8, Math.min(innerWidth - 300, r.left - 10)) + 'px'; p.style.top = (r.bottom + 6 + 120 > innerHeight ? Math.max(8, r.top - 110) : r.bottom + 6) + 'px';
+    await prefetchCloud([w]); const m = await resolveMeaning(w), box = $('fwM'); if (!box || !p.isConnected) return;
+    box.innerHTML = m ? `${esc3(m.meaning)} <span style="font-size:11px;color:#7e22ce">(${esc3(m.pos || '')})</span><div style="font-size:11px;color:${m.verifiedMeaning ? '#059669' : '#d97706'}">${m.verifiedMeaning ? '✅ nghĩa đã kiểm tra' : '⚠️ nghĩa tham khảo'}</div>` : 'Chưa tra được từ này (máy chưa có mạng?) 🙈';
+}
+document.addEventListener('click', e => { const w = e.target.closest && e.target.closest('.fw'); if (w) { wordTap(w); return; } if (pop() && !e.target.closest('#fwPop')) { pop().remove(); document.querySelectorAll('.fw.on').forEach(x => x.classList.remove('on')); } });
+function ask(stage, item, qs, done) {                    // câu hỏi trắc nghiệm cuối bài
+    let qi = 0, good = 0;
+    const next = () => {
+        if (qi >= qs.length) { const pts = good * 5; stage.querySelector('#funQ').innerHTML = `<div class="p-3 rounded-2xl bg-green-50 border-2 border-green-300 text-green-700 font-black text-center">🎉 Hoàn thành! Bé trả lời đúng ngay ${good}/${qs.length} câu${pts ? ` (+${pts} điểm)` : ''}.</div>`; done(); burst(...ctr(), WIN, 24); return; }
+        const [q, a, ...wr] = qs[qi], opts = shuf([a, ...wr]); let tried = false;
+        stage.querySelector('#funQ').innerHTML = `<div class="font-black text-pink-700 mb-1">❓ Câu hỏi ${qi + 1}/${qs.length}</div><div class="fun-txt">${words(q)}</div>${opts.map((o, i) => `<button class="fun-opt" data-i="${i}">${esc3(o)}</button>`).join('')}`;
+        stage.querySelectorAll('.fun-opt').forEach(b => b.onclick = () => {
+            const ok = opts[+b.dataset.i] === a; if (b.classList.contains('bad') || b.disabled) return;
+            if (ok) { b.classList.add('ok'); stage.querySelectorAll('.fun-opt').forEach(x => x.disabled = true); const pts = tried ? 2 : 5; if (!tried) good++; sessionTracker.scoreEarned += pts; updateSessionUI(); burst(...ctr(), WIN, 10); setTimeout(() => { qi++; next(); }, 900); }
+            else { tried = true; b.classList.add('bad'); burst(...ctr(), OOPS, 5); talk('Chưa đúng rồi, bé thử lại nhé! 💪'); }
+        });
+    }; next();
+}
+function show(item) {
+    pop() && pop().remove(); stopAudio(); readTok++; const st = $('funStage'), idx = hash(item.id), seen = seenL().filter(x => x !== item.id); seen.push(item.id); store.set(seenK(), JSON.stringify(seen.slice(-150)));
+    let html = '', texts = [];
+    if (item.type === 'joke') {
+        const ans = item.a.replace(/\*/g, ''); texts = [item.q, ans];
+        html = `${artHTML(item.art, idx)}<div class="fun-txt">${words(item.q)}</div><button id="fnAns" class="mt-2 w-full py-3 bg-yellow-400 text-yellow-900 rounded-2xl font-black text-base">😂 Xem câu trả lời</button><div id="fnA" class="hid fun-txt mt-2 p-3 rounded-2xl bg-yellow-50 border-2 border-yellow-300">${words(ans)}</div>`;
+    } else {
+        texts = item.panels.map(p => p[1]);
+        html = `${artHTML(item.art, idx)}<div class="font-black text-purple-700 text-base mb-1">${esc3(item.title)} <span class="text-[11px] text-slate-500">(${item.type === 'tale' ? 'cổ tích' : 'thần thoại / truyền thuyết'})</span></div>${item.panels.map(p => `<div class="fun-panel"><div class="pic">${p[0]}</div><div class="fun-txt">${words(p[1])}</div></div>`).join('')}`;
+    }
+    html += `<div class="grid grid-cols-2 gap-2 mt-2"><button id="fnRead" class="py-2.5 bg-sky-500 text-white rounded-xl font-black text-sm">🔊 Nghe cả chuyện</button><button id="fnNext" class="py-2.5 bg-orange-400 text-white rounded-xl font-black text-sm">🎲 Chuyện khác</button></div><div id="funQ" class="mt-3"></div>`;
+    st.innerHTML = html; st.className = 'text-sm'; $('funBadge').textContent = item.type === 'joke' ? '😂 Chuyện cười' : item.type === 'tale' ? '🧚 Cổ tích' : '⚡ Thần thoại';
+    const startQ = () => { const qs = item.type === 'joke' ? [jokeQ(item)] : item.qs; ask(st, item, qs, () => funDone(item.type)); };
+    if (item.type === 'joke') $('fnAns').onclick = () => { $('fnA').classList.remove('hid'); $('fnAns').classList.add('hid'); burst(...ctr(), ['😂', '🤣', '😆', '😹'], 16); sfx(660, .1); setTimeout(() => sfx(880, .1), 120); readAloud(texts); startQ(); };
+    else setTimeout(startQ, 0);
+    $('fnRead').onclick = () => readAloud(item.type === 'joke' && $('fnA').classList.contains('hid') ? [item.q] : texts); $('fnNext').onclick = () => pickItem(null);
+    if (item.type !== 'joke') readAloud([texts[0]]);
+}
+function jokeQ(item) {                                   // điền từ còn thiếu trong câu trả lời
+    const m = /\*([^*]+)\*/.exec(item.a), key = m ? m[1] : item.a.split(' ')[0], clean = item.a.replace(/\*/g, ''), blank = item.a.replace(/\*[^*]+\*/, '_____').replace(/\*/g, '');
+    const near = shuf(dictWords().filter(e => e.word !== key.toLowerCase() && Math.abs(e.word.length - key.length) <= 2)).slice(0, 3).map(e => e.word);
+    return [`Điền từ còn thiếu: "${blank}"`, key, ...near];
+}
+function pickItem(type) {
+    const seen = seenL(), pool = ALL.filter(x => !type || x.type === type), un = pool.filter(x => !seen.includes(x.id)); show(pick(un.length ? un : pool));
+}
+$('fnMis').onclick = () => pickItem(assigned()); $('fnRnd').onclick = () => pickItem(null); card.querySelectorAll('.fnT').forEach(b => b.onclick = () => pickItem(b.dataset.ft));
+const refreshMission = () => { const m = $('funMission'); if (m) m.innerHTML = currentSharedQuest && CFG.q.fun > 0 ? `🎯 Nhiệm vụ hôm nay: đọc 1 <b>${TYPES[assigned()]}</b> và trả lời câu hỏi cuối bài (${(sessionTracker.funByType && sessionTracker.funByType[assigned()]) || 0}/${CFG.q.fun}).` : 'Đọc chuyện vui để học thêm từ mới nhé!'; };
+const _us = updateSessionUI; updateSessionUI = function () { const r = _us.apply(this, arguments); refreshMission(); return r; }; refreshMission();
+window.__fun2 = { ALL, JOKES, TALES, assigned, show, pickItem, jokeQ };
 })();
 
 </script>
