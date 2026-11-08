@@ -3320,6 +3320,217 @@ setTimeout(() => { try { loadLeaderboard(); refreshSpin(); } catch (e) {} }, 250
 window.__fun = { spinKey, prizeList };
 })();
 
+
+// ================== V11: MICRO ỔN ĐỊNH TRÊN iPhone / iPad / Android ==================
+(() => {
+const SC = () => window.__micScale || 1, UA = navigator.userAgent;
+const IOS = /iP(hone|ad|od)/.test(UA) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const INAPP = /FBAN|FBAV|FB_IAB|Instagram|Zalo|Line\/|MicroMessenger|Messenger|; wv\)/i.test(UA);
+const SRC = () => window.SpeechRecognition || window.webkitSpeechRecognition;
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const esc2 = v => String(v || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const st = document.createElement('style');
+st.textContent = `.mic-cd{display:flex;align-items:center;gap:6px;margin:5px 0}.mic-bar{flex:1;height:14px;background:#e2e8f0;border-radius:99px;overflow:hidden}.mic-bar i{display:block;height:100%;width:100%;background:#22c55e;transition:width .1s linear,background .3s}.mic-cd span{font-weight:900;font-size:13px;min-width:96px;text-align:right}
+.mic-lv{height:10px;background:#e2e8f0;border-radius:99px;overflow:hidden;margin:3px 0}.mic-lv i{display:block;height:100%;width:0;background:#38bdf8;transition:width .08s}.sentence-item button{min-height:36px}
+.sent-text .ok{color:#059669}.sent-text .bad{color:#ef4444;text-decoration:underline wavy}`;
+document.head.appendChild(st);
+const HELP = {
+    'not-allowed': IOS ? '🔒 Micro đang bị chặn. Bé vào Cài đặt > Safari > Micrô, chọn Cho phép (hoặc chạm "aA" trên thanh địa chỉ > Cài đặt trang web), rồi tải lại trang nhé.' : '🔒 Micro đang bị chặn. Bé chạm biểu tượng ổ khóa cạnh địa chỉ trang, chọn Cho phép Micrô rồi tải lại trang nhé.',
+    'service-not-allowed': IOS ? '⚙️ iPhone/iPad cần bật Đọc chính tả: Cài đặt > Cài đặt chung > Bàn phím > Bật Đọc chính tả (và bật Siri).' : '⚙️ Máy chưa cho phép nhận diện giọng nói. Bé kiểm tra quyền Micrô của Chrome trong Cài đặt máy nhé.',
+    'audio-capture': '🎤 Máy không tìm thấy micro, hoặc micro đang được ứng dụng khác dùng. Bé tắt ứng dụng ghi âm/cuộc gọi rồi thử lại nhé.',
+    'network': '📶 Máy nhận giọng cần có mạng. Bé kiểm tra Wi‑Fi/4G rồi thử lại nhé.',
+    'language-not-supported': '🌐 Máy chưa hỗ trợ nhận giọng tiếng Anh. Bé dùng chế độ thu âm dự phòng nhé.',
+    'no-start': IOS ? '⏳ Micro chưa mở được. Bé chờ 2 giây rồi chạm lại; nếu vẫn vậy hãy mở bằng Safari và bật Đọc chính tả.' : '⏳ Micro chưa mở được. Bé chạm lại; nếu vẫn vậy hãy mở trang bằng Chrome.',
+    'unsupported': IOS ? '📵 Trình duyệt này chưa nhận được giọng nói tự động. Bé mở bằng Safari (iOS 14.5 trở lên) hoặc dùng thu âm dự phòng nhé.' : '📵 Trình duyệt này chưa nhận được giọng nói tự động. Bé mở bằng Chrome hoặc dùng thu âm dự phòng nhé.',
+    'retap': '✅ Bé đã cho phép micro rồi! Chạm 🎤 thêm một lần nữa nhé.'
+};
+const FATAL = /not-allowed|service-not-allowed|audio-capture|language-not-supported|network/;
+let cur = null, preOk = false;
+const abort = () => { if (cur) { const c = cur; cur = null; c.kill(); } };
+// ---------- nghe & nhận giọng: đồng hồ đếm ngược, tự mở lại khi micro tắt sớm, xin quyền đúng cách ----------
+function listen(o) {
+    abort(); try { stopAudio(); } catch (e) {}
+    let rec = null, done = false, ready = false, stopping = false, restarts = 0, err = '', tStart = 0, iv = null, rto = null, gto = null, acc = '', segF = '', segI = '', alts = [], resolve;
+    const pr = new Promise(r => resolve = r), maxMs = o.maxMs * SC(), text = () => (acc + ' ' + (segF || segI)).trim();
+    const end = reason => {
+        if (done) return; done = true; clearInterval(iv); clearTimeout(rto); clearTimeout(gto);
+        try { if (rec) { rec.onresult = rec.onerror = rec.onend = rec.onstart = rec.onaudiostart = null; rec.abort(); } } catch (e) {}
+        if (cur === ctl) cur = null; const t = text();
+        resolve({ text: t, alts: alts.length ? alts : (t ? [t] : []), reason: reason === 'ok' && !t ? 'silence' : reason, err });
+    };
+    const ctl = { promise: pr, stop() { if (done || stopping) return; stopping = true; try { rec && rec.stop(); } catch (e) {} gto = setTimeout(() => end('ok'), 1500); }, kill() { end('stopped'); } };
+    cur = ctl;
+    const markReady = () => {
+        if (ready) return; ready = true; clearTimeout(rto); tStart = Date.now(); o.onReady && o.onReady();
+        iv = setInterval(() => { const left = maxMs - (Date.now() - tStart); o.onTick && o.onTick(Math.max(0, left), maxMs); if (left <= 0) { clearInterval(iv); ctl.stop(); } }, 100);
+    };
+    const startRec = () => {
+        segF = ''; segI = ''; rec = new (SRC())(); rec.lang = 'en-US'; rec.interimResults = true; rec.continuous = false; rec.maxAlternatives = 3;
+        rec.onstart = () => { if (IOS) markReady(); }; rec.onaudiostart = markReady;
+        rec.onresult = e => { let f = '', i = ''; for (let k = 0; k < e.results.length; k++) { const r = e.results[k]; if (r.isFinal) { f += ' ' + r[0].transcript; alts = [...r].map(a => a.transcript); } else i += ' ' + r[0].transcript; } segF = f.trim(); segI = i.trim(); o.onText && o.onText(text()); };
+        rec.onerror = e => { err = e.error || 'error'; if (FATAL.test(err)) end('error'); };
+        rec.onend = () => {
+            if (done) return; acc = text(); segF = segI = ''; if (stopping) return end('ok');
+            const left = maxMs - (ready ? Date.now() - tStart : 0);
+            if (o.expect && acc.split(/\s+/).filter(Boolean).length >= o.expect * .9) return end('ok');       // đã đọc gần đủ câu thì dừng, khỏi chờ hết giờ
+            if (ready && left > 1800 * SC() && restarts < (IOS ? 2 : 4)) { restarts++; setTimeout(() => { if (!done && !stopping) try { startRec(); } catch (x) { end('ok'); } }, 150); }   // micro tự tắt sớm → mở lại để nghe tiếp
+            else end('ok');
+        };
+        rec.start();
+    };
+    (async () => {
+        if (!SRC()) { err = 'unsupported'; return end('error'); }
+        if (!preOk && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            o.onPrep && o.onPrep('⏳ Đang xin quyền micro...'); const t0 = Date.now();
+            try { const s = await navigator.mediaDevices.getUserMedia({ audio: true }); s.getTracks().forEach(t => t.stop()); preOk = true; await sleep(IOS ? 500 : 300); if (IOS && Date.now() - t0 > 700) { err = 'retap'; return end('error'); } }
+            catch (e) { err = /NotAllowed|Security/.test(e.name) ? 'not-allowed' : 'audio-capture'; return end('error'); }
+        } else await sleep(IOS ? 400 : 200);
+        if (done) return; o.onPrep && o.onPrep('⏳ Đang bật micro...');
+        rto = setTimeout(() => { if (!ready) { err = 'no-start'; end('error'); } }, 3800);
+        try { startRec(); } catch (e) { await sleep(300); try { startRec(); } catch (x) { err = 'no-start'; end('error'); } }
+    })();
+    return ctl;
+}
+// ---------- dự phòng: thu âm thật bằng MediaRecorder + thanh mức âm + nghe lại ----------
+function record(o) {
+    const AC = window.AudioContext || window.webkitAudioContext, ac = AC ? new AC() : null; if (ac && ac.resume) ac.resume();   // phải tạo ngay lúc bé chạm (iOS)
+    let stopFn = null, stopped = false; const maxMs = o.maxMs * SC();
+    const pr = (async () => {
+        let stream; try { stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }); } catch (e) { return { ok: false, err: /NotAllowed|Security/.test(e.name) ? 'not-allowed' : 'audio-capture' }; }
+        const an = ac ? ac.createAnalyser() : null; if (an) { an.fftSize = 1024; ac.createMediaStreamSource(stream).connect(an); }
+        let mime = ''; for (const m of ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm']) if (window.MediaRecorder && MediaRecorder.isTypeSupported(m)) { mime = m; break; }
+        const chunks = []; let mr = null; try { mr = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined); mr.ondataavailable = e => e.data && e.data.size && chunks.push(e.data); mr.start(250); } catch (e) { mr = null; }
+        const buf = an ? new Uint8Array(an.fftSize) : null, t0 = Date.now(); let voiced = 0, last = t0, floor = 0, n = 0;
+        return await new Promise(res => {
+            const fin = async () => { if (stopped) return; stopped = true; clearInterval(iv); let url = ''; if (mr && mr.state !== 'inactive') await new Promise(r => { mr.onstop = r; try { mr.stop(); } catch (e) { r(); } }); if (chunks.length) url = URL.createObjectURL(new Blob(chunks, { type: mime || 'audio/webm' })); stream.getTracks().forEach(t => t.stop()); try { ac && ac.close(); } catch (e) {} res({ ok: true, url, voicedMs: voiced, totalMs: Date.now() - t0 }); };
+            stopFn = fin;
+            const iv = setInterval(() => {
+                const now = Date.now(); let rms = 0; if (an) { an.getByteTimeDomainData(buf); let s = 0; for (const v of buf) { const x = (v - 128) / 128; s += x * x; } rms = Math.sqrt(s / buf.length); }
+                if (now - t0 < 400) { floor = n ? Math.min(floor, rms) : rms; n++; } else if (rms > Math.min(.08, Math.max(.025, floor * 2.5))) voiced += now - last; last = now;
+                o.onLevel && o.onLevel(Math.min(1, rms * 6)); const left = maxMs - (now - t0); o.onTick && o.onTick(Math.max(0, left), maxMs); if (left <= 0) fin();
+            }, 80);
+        });
+    })();
+    return { promise: pr, stop() { stopFn && stopFn(); }, kill() { stopFn && stopFn(); } };
+}
+// ---------- chấm điểm câu đọc: cho phép sai 1 chữ cái, bỏ dấu nháy, hiện từ nào đúng/sai ----------
+const nrm = t => String(t || '').toLowerCase().replace(/[’']/g, '').replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(Boolean);
+const lev = (a, b) => { const d = Array.from({ length: a.length + 1 }, (_, i) => [i]); for (let j = 1; j <= b.length; j++) d[0][j] = j; for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++) d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); return d[a.length][b.length]; };
+const near = (a, b) => a === b || a.replace(/s$/, '') === b.replace(/s$/, '') || (a.length >= 4 && b.length >= 4 && lev(a, b) <= 1);
+function scoreSentence(orig, heards) {
+    const ow = nrm(orig); let best = { pct: 0, marks: ow.map(() => false), heard: heards[0] || '' };
+    heards.filter(Boolean).forEach(h => { const hw = nrm(h), used = hw.map(() => false), marks = ow.map(w => { const k = hw.findIndex((x, i) => !used[i] && near(w, x)); if (k >= 0) { used[k] = true; return true; } return false; }); const pct = ow.length ? Math.round(marks.filter(Boolean).length / ow.length * 100) : 0; if (pct > best.pct) best = { pct, marks, heard: h }; });
+    return best;
+}
+const setBtn = (btn, on, label) => { btn.textContent = on ? '⏹️ Xong rồi' : label; btn.classList.toggle('bg-red-500', on); btn.classList.toggle('bg-pink-500', !on); };
+const cdUI = el => ({ show() { el.classList.remove('hid'); el.innerHTML = '<div class="mic-bar"><i></i></div><span></span>'; }, tick(l, t) { const i = el.querySelector('i'), s = el.querySelector('span'); if (!i) return; i.style.width = (l / t * 100) + '%'; i.style.background = l < 3000 ? '#ef4444' : l < 6000 ? '#f59e0b' : '#22c55e'; s.textContent = `⏱️ Còn ${Math.ceil(l / 1000 / SC())} giây`; }, hide() { el.classList.add('hid'); el.innerHTML = ''; } });
+// ---------- Thử thách đọc cả câu ----------
+const sentSeenKey = () => 'magicSentSeen_' + currentKidId, sentSeen = () => { try { return JSON.parse(store.get(sentSeenKey())) || []; } catch (e) { return []; } };
+const markSent = s => store.set(sentSeenKey(), JSON.stringify([...sentSeen().filter(x => x !== s), s].slice(-60)));
+const sentHTML = (sentence, idx) => {
+    const enc = encodeURIComponent(sentence), sr = !!SRC() && !INAPP;
+    return `<div class="bg-white p-2.5 rounded-xl border border-emerald-200 shadow-sm sentence-item" data-sentence="${enc}" data-idx="${idx}"><div class="flex justify-between items-start gap-2 mb-1"><span class="text-emerald-800 font-black text-xs">Câu ${idx + 1}:</span><div class="flex gap-1 flex-wrap justify-end"><button onclick="playSentenceSample('${enc}')" class="px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-black rounded-lg btn-bounce">🔊 Nghe mẫu</button><button onclick="recordSentenceVoice(this,'${enc}')" class="mic-go px-3 py-1 bg-pink-500 text-white text-xs font-black rounded-lg btn-bounce">${sr ? '🎤 Bé nói' : '🎙️ Thu âm'}</button><button onclick="swapSentence(this)" class="px-3 py-1 bg-purple-100 text-purple-700 text-xs font-black rounded-lg btn-bounce">🔀 Đổi câu</button></div></div><p class="sent-text text-slate-800 text-sm font-bold leading-relaxed mb-1 italic">"${sentence.split(/\s+/).map(w => `<span>${esc2(w)}</span>`).join(' ')}"</p><div class="mic-cd hid"></div><div class="mic-live text-[11px] text-slate-500 italic min-h-[14px]"></div><div class="sentence-feedback text-xs font-black min-h-[16px] text-slate-500">Bé nghe mẫu rồi nhấn nút "${sr ? '🎤 Bé nói' : '🎙️ Thu âm'}" nhé! (có đồng hồ đếm ngược)</div></div>`;
+};
+generateSentenceChallenge = function () {
+    const area = $('sentenceChallengeArea');
+    if (!allStorySentences.length) { const t = storyText.value.trim(); if (t) allStorySentences = (t.match(/[^.!?\n]+[.!?]*/g) || []).map(s => s.trim()).filter(s => s.length > 15); }
+    if (!allStorySentences.length) { area.innerHTML = '<p class="text-emerald-500 italic text-[11px]">Chưa có bài đọc nào! Hãy chọn sách và bấm "Sạch" để máy chọn câu luyện đọc nhé.</p>'; return; }
+    document.querySelectorAll('.sentence-item').forEach(i => i._ctl && i._ctl.kill());
+    const seen = sentSeen(), un = allStorySentences.filter(s => !seen.includes(s)), pool = un.length >= 1 ? un : allStorySentences, n = Math.min(pool.length, 1 + Math.floor(Math.random() * 3)), chosen = shuf(pool).slice(0, n);
+    chosen.forEach(markSent);
+    const warn = INAPP ? '<div class="p-2 rounded-xl bg-amber-50 border border-amber-300 text-amber-800 text-[11px]">⚠️ Trang đang mở trong ứng dụng (Zalo/Facebook...). Bé mở bằng <b>Chrome</b> hoặc <b>Safari</b> để micro hoạt động tốt hơn nhé.</div>'
+        : !window.isSecureContext ? '<div class="p-2 rounded-xl bg-amber-50 border border-amber-300 text-amber-800 text-[11px]">⚠️ Cần mở trang bằng địa chỉ https:// thì micro mới hoạt động.</div>'
+        : !SRC() ? '<div class="p-2 rounded-xl bg-sky-50 border border-sky-200 text-sky-800 text-[11px]">ℹ️ Trình duyệt này chưa nhận giọng tự động. Bé sẽ <b>thu âm</b>, nghe lại giọng mình rồi tự chấm. (iPhone/iPad: dùng Safari để máy chấm giúp bé)</div>' : '';
+    area.innerHTML = warn + chosen.map(sentHTML).join(''); talk('Thử thách đọc cả câu đã sẵn sàng! Bấm 🎤, đồng hồ đếm ngược sẽ cho bé biết còn bao lâu nhé! 🎙️');
+};
+window.swapSentence = el => {
+    const item = el.closest('.sentence-item'); if (!item) return; item._ctl && item._ctl.kill(); abort();
+    const shown = [...document.querySelectorAll('.sentence-item')].map(i => decodeURIComponent(i.dataset.sentence)), pool = allStorySentences.filter(s => !shown.includes(s));
+    if (!pool.length) return showToast('Bài này chỉ còn ít câu. Bé bấm "Sạch" với bài khác để có thêm câu nhé!', 'warning');
+    const seen = sentSeen(), un = pool.filter(s => !seen.includes(s)), s = pick(un.length ? un : pool); markSent(s);
+    const tmp = document.createElement('div'); tmp.innerHTML = sentHTML(s, +item.dataset.idx); item.replaceWith(tmp.firstElementChild); talk('Đổi câu mới rồi! Bé nghe mẫu rồi đọc thử nhé! 🔀');
+};
+window.retrySentence = el => { const it = el.closest('.sentence-item'); it && it.querySelector('.mic-go').click(); };
+window.useRecorder = el => { const it = el.closest('.sentence-item'); it.dataset.rec = '1'; it.querySelector('.mic-go').textContent = '🎙️ Thu âm'; it.querySelector('.mic-go').click(); };
+const advice = '<div class="mt-1 p-2 rounded-xl bg-amber-50 border-2 border-amber-300 text-amber-800 text-xs">Bé đã nói vài lần chưa được rồi 😊 Bé muốn làm gì tiếp?<div class="flex gap-2 mt-1.5"><button onclick="retrySentence(this)" class="flex-1 py-2 bg-pink-500 text-white font-black rounded-lg">🔁 Thử lại</button><button onclick="swapSentence(this)" class="flex-1 py-2 bg-purple-500 text-white font-black rounded-lg">🔀 Đổi câu khác</button></div></div>';
+function passSentence(item, btn, msg, pts) {
+    const fb = item.querySelector('.sentence-feedback');
+    if (item.dataset.done) { fb.innerHTML = '<span class="text-emerald-600">🎉 Giỏi lắm! Câu này bé đã được tính điểm rồi, bé thử đổi câu khác nhé!</span>'; return; }
+    item.dataset.done = '1'; item.dataset.tries = 0; fb.innerHTML = `<span class="text-emerald-600">${msg} +${pts}đ</span>`; const r = btn.getBoundingClientRect(); burst(r.left, r.top, ['⭐', '👏', '🎉'], 10);
+    sessionTracker.sentencesPassed++; sessionTracker.scoreEarned += pts; updateSessionUI(); talk('Phát âm chuẩn quá bé ơi! 👏');
+}
+function failSentence(item, html) {
+    const fb = item.querySelector('.sentence-feedback'), t = (+item.dataset.tries || 0) + 1; item.dataset.tries = t;
+    fb.innerHTML = `<span class="text-amber-600">${html}</span>` + (t >= 3 ? advice : '');
+}
+recordSentenceVoice = async function (btn, enc) {
+    const item = btn.closest('.sentence-item'); if (!item) return;
+    if (item._ctl) { item._ctl.stop(); return; }                                           // đang thu: bấm lần nữa = xong rồi
+    const sentence = decodeURIComponent(enc), words = sentence.split(/\s+/).length, maxMs = Math.min(20000, Math.max(8000, words * 650 + 4500));
+    const fb = item.querySelector('.sentence-feedback'), live = item.querySelector('.mic-live'), cdu = cdUI(item.querySelector('.mic-cd')), label = btn.textContent.includes('Thu') ? '🎙️ Thu âm' : '🎤 Bé nói';
+    live.textContent = ''; if (!SRC() || INAPP || item.dataset.rec === '1') return recordMode(item, btn, sentence, maxMs, fb, live, cdu);
+    setBtn(btn, true, label); fb.innerHTML = '<span class="text-slate-500">⏳ Đang bật micro...</span>';
+    const ctl = listen({ maxMs, expect: words, onPrep: m => fb.innerHTML = `<span class="text-slate-500">${m}</span>`, onReady: () => { fb.innerHTML = '<span class="text-pink-600 animate-pulse font-black">🎤 Bé đọc to lên nào!</span>'; cdu.show(); }, onTick: (l, t) => cdu.tick(l, t), onText: t => live.textContent = '👂 ' + t });
+    item._ctl = ctl; const r = await ctl.promise; item._ctl = null; cdu.hide(); setBtn(btn, false, label);
+    if (r.reason === 'stopped') return; live.textContent = '';
+    if (r.reason === 'error') {
+        if (r.err === 'retap') { fb.innerHTML = `<span class="text-emerald-600">${HELP.retap}</span>`; return; }
+        const env = (+item.dataset.env || 0) + 1; item.dataset.env = env;
+        fb.innerHTML = `<span class="text-red-500">${HELP[r.err] || '😕 Micro gặp trục trặc. Bé thử lại nhé.'}</span>` + (env >= 2 || /unsupported|language-not-supported|service-not-allowed/.test(r.err) ? '<button onclick="useRecorder(this)" class="mt-1 w-full py-2 bg-sky-500 text-white font-black rounded-lg">🎙️ Dùng chế độ thu âm dự phòng</button>' : ''); return;
+    }
+    if (r.reason === 'silence') return failSentence(item, '🙉 Máy chưa nghe thấy giọng bé. Bé cầm điện thoại gần miệng hơn, đọc to và rõ rồi thử lại nhé!');
+    const sc = scoreSentence(sentence, [...r.alts, r.text]);
+    item.querySelectorAll('.sent-text span').forEach((s, i) => { s.className = sc.marks[i] ? 'ok' : 'bad'; });
+    if (sc.pct >= 70) passSentence(item, btn, `🎉 Xuất sắc! Bé đọc khớp ${sc.pct}% ("${esc2(sc.heard)}") 🌟`, 10);
+    else failSentence(item, `🤔 Máy nghe là: "${esc2(sc.heard)}" (khớp ${sc.pct}%). Từ màu đỏ là từ cần đọc lại. Bé nghe mẫu rồi thử lại nha! 💪`);
+};
+async function recordMode(item, btn, sentence, maxMs, fb, live, cdu) {                     // thu âm dự phòng khi máy không nhận giọng tự động
+    abort(); try { stopAudio(); } catch (e) {}
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { fb.innerHTML = `<span class="text-red-500">${HELP.unsupported}</span>`; return; }
+    setBtn(btn, true, '🎙️ Thu âm'); fb.innerHTML = '<span class="text-slate-500">⏳ Đang bật micro...</span>'; live.innerHTML = '<div class="mic-lv"><i></i></div>';
+    const ctl = record({ maxMs, onTick: (l, t) => { if (!cdu.started) { cdu.started = 1; cdu.show(); fb.innerHTML = '<span class="text-pink-600 animate-pulse font-black">🎙️ Đang thu âm — bé đọc to lên nào!</span>'; } cdu.tick(l, t); }, onLevel: v => { const i = live.querySelector('i'); if (i) i.style.width = (v * 100) + '%'; } });
+    item._ctl = ctl; const r = await ctl.promise; item._ctl = null; cdu.started = 0; cdu.hide(); live.innerHTML = ''; setBtn(btn, false, '🎙️ Thu âm');
+    if (!r.ok) { fb.innerHTML = `<span class="text-red-500">${HELP[r.err] || HELP['audio-capture']}</span>`; return; }
+    const need = Math.max(900, sentence.split(/\s+/).length * 160) * SC();
+    if (r.voicedMs < need) return failSentence(item, `🙉 Máy chưa nghe thấy giọng bé đọc rõ (nghe được ${(r.voicedMs / 1000).toFixed(1)} giây). Bé đọc to hơn, gần micro hơn rồi thu lại nhé!`);
+    fb.innerHTML = `<span class="text-emerald-700">✅ Đã thu ${(r.totalMs / 1000).toFixed(0)} giây. Bé nghe lại giọng mình nhé:</span>${r.url ? `<audio controls src="${r.url}" class="w-full mt-1"></audio>` : ''}<button class="mt-1 w-full py-2 bg-pink-500 text-white font-black rounded-lg self-ok">😍 Mình đọc đúng rồi! (+5đ)</button><button onclick="retrySentence(this)" class="mt-1 w-full py-1.5 bg-slate-100 font-black rounded-lg">🔁 Thu lại</button>`;
+    fb.querySelector('.self-ok').onclick = () => passSentence(item, btn, '🎉 Bé tự chấm: đọc đúng!', 5);
+}
+// ---------- Nghe hiểu & game Tập nói dùng chung bộ micro mới ----------
+cpStopRec = function () { abort(); const m = $('cpMic'); if (m) { m.textContent = '🎤'; m.classList.remove('bg-red-500'); m.classList.add('bg-pink-500'); } };
+cpListen = async function () {
+    const fb = $('cpFb'), m = $('cpMic'); if (C.done) return; if (!SRC() || INAPP) { fb.textContent = '📵 Máy này chưa nghe được giọng. Bé gõ câu trả lời vào ô nhé ⌨️'; return; }
+    if (m.dataset.on) { cur && cur.stop(); return; }
+    m.dataset.on = 1; m.textContent = '⏹️'; m.classList.replace('bg-pink-500', 'bg-red-500'); fb.textContent = '⏳ Đang bật micro...';
+    const ctl = listen({ maxMs: 9000, onPrep: x => fb.textContent = x, onReady: () => fb.innerHTML = '<span class="text-pink-600 animate-pulse font-black">🎤 Bé nói đi!</span> <span id="cpCd" class="font-black"></span>', onTick: l => { const c = $('cpCd'); if (c) { c.textContent = `⏱️ Còn ${Math.ceil(l / 1000 / SC())} giây`; c.style.color = l < 3000 ? '#ef4444' : '#334155'; } }, onText: t => { $('cpIn').value = t; } });
+    const r = await ctl.promise; delete m.dataset.on; m.textContent = '🎤'; m.classList.replace('bg-red-500', 'bg-pink-500');
+    if (r.reason === 'stopped') return;
+    if (r.reason === 'error') { fb.innerHTML = `<span class="text-red-500">${r.err === 'retap' ? HELP.retap : (HELP[r.err] || 'Micro gặp trục trặc, bé thử lại nhé.')}</span>`; return; }
+    if (r.reason === 'silence') { C.micFails = (C.micFails || 0) + 1; fb.innerHTML = `<span class="text-amber-600">🙉 Chưa nghe thấy bé nói. ${C.micFails >= 3 ? 'Bé thử <b>gõ đáp án</b> vào ô, hoặc bấm <b>🔀 Đổi câu hỏi</b> nhé!' : 'Bé bấm 🎤 thử lại nhé!'}</span>`; return; }
+    C.micFails = 0; cpCheck([r.text, ...r.alts]);
+};
+gSpeak = function () {
+    const vs = fresh(V(), 5), auto = !!SRC() && !INAPP; let i = 0;
+    const nx = () => {
+        if (i >= vs.length) return fin(); const v = vs[i]; let fails = 0, ctl = null;
+        area().innerHTML = `<div class="text-center"><div class="text-xs text-sky-500">Câu ${i + 1}/${vs.length} • ${G.score}đ</div><div class="text-2xl font-black text-purple-700">${v.word}</div><div class="text-sm capitalize text-slate-500 mb-2">${v.meaning}</div><button onclick="spk('${v.word}')" class="px-3 py-2 bg-cyan-500 text-white rounded-lg font-black">🔊 Nghe mẫu</button> ${auto ? '<button id="mic" class="px-3 py-2 bg-pink-500 text-white rounded-lg font-black">🎤 Bé nói</button>' : ''} <button id="sk" class="px-3 py-2 bg-slate-200 rounded-lg">⏭️ Bỏ qua</button><div id="gcd" class="mic-cd hid"></div><div id="sr" class="mt-2 min-h-[1.5rem] text-sm font-bold"></div>${auto ? '' : '<div class="mt-1 text-sm">Bé đọc theo rồi tự chấm nhé:</div><div class="flex justify-center gap-3 mt-1 text-3xl"><button class="sf" data-p="2">😖</button><button class="sf" data-p="6">😐</button><button class="sf" data-p="10">😍</button></div>'}</div>`;
+        const go = p => { G.score += p; i++; setTimeout(nx, 1200); }; $('sk').onclick = () => { abort(); go(0); };
+        area().querySelectorAll('.sf').forEach(b => b.onclick = () => { burst(...ctr(), +b.dataset.p > 5 ? FUN : OOPS, 6); go(+b.dataset.p); });
+        if (auto) $('mic').onclick = async () => {
+            const mic = $('mic'), sr = $('sr'), cdu = cdUI($('gcd')); if (ctl) { ctl.stop(); return; }
+            mic.textContent = '⏹️ Xong'; sr.textContent = '⏳ Đang bật micro...';
+            ctl = listen({ maxMs: 6000, onPrep: x => sr.textContent = x, onReady: () => { sr.innerHTML = '<span class="text-pink-600 animate-pulse">🎤 Bé nói đi!</span>'; cdu.show(); }, onTick: (l, t) => cdu.tick(l, t), onText: t => sr.textContent = '👂 ' + t });
+            const r = await ctl.promise; ctl = null; cdu.hide(); mic.textContent = '🎤 Bé nói'; if (r.reason === 'stopped') return;
+            if (r.reason === 'error') { sr.innerHTML = `<span class="text-red-500">${r.err === 'retap' ? HELP.retap : (HELP[r.err] || 'Micro gặp trục trặc, bé thử lại nhé.')}</span>`; return; }
+            const ok = [...r.alts, r.text].some(a => nrm(a).some(w => near(w, v.word)));
+            if (ok) { sr.innerHTML = '🎉 Chuẩn luôn!'; burst(...ctr(), WIN, 12); go(10); }
+            else { fails++; sr.innerHTML = r.reason === 'silence' ? '🙉 Chưa nghe thấy bé nói, thử lại nhé!' : `🤔 Máy nghe là "${esc2(r.text)}" — thử lại nhé!`; wig(area()); if (fails >= 3) sr.innerHTML += '<div class="mt-1 p-2 bg-amber-50 border-2 border-amber-300 rounded-xl">Bé nói vài lần chưa được rồi 😊 <b>Thử lại</b> hoặc bấm <b>⏭️ Bỏ qua</b> để đổi từ khác nhé!</div>'; }
+        };
+    }; nx();
+};
+window.__mic = { listen, record, scoreSentence, abort };
+})();
+
 </script>
 </body>
 </html>
