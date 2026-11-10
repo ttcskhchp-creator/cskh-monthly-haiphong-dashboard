@@ -817,7 +817,7 @@
             if (localQ) {
                 try {
                     let parsed = JSON.parse(localQ);
-                    if (now - new Date(parsed.created_at).getTime() < SIX_HOURS) {
+                    if (now - __qTime(parsed) < SIX_HOURS) {
                         activeQ = parsed;
                     }
                 } catch(e) {}
@@ -828,7 +828,7 @@
                     const { data: quests } = await db.from('shared_quests').select('*').order('created_at', { ascending: false }).limit(1);
                     if (quests && quests.length) {
                         const q = quests[0];
-                        if (now - new Date(q.created_at).getTime() < SIX_HOURS) {
+                        if (now - __qTime(q) < SIX_HOURS) {
                             activeQ = q;
                         }
                     }
@@ -874,14 +874,14 @@
 
             const q = currentSharedQuest;
             const now = Date.now();
-            const createdAt = new Date(q.created_at).getTime();
+            const createdAt = __qTime(q);
             const timeLeft = Math.max(0, SIX_HOURS - (now - createdAt));
             const hours = Math.floor(timeLeft / (60 * 60 * 1000));
             const minutes = Math.floor((timeLeft % (60 * 60 * 1000)) / (60 * 1000));
 
             const timerEl = document.getElementById('questTimer');
             if (timerEl) {
-                timerEl.textContent = `⏱️ ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`;
+                timerEl.textContent = '⏱️ ' + window.__fmtTimer(timeLeft);
             }
 
             const attempts = q.attempts || {};
@@ -4079,6 +4079,43 @@ async function syncCfg() {
 let lastSync = Date.now(); document.addEventListener('visibilitychange', () => { if (!document.hidden && Date.now() - lastSync > 120000) { lastSync = Date.now(); syncCfg(); } });
 window.__syncCfg = syncCfg;
 window.__fun2 = { ALL, JOKES, TALES, STORIES, CATS, storyQs, assigned, show, pickItem, jokeQ };
+})();
+
+
+// ================== V14: ĐỒNG HỒ NHIỆM VỤ CHẠY TỪNG GIÂY + TỰ CHUYỂN NHIỆM VỤ MỚI ==================
+(() => {
+// Giờ tạo nhiệm vụ: nếu Cloud trả về kiểu "timestamp" không có múi giờ (không có Z), coi là giờ UTC để không lệch 7 tiếng
+window.__qTime = q => { let t = q && q.created_at; if (!t) return NaN; if (typeof t === 'string' && !/(Z|[+-]\d{2}(:?\d{2})?)$/i.test(t.trim())) t = t.trim().replace(' ', 'T') + 'Z'; return new Date(t).getTime(); };
+const fmt = ms => { const s = Math.max(0, Math.ceil(ms / 1000)), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(x).padStart(2, '0')}`; };
+window.__fmtTimer = fmt;
+const left = () => { const q = currentSharedQuest; if (!q) return null; const t = __qTime(q); if (!isFinite(t)) return null; return Math.max(0, Math.min(SIX_HOURS, SIX_HOURS - (Date.now() - t))); };
+let lastId = null, w10 = false, w1 = false, rolling = false, retryAt = 0;
+function newQuestPopup(oldDone, title) {
+    document.querySelectorAll('.mj-ov,.mj-mini').forEach(x => x.remove()); const o = document.createElement('div'); o.className = 'mj-ov';
+    o.innerHTML = `<div class="mj-card" style="background:#fff7ed"><div class="mj-wh"><div style="font-size:56px">⏰🆕</div><h2 style="font-size:22px;font-weight:900;color:#c2410c">Hết giờ! Nhiệm vụ mới đã sẵn sàng</h2><div style="font-size:14px;font-weight:800;color:#7c2d12;margin:8px 0">${oldDone ? 'Bé đã nộp điểm nhiệm vụ trước rồi, giỏi quá! 🎉' : 'Nhiệm vụ trước đã hết giờ nên điểm chưa nộp không được tính. Không sao, bé cố lên ở nhiệm vụ mới nhé! 💪'}</div><div style="font-size:15px;font-weight:900;color:#1d4ed8">📚 Truyện gợi ý: ${String(title || '').replace(/[<>&]/g, '')}</div><button class="mj-btn" id="nqGo" style="margin-top:12px">🚀 Bắt đầu nhiệm vụ mới</button></div></div>`;
+    document.body.appendChild(o); $('nqGo').onclick = () => { o.remove(); setTab('home'); };
+    try { burst(...ctr(), WIN, 24); sfx(660, .15); setTimeout(() => sfx(880, .15), 160); } catch (e) {}
+}
+async function rollover() {                              // hết giờ: lấy nhiệm vụ mới nhất từ Cloud hoặc tạo nhiệm vụ mới
+    if (rolling || Date.now() < retryAt) return; rolling = true;
+    try {
+        const old = currentSharedQuest, oldDone = !!(old && (old.completed_kids || []).includes(currentKidId));
+        localStorage.removeItem('magicCurrentQuest'); currentSharedQuest = null; await syncSharedQuestFromCloud();
+        if (currentSharedQuest && (!old || currentSharedQuest.id !== old.id)) { lastId = null; newQuestPopup(oldDone, currentSharedQuest.story_title); talk('Nhiệm vụ mới đã có rồi! Bé xem thẻ Nhiệm vụ nhé! 🎯'); }
+        else retryAt = Date.now() + 10000;                // chưa tạo được: thử lại sau 10 giây
+    } catch (e) { retryAt = Date.now() + 10000; } finally { rolling = false; }
+}
+function tick() {
+    const el = $('questTimer'), l = left(); if (l === null) return;
+    if (currentSharedQuest.id !== lastId) { lastId = currentSharedQuest.id; w10 = w1 = false; }
+    if (el) { el.textContent = '⏱️ ' + fmt(l); el.style.background = l < 600000 ? '#fecaca' : ''; el.style.color = l < 600000 ? '#b91c1c' : ''; }
+    if (l <= 600000 && l > 0 && !w10) { w10 = true; try { const m = reqs().filter(r => !r.ok); if (m.length) talk(`Còn 10 phút nữa là hết giờ nhiệm vụ! Bé còn thiếu ${m.length} mục nha ⏰`); } catch (e) {} }
+    if (l <= 60000 && l > 0 && !w1) { w1 = true; showToast('Còn 1 phút! Bé nộp ghi điểm nếu đã đủ mục nhé ⏰', 'warning'); }
+    if (l <= 0) rollover();
+}
+setInterval(tick, 1000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) tick(); });     // điện thoại ngủ máy rồi mở lại: kiểm tra ngay
+window.__questTimer = { tick, left, rollover };
 })();
 
 </script>
