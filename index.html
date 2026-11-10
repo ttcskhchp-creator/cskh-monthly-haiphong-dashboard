@@ -3250,7 +3250,7 @@ function goodJob(list) {
 window.__onCriterion = key => { try { const list = reqs(), done = list.find(r => r.key === key), next = list.find(r => !r.ok); next ? miniPop(done, next) : goodJob(list); } catch (e) {} };
 
 // --- quà & vòng quay ---
-const PRIZE_DEF = ['🌟 +20 điểm thưởng', '🍦 Một cây kem', '🎮 15 phút chơi game', '🍟 Một gói snack nhỏ', '📚 Chọn 1 truyện mới', '🧸 Một cái ôm thật chặt', '🥤 Một ly nước ép', '🎬 Xem 1 tập phim hoạt hình'];
+const PRIZE_DEF = ['🌟 +20 điểm thưởng', '🧙 Phù thủy đọc nhầm thần chú, quà chưa xuất hiện rồi!', '🛸 Người ngoài hành tinh vừa lấy nhầm phần thưởng rồi!', '🍟 Một gói snack nhỏ', '📚 Chọn 1 truyện mới', '🐱 Mèo thần tài đang ngủ quên mất rồi! Bé thử lại lần sau nhé', '🥤 Một ly nước ép', '🤣 Ôi không! Bé vừa quay trúng... một nụ cười thật tươi!', '🚀 Chúc mừng! Đi siêu thị/ nhà bóng chơi thôi !', '🐌 Vận may đang bò đến, nhưng chắc phải mai mới tới!'];
 const prizeList = () => { const cp = (typeof CFG !== 'undefined' && CFG.prizes); if (Array.isArray(cp) && cp.length >= 2) return cp.slice(0, 12); try { const a = JSON.parse(store.get('magicPrizesCfg')); if (Array.isArray(a) && a.length >= 2) return a.slice(0, 12); } catch (e) {} return PRIZE_DEF; };
 const ptsOf = t => { const m = /\+(\d+)\s*điểm/i.exec(t); return m ? +m[1] : 0; };
 const spinKey = () => `magicSpin_${currentKidId}_${currentSharedQuest ? currentSharedQuest.id : 'x'}`;
