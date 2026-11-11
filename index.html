@@ -2636,7 +2636,7 @@ const CFG_DEF = {
     q: { stories: 1, sentences: 2, comp: 3, quiz: 1, games: 2, gameTypes: 2, vocab: 0, fun: 1 }
 };
 const cfgOk = c => c && Array.isArray(c.ranks) && c.ranks.length && c.q;
-let CFG = (() => { try { const c = JSON.parse(store.get('magicCfg')); if (cfgOk(c)) return { ranks: c.ranks, q: { ...CFG_DEF.q, ...c.q }, prizes: Array.isArray(c.prizes) ? c.prizes : undefined }; } catch (e) {} return JSON.parse(JSON.stringify(CFG_DEF)); })();
+let CFG = (() => { try { const c = JSON.parse(store.get('magicCfg')); if (cfgOk(c)) return { ranks: c.ranks, q: { ...CFG_DEF.q, ...c.q }, prizes: Array.isArray(c.prizes) ? c.prizes : undefined, bonus: c.bonus }; } catch (e) {} return JSON.parse(JSON.stringify(CFG_DEF)); })();
 getKidRank = function (done) { let r = CFG.ranks[0]; for (const x of CFG.ranks) if (done >= x.min) r = x; return { title: r.title, minScore: r.score }; };
 
 const newSess = () => ({ readStories: new Set(), sentencesPassed: 0, gamesPlayed: 0, scoreEarned: 0, compOk: 0, quizPlays: 0, gameTypes: new Set(), vocabHeard: new Set() });
@@ -2754,7 +2754,7 @@ function drawCfg(c) {
 (() => { const b = document.createElement('button'); b.id = 'cfgBtn'; b.type = 'button'; b.textContent = '⚙️ Cài điểm chuẩn hạng & nhiệm vụ (Bố Mẹ)'; b.className = 'w-full mt-2 py-2 text-xs bg-purple-100 text-purple-700 font-black rounded-xl'; b.onclick = openCfg; $('cardKidProfile').appendChild(b); })();
 setTimeout(async () => {                                // lấy cài đặt dùng chung từ Cloud (tối đa 1 giờ/lần)
     if (!db || Date.now() - (+store.get('magicCfgAt') || 0) < 6e4) return; store.set('magicCfgAt', Date.now());
-    try { const { data } = await db.from('magic_settings').select('data').eq('id', 'cfg').maybeSingle(); if (data && cfgOk(data.data)) { CFG = { ranks: data.data.ranks, q: { ...CFG_DEF.q, ...data.data.q }, prizes: Array.isArray(data.data.prizes) && data.data.prizes.length >= 2 ? data.data.prizes : CFG.prizes }; if (CFG.prizes) store.set('magicPrizesCfg', JSON.stringify(CFG.prizes)); store.set('magicCfg', JSON.stringify(CFG)); cfgRefresh(); } } catch (e) {}
+    try { const { data } = await db.from('magic_settings').select('data').eq('id', 'cfg').maybeSingle(); if (data && cfgOk(data.data)) { CFG = { ranks: data.data.ranks, q: { ...CFG_DEF.q, ...data.data.q }, prizes: Array.isArray(data.data.prizes) && data.data.prizes.length >= 2 ? data.data.prizes : CFG.prizes, bonus: data.data.bonus || CFG.bonus }; if (CFG.prizes) store.set('magicPrizesCfg', JSON.stringify(CFG.prizes)); store.set('magicCfg', JSON.stringify(CFG)); cfgRefresh(); } } catch (e) {}
 }, 3000);
 
         // KHỞI ĐỘNG HỆ THỐNG AN TOÀN
@@ -3250,7 +3250,7 @@ function goodJob(list) {
 window.__onCriterion = key => { try { const list = reqs(), done = list.find(r => r.key === key), next = list.find(r => !r.ok); next ? miniPop(done, next) : goodJob(list); } catch (e) {} };
 
 // --- quà & vòng quay ---
-const PRIZE_DEF = ['🌟 +20 điểm thưởng', '🧙 Phù thủy đọc nhầm thần chú, quà chưa xuất hiện rồi!', '🛸 Người ngoài hành tinh vừa lấy nhầm phần thưởng rồi!', '🍟 Một gói snack nhỏ', '📚 Chọn 1 truyện mới', '🐱 Mèo thần tài đang ngủ quên mất rồi! Bé thử lại lần sau nhé', '🥤 Một ly nước ép', '🤣 Ôi không! Bé vừa quay trúng... một nụ cười thật tươi!', '🚀 Chúc mừng! Đi siêu thị/ nhà bóng chơi thôi !', '🐌 Vận may đang bò đến, nhưng chắc phải mai mới tới!'];
+const PRIZE_DEF = ['🌟 +20 điểm thưởng', '🍦 Một cây kem', '🎮 15 phút chơi game', '🍟 Một gói snack nhỏ', '📚 Chọn 1 truyện mới', '🧸 Một cái ôm thật chặt', '🥤 Một ly nước ép', '🎬 Xem 1 tập phim hoạt hình'];
 const prizeList = () => { const cp = (typeof CFG !== 'undefined' && CFG.prizes); if (Array.isArray(cp) && cp.length >= 2) return cp.slice(0, 12); try { const a = JSON.parse(store.get('magicPrizesCfg')); if (Array.isArray(a) && a.length >= 2) return a.slice(0, 12); } catch (e) {} return PRIZE_DEF; };
 const ptsOf = t => { const m = /\+(\d+)\s*điểm/i.exec(t); return m ? +m[1] : 0; };
 const spinKey = () => `magicSpin_${currentKidId}_${currentSharedQuest ? currentSharedQuest.id : 'x'}`;
@@ -3280,8 +3280,8 @@ function wheelSVG(items) {
 function showWheel() {
     closeOv(); const items = prizeList(), n = items.length, sl = 360 / n, hasReal = !!store.get(spinKey()); let cur = 0, busy = false, tries = 0;
     const o = document.createElement('div'); o.className = 'mj-ov';
-    o.innerHTML = `<div class="mj-card" style="background:#fff7ed"><div class="mj-wh"><h2 style="font-size:22px;font-weight:900;color:#c2410c">🎡 Vòng quay phần thưởng</h2><div style="font-size:12px;font-weight:700;color:#7c2d12">Bé hoàn thành nhiệm vụ nên được quay 1 lần thật. Quay thử trước cho vui nhé!</div>${wheelSVG(items)}<div id="mjRes" style="min-height:44px;font-weight:900;font-size:16px;color:#9a3412"></div><div class="row"><button id="mjTry" style="background:#6366f1">🎡 Quay thử (<span id="mjTn">0</span>)</button><button id="mjReal" style="background:#f97316">🎁 QUAY THƯỞNG</button></div><div style="font-size:11px;font-weight:700;color:#78350f;text-align:left">${items.map(esc).join(' • ')}</div><a class="mj-x" id="mjClose" style="color:#9a3412;margin-top:8px">Đóng</a></div></div>`;
-    document.body.appendChild(o); $('mjClose').onclick = () => o.remove(); if (!hasReal) { $('mjReal').disabled = true; $('mjReal').style.opacity = .45; $('mjReal').textContent = '✅ Đã quay'; }
+    o.innerHTML = `<div class="mj-card" style="background:#fff7ed"><div class="mj-wh"><h2 style="font-size:22px;font-weight:900;color:#c2410c">🎡 Vòng quay phần thưởng</h2><div style="font-size:12px;font-weight:700;color:#7c2d12">${hasReal ? 'Bé hoàn thành nhiệm vụ nên được quay 1 lần thật. Quay thử trước cho vui nhé!' : 'Quay thử cho vui nhé! Làm xong nhiệm vụ để được quay thưởng thật 🎁'}</div>${wheelSVG(items)}<div id="mjRes" style="min-height:44px;font-weight:900;font-size:16px;color:#9a3412"></div><div class="row"><button id="mjTry" style="background:#6366f1">🎡 Quay thử (<span id="mjTn">0</span>)</button><button id="mjReal" style="background:#f97316">🎁 QUAY THƯỞNG</button></div><div style="font-size:11px;font-weight:700;color:#78350f;text-align:left">${items.map(esc).join(' • ')}</div><a class="mj-x" id="mjClose" style="color:#9a3412;margin-top:8px">Đóng</a></div></div>`;
+    document.body.appendChild(o); $('mjClose').onclick = () => o.remove(); if (!hasReal) { $('mjReal').disabled = true; $('mjReal').style.opacity = .45; $('mjReal').textContent = '🔒 Xong nhiệm vụ để quay thật'; }
     const spin = (real) => {
         if (busy) return; busy = true; const i = Math.floor(Math.random() * n), rot = $('mjRot');
         cur = cur + 360 * 5 + ((((-(i + .5) * sl - cur) % 360) + 360) % 360); rot.style.transition = 'transform 4.2s cubic-bezier(.12,.7,.12,1)'; rot.style.transform = `rotate(${cur}deg)`;
@@ -3304,6 +3304,7 @@ const _claim10 = claimQuestReward;
 claimQuestReward = async function () {
     const q = currentSharedQuest, was = q && (q.completed_kids || []).includes(currentKidId), r = await _claim10.apply(this, arguments);
     if (q && !was && (q.completed_kids || []).includes(currentKidId) && !(q.attempts && q.attempts['spun_' + currentKidId])) { store.set(spinKey(), '1'); refreshSpin(); setTimeout(showWheel, 900); }
+    if (q && !was && (q.completed_kids || []).includes(currentKidId)) { try { window.__onQuestClaimed && window.__onQuestClaimed(q); } catch (e) {} }
     return r;
 };
 // --- Bố Mẹ chỉnh danh sách quà ---
@@ -3331,7 +3332,7 @@ setTimeout(async () => {
     loadLeaderboard();
 }, 3500);
 setTimeout(() => { try { loadLeaderboard(); refreshSpin(); } catch (e) {} }, 2500);
-window.__fun = { spinKey, prizeList };
+window.__fun = { spinKey, prizeList, showWheel, animalSVG, ANIMALS };
 })();
 
 
@@ -4059,22 +4060,28 @@ function pickItem(type, cat) {
 $('fnStory').onclick = topicPicker; $('fnMis').onclick = () => pickItem(assigned()); $('fnRnd').onclick = () => pickItem(null); card.querySelectorAll('.fnT').forEach(b => b.onclick = () => pickItem(b.dataset.ft));
 const refreshMission = () => { const m = $('funMission'); if (m) m.innerHTML = currentSharedQuest && CFG.q.fun > 0 ? `🎯 Nhiệm vụ hôm nay: đọc 1 <b>${TYPES[assigned()]}</b> và trả lời câu hỏi cuối bài (${(sessionTracker.funByType && sessionTracker.funByType[assigned()]) || 0}/${CFG.q.fun}).` : 'Đọc chuyện vui để học thêm từ mới nhé!'; };
 const _us = updateSessionUI; updateSessionUI = function () { const r = _us.apply(this, arguments); refreshMission(); return r; }; refreshMission();
+const canon = v => Array.isArray(v) ? '[' + v.map(canon).join(',') + ']' : (v && typeof v === 'object') ? '{' + Object.keys(v).filter(k => v[k] !== undefined).sort().map(k => JSON.stringify(k) + ':' + canon(v[k])).join(',') + '}' : JSON.stringify(v);
 async function cloudSaveCfg(cfg) {
     if (!db) return { ok: false, msg: 'Chưa kết nối được Supabase (kiểm tra mạng hoặc khóa kết nối).' };
+    const payload = JSON.parse(JSON.stringify(cfg)); let how = 'bảng';
     try {
-        const { error } = await db.from('magic_settings').upsert({ id: 'cfg', data: cfg, updated_at: new Date().toISOString() });
-        if (error) return { ok: false, msg: /relation|does not exist|42P01/.test(error.message + error.code) ? 'Bảng magic_settings chưa được tạo.' : (error.message || String(error)) };
+        const up = await db.from('magic_settings').upsert({ id: 'cfg', data: payload, updated_at: new Date().toISOString() }).select('id');
+        if (up.error && /relation|does not exist|42P01/.test((up.error.message || '') + (up.error.code || ''))) return { ok: false, msg: 'Bảng magic_settings chưa được tạo.' };
+        if (up.error || !up.data || !up.data.length) {                       // bảng chặn ghi/cập nhật → thử hàm lưu riêng (không phụ thuộc quyền của bảng)
+            const r = await db.rpc('magic_save_setting', { p_id: 'cfg', p_data: payload });
+            if (r.error) return { ok: false, msg: (up.error && up.error.message) || 'Bảng chặn quyền cập nhật và hàm magic_save_setting chưa được cài.' };
+            how = 'hàm';
+        }
         const { data, error: e2 } = await db.from('magic_settings').select('data').eq('id', 'cfg').maybeSingle();
         if (e2 || !data) return { ok: false, msg: (e2 && e2.message) || 'Không đọc lại được dữ liệu vừa lưu (thiếu quyền đọc).' };
-        const same = JSON.stringify(data.data.prizes || null) === JSON.stringify(cfg.prizes || null) && JSON.stringify(data.data.q) === JSON.stringify(cfg.q) && JSON.stringify(data.data.ranks) === JSON.stringify(cfg.ranks);
-        return same ? { ok: true } : { ok: false, msg: 'Cloud chưa nhận dữ liệu mới (thiếu quyền ghi/cập nhật trên bảng magic_settings).' };
+        return canon(data.data) === canon(payload) ? { ok: true, how } : { ok: false, msg: 'Cloud chưa nhận dữ liệu mới (thiếu quyền ghi/cập nhật trên bảng magic_settings).' };
     } catch (e) { return { ok: false, msg: e.message || String(e) }; }
 }
 window.__cloudSave = cloudSaveCfg;
 window.__cloudTest = () => cloudSaveCfg(CFG);
 async function syncCfg() {
     if (!db) return;
-    try { const { data } = await db.from('magic_settings').select('data').eq('id', 'cfg').maybeSingle(); if (data && cfgOk(data.data)) { const d = data.data; CFG = { ranks: d.ranks, q: { ...CFG_DEF.q, ...d.q }, prizes: Array.isArray(d.prizes) && d.prizes.length >= 2 ? d.prizes : CFG.prizes }; store.set('magicCfg', JSON.stringify(CFG)); if (CFG.prizes) store.set('magicPrizesCfg', JSON.stringify(CFG.prizes)); store.set('magicCfgAt', Date.now()); cfgRefresh(); } } catch (e) {}
+    try { const { data } = await db.from('magic_settings').select('data').eq('id', 'cfg').maybeSingle(); if (data && cfgOk(data.data)) { const d = data.data; CFG = { ranks: d.ranks, q: { ...CFG_DEF.q, ...d.q }, prizes: Array.isArray(d.prizes) && d.prizes.length >= 2 ? d.prizes : CFG.prizes, bonus: d.bonus || CFG.bonus }; store.set('magicCfg', JSON.stringify(CFG)); if (CFG.prizes) store.set('magicPrizesCfg', JSON.stringify(CFG.prizes)); store.set('magicCfgAt', Date.now()); cfgRefresh(); } } catch (e) {}
 }
 let lastSync = Date.now(); document.addEventListener('visibilitychange', () => { if (!document.hidden && Date.now() - lastSync > 120000) { lastSync = Date.now(); syncCfg(); } });
 window.__syncCfg = syncCfg;
@@ -4116,6 +4123,263 @@ function tick() {
 setInterval(tick, 1000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) tick(); });     // điện thoại ngủ máy rồi mở lại: kiểm tra ngay
 window.__questTimer = { tick, left, rollover };
+})();
+
+
+// ================== V15: THẺ BÀI MAY MẮN (thách đấu) + BỐC THĂM NHIỆM VỤ PHỤ + NÚT QUAY THỬ ==================
+(() => {
+const TS = t => window.__qTime({ created_at: t }), sleep = ms => new Promise(r => setTimeout(r, ms));
+const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const bonusCfg = () => ({ on: true, reward: 100, penalty: 300, minutes: 30, ...(CFG.bonus || {}) });
+const kidOf = id => cachedKids.find(k => k.id === id) || {};
+const seenKey = () => 'magicDuelSeen_' + currentKidId, seenL = () => { try { return JSON.parse(store.get(seenKey())) || []; } catch (e) { return []; } };
+const markSeen = k => { const a = seenL(); if (!a.includes(k)) { a.push(k); store.set(seenKey(), JSON.stringify(a.slice(-80))); } };
+const rpc = async (fn, args) => { if (!db) return { error: { message: 'no-db' } }; try { return await db.rpc(fn, args); } catch (e) { return { error: { message: e.message || String(e) } }; } };
+const noFn = e => e && /function|schema cache|does not exist|PGRST202|42883|lucky_/i.test((e.message || '') + (e.code || ''));
+const SQLMSG = 'Chưa cài hàm thẻ bài trên Cloud: bố mẹ chạy lại file supabase_setup.sql trong Supabase (SQL Editor).';
+let inbox = [], outbox = [], sel = null, skew = 0, busy = false;
+const st = document.createElement('style');
+st.textContent = `@keyframes duelBlink{0%,100%{box-shadow:0 0 0 0 #f59e0bcc;transform:scale(1)}50%{box-shadow:0 0 0 12px #f59e0b00;transform:scale(1.025)}}.duel-blink{animation:duelBlink 1s infinite;border-color:#f59e0b!important}
+.dl-card{position:relative;border-radius:18px;padding:8px;text-align:center;background:linear-gradient(135deg,#fde68a,#fbcfe8);border:3px solid #fff;box-shadow:0 6px 16px #0002;margin-bottom:8px}.dl-ani svg{width:84px;height:104px;display:block;margin:auto;animation:mjFloat 2.2s infinite}
+.dl-opp{padding:8px 4px;border-radius:14px;border:3px solid #fecdd3;background:#fff;font-weight:900;font-size:13px;line-height:1.25}.dl-opp.on{background:#fda4af;border-color:#e11d48;color:#fff}.dl-btn{padding:10px 14px;border-radius:14px;font-weight:900;font-size:15px;color:#fff}
+.dl-roll{font-size:46px;font-weight:900;text-align:center;min-height:62px}.dl-lt{display:inline-block;margin:3px;padding:6px 10px;border-radius:12px;background:#fde68a;font-weight:900;font-size:20px;text-transform:uppercase}`;
+document.head.appendChild(st);
+const card = document.createElement('div'); card.id = 'cardDuel'; card.className = 'guide-card hid bg-white p-3 rounded-[1.5rem] shadow-lg border-4 border-rose-300';
+card.innerHTML = `<div class="flex items-center justify-between gap-2 mb-1"><h2 class="font-black text-rose-600 text-base md:text-lg">🎴 Thẻ bài may mắn</h2><span id="dlBadge" class="text-[11px] font-black bg-rose-100 text-rose-700 px-2 py-1 rounded-full">0 thẻ chờ</span></div>
+<div class="text-[12px] font-bold text-slate-600 bg-rose-50 border border-rose-200 rounded-xl p-2 mb-2">📜 <b>Thách đấu:</b> gửi thẻ cho bạn. Bạn mở thẻ phải làm câu đố tiếng Anh trong <b>60 giây</b>: <b>thắng</b> nhận 100 điểm của người gửi, <b>sai/hết giờ</b> mất 100 điểm cho người gửi.<br>🎰 <b>Nhiệm vụ phụ:</b> sau mỗi nhiệm vụ, máy bốc thăm ngẫu nhiên một bạn làm câu hỏi về từ của bài: <b>đúng +100</b>, <b>sai/không làm −300</b> điểm.</div>
+<div id="dlInbox"></div><div class="font-black text-rose-700 mt-2 mb-1">🎯 Tìm đối thủ để gửi thẻ</div><div id="dlOpp" class="grid grid-cols-2 gap-1.5"></div>
+<button id="dlSend" class="w-full mt-2 py-3 rounded-2xl bg-rose-500 text-white font-black">🎴 Gửi thẻ bài may mắn</button><div id="dlMsg" class="text-xs font-bold mt-1 min-h-[16px]"></div>
+<div class="font-black text-rose-700 mt-3 mb-1">📬 Thẻ đã gửi / bốc thăm gần đây</div><div id="dlOut" class="text-[12px] font-bold"></div>`;
+$('cardGameSection').after(card); TABS.cardDuel = 'play'; card.classList.toggle('hid', document.body.dataset.tab !== 'play');
+const msg = (t, bad) => { const m = $('dlMsg'); m.style.color = bad ? '#dc2626' : '#059669'; m.textContent = t || ''; };
+function render() {
+    const me = kidOf(currentKidId), others = cachedKids.filter(k => k.id !== currentKidId);
+    $('dlOpp').innerHTML = others.length ? others.map(k => `<button class="dl-opp ${sel === k.id ? 'on' : ''}" data-id="${esc(k.id)}">${esc(k.icon)} ${esc(k.name)}<br><span style="font-weight:700">${k.score || 0} điểm</span></button>`).join('') : '<div class="col-span-2 text-[12px] text-slate-500 italic">Chưa có bạn nào khác. Bố mẹ thêm thành viên nhí (cùng dùng Cloud) để thách đấu nhé!</div>';
+    $('dlOpp').querySelectorAll('.dl-opp').forEach(b => b.onclick = () => { sel = b.dataset.id; msg(''); render(); });
+    $('dlSend').textContent = sel ? `🎴 Gửi thẻ cho ${kidOf(sel).name || 'bạn'}` : '🎴 Gửi thẻ bài may mắn';
+    $('dlInbox').innerHTML = inbox.length ? inbox.map(c => { const b = c.kind === 'bonus', left = c.expires_at ? Math.max(0, Math.round((TS(c.expires_at) - skew - Date.now()) / 60000)) : null;
+        return `<div class="dl-card duel-blink"><div class="dl-ani">${window.__fun.animalSVG(b ? 'fox' : c.animal)}</div><div class="font-black text-rose-700">${b ? '🎰 Nhiệm vụ phụ may mắn!' : `🎴 Thẻ bài may mắn từ ${esc(c.from_icon)} ${esc(c.from_name)}!`}</div><div style="font-size:12px;font-weight:700;color:#7c2d12">${c.status === 'opened' ? '⏳ Bé đang làm dở — bấm để tiếp tục' : b ? `Đúng +${c.reward} • Sai/không làm −${c.penalty} điểm${left != null ? ` • còn ${left} phút` : ''}` : 'Mở thẻ rồi làm trong 60 giây: thắng +100, thua −100 điểm'}</div><button class="dlOpen dl-btn" style="background:#e11d48;margin-top:6px" data-id="${esc(c.id)}">🎴 ${c.status === 'opened' ? 'Làm tiếp' : 'Mở thẻ'}</button></div>`; }).join('') : '<div class="text-[12px] text-slate-500 italic">Chưa có thẻ nào gửi đến bé.</div>';
+    $('dlInbox').querySelectorAll('.dlOpen').forEach(b => b.onclick = () => openCard(b.dataset.id));
+    const T = { sent: '⏳ chờ mở', opened: '🎮 đang làm', expired: '⌛ hết hạn' };
+    $('dlOut').innerHTML = outbox.length ? outbox.map(c => { const b = c.kind === 'bonus', who = `${esc(c.to_icon)} ${esc(c.to_name)}`;
+        const s = T[c.status] || (b ? (c.status === 'won' ? `✅ làm đúng (+${c.transfer}đ)` : `❌ sai/không làm (−${c.transfer}đ)`) : (c.status === 'won' ? `😬 ${who} thắng, bé mất ${c.transfer}đ` : `😎 ${who} thua, bé nhận ${c.transfer}đ`));
+        return `<div class="bg-white border border-rose-100 rounded-xl px-2 py-1 mb-1">${b ? '🎰 Bốc thăm →' : '🎴 Thẻ →'} ${who}: ${s}</div>`; }).join('') : '<div class="text-slate-500 italic">Chưa có.</div>';
+    $('dlBadge').textContent = `${inbox.length} thẻ chờ`;
+    card.classList.toggle('duel-blink', inbox.length > 0);
+    const nb = document.querySelector('#nav button[data-t="play"]'); if (nb && inbox.length && document.body.dataset.tab !== 'play') nb.classList.add('pulse');
+}
+const popup = (html, go) => {
+    document.querySelectorAll('.mj-mini').forEach(x => x.remove()); const m = document.createElement('div'); m.className = 'mj-mini'; m.style.borderColor = '#e11d48';
+    m.innerHTML = `${window.__fun.animalSVG('fox')}<div class="t">${html}<br><button id="dnGo" style="background:#e11d48;color:#fff">Xem thẻ ➡️</button><button id="dnX" style="background:#e2e8f0">Để sau</button></div>`; document.body.appendChild(m);
+    $('dnX').onclick = () => m.remove(); $('dnGo').onclick = () => { m.remove(); go && go(); }; setTimeout(() => m.remove(), 15000); try { fanfare(); } catch (e) {}
+};
+function notify() {
+    const seen = seenL(), nw = inbox.find(c => c.status === 'sent' && !seen.includes('in:' + c.id));
+    if (nw) { markSeen('in:' + nw.id); popup(nw.kind === 'bonus' ? `🎰 Bốc thăm may mắn chọn <b>bé</b>! Có <b>nhiệm vụ phụ</b>: đúng +${nw.reward}, sai/không làm −${nw.penalty} điểm.` : `🎴 Bé có <b>thẻ bài may mắn</b> từ <b>${esc(nw.from_name)}</b>! Mở ra làm trong 60 giây nhé.`, () => setTab('play')); return; }
+    const rs = outbox.find(c => ['won', 'lost'].includes(c.status) && !seen.includes('out:' + c.id + c.status));
+    if (rs) { markSeen('out:' + rs.id + rs.status); const b = rs.kind === 'bonus'; popup(b ? `🎰 ${esc(rs.to_name)} vừa làm xong nhiệm vụ phụ từ lần bốc thăm của bé: ${rs.status === 'won' ? 'làm đúng' : 'sai/không làm'}.` : `🎴 ${esc(rs.to_name)} đã mở thẻ của bé: ${rs.status === 'won' ? `bạn ấy THẮNG, bé mất ${rs.transfer} điểm 😬` : `bạn ấy THUA, bé nhận ${rs.transfer} điểm 😎`}`, () => { syncKidsFromCloud(); setTab('play'); }); syncKidsFromCloud(); }
+}
+async function fetchDuel() {
+    if (!db) { msg('Cần kết nối Cloud để chơi thẻ bài.', true); return; }
+    try {
+        const [a, b] = await Promise.all([db.from('lucky_cards').select('*').eq('to_kid', currentKidId).in('status', ['sent', 'opened']).order('created_at', { ascending: false }).limit(10), db.from('lucky_cards').select('*').eq('from_kid', currentKidId).order('created_at', { ascending: false }).limit(8)]);
+        if (a.error || b.error) { msg(SQLMSG, true); return; }
+        inbox = a.data || []; outbox = b.data || []; let changed = false;
+        for (const c of [...inbox, ...outbox]) {                // hết giờ / hết hạn mà chưa ai chốt → chốt giúp
+            const late = c.status === 'opened' && Date.now() + skew - TS(c.opened_at) > (c.limit_s || 60) * 1000 + 3000, gone = c.status === 'sent' && c.expires_at && Date.now() + skew > TS(c.expires_at) + 2000;
+            if (late || gone) { const r = await rpc('lucky_resolve', { p_id: c.id, p_mode: late ? 'timeout' : 'expire' }); if (r.data && r.data.status !== c.status) changed = true; }
+        }
+        if (changed) { const [a2, b2] = await Promise.all([db.from('lucky_cards').select('*').eq('to_kid', currentKidId).in('status', ['sent', 'opened']).order('created_at', { ascending: false }).limit(10), db.from('lucky_cards').select('*').eq('from_kid', currentKidId).order('created_at', { ascending: false }).limit(8)]); inbox = a2.data || []; outbox = b2.data || []; syncKidsFromCloud(); }
+        render(); notify();
+    } catch (e) {}
+}
+// ---------- câu đố ----------
+const mcq = (correct, wrongs) => { const s = [correct]; wrongs.forEach(x => { if (s.length < 4 && x && !s.includes(x)) s.push(x); }); return shuf(s); };
+const pool = () => { const a = (globalVocabData || []).filter(v => v.word && v.meaning); return a.length >= 4 ? a : V(); };
+function duelChallenge() {
+    const w = fresh(V(), 1)[0], P = V().filter(x => x.word !== w.word), o = shuf(P), kind = pick(['meaning', 'word', 'listen', 'scramble']);
+    if (kind === 'meaning') return { t: 'mcq', w: w.word, q: `Nghĩa của từ "${w.word}" là gì?`, opts: mcq(w.meaning, o.map(x => x.meaning)), a: w.meaning };
+    if (kind === 'word') return { t: 'mcq', w: w.word, q: `Từ nào có nghĩa là "${w.meaning}"?`, opts: mcq(w.word, o.map(x => x.word)), a: w.word };
+    if (kind === 'listen') return { t: 'mcq', w: w.word, listen: 1, q: 'Nghe và chọn từ đúng', opts: mcq(w.word, o.map(x => x.word)), a: w.word };
+    const sw = P.concat([w]).filter(x => x.word.length >= 3 && x.word.length <= 7 && /^[a-z]+$/.test(x.word)), t = pick(sw.length ? sw : [w]); let L = shuf(t.word.split('')); for (let i = 0; i < 5 && L.join('') === t.word; i++) L = shuf(L);
+    return { t: 'scr', w: t.word, letters: L, hint: t.meaning, q: 'Xếp các chữ cái thành từ đúng' };
+}
+function bonusPayload() {                                // câu hỏi về các từ của bài đã chọn + phát âm
+    const p = pool(), w = pick(p), o = shuf(V().concat(p).filter(x => x.word !== w.word)), kind = pick(['meaning', 'listen', 'word']);
+    const base = { w: w.word, meaning: w.meaning, say: 1, from: 'bài đã chọn' };
+    if (kind === 'meaning') return { ...base, t: 'mcq', q: `Nghĩa của từ "${w.word}" là gì?`, opts: mcq(w.meaning, o.map(x => x.meaning)), a: w.meaning };
+    if (kind === 'word') return { ...base, t: 'mcq', q: `Từ nào có nghĩa là "${w.meaning}"?`, opts: mcq(w.word, o.map(x => x.word)), a: w.word };
+    return { ...base, t: 'mcq', listen: 1, q: 'Nghe và chọn từ đúng', opts: mcq(w.word, o.map(x => x.word)), a: w.word };
+}
+// ---------- cửa sổ làm thẻ ----------
+const closeAll = () => document.querySelectorAll('.mj-ov,.mj-mini').forEach(x => x.remove());
+async function resolve(id, mode) { const r = await rpc('lucky_resolve', { p_id: id, p_mode: mode }); return r.error ? { status: 'error', err: r.error.message } : r.data; }
+function runChallenge(c) {
+    closeAll(); const ch = c.payload || {}, bonus = c.kind === 'bonus', limit = (c.limit_s || (bonus ? 90 : 60)) * 1000, o = document.createElement('div'); o.className = 'mj-ov'; o.id = 'dlOv';
+    o.innerHTML = `<div class="mj-card" style="background:#fff7ed;padding:12px"><div class="dl-ani">${window.__fun.animalSVG(bonus ? 'fox' : c.animal)}</div><div style="text-align:center;font-weight:900;color:#be123c">${bonus ? '🎰 Nhiệm vụ phụ may mắn' : `🎴 Thẻ bài từ ${esc(c.from_icon)} ${esc(c.from_name)}`}</div><div style="font-size:12px;text-align:center;font-weight:700;color:#7c2d12">${bonus ? `Đúng +${c.reward} điểm • Sai / hết giờ −${c.penalty} điểm` : 'Thắng nhận 100 điểm • Sai / hết giờ mất 100 điểm'}</div><div class="mic-cd"><div class="mic-bar"><i></i></div><span></span></div><div id="dlChal" style="margin-top:6px"></div><div id="dlRes" style="text-align:center;font-weight:900;margin-top:8px"></div></div>`;
+    document.body.appendChild(o);
+    const end = TS(c.opened_at) + limit - skew; let done = false;
+    const tm = setInterval(() => { const l = end - Date.now(), i = o.querySelector('.mic-bar i'), s = o.querySelector('.mic-cd span'); if (!i) { clearInterval(tm); return; } i.style.width = Math.max(0, Math.min(100, l / limit * 100)) + '%'; i.style.background = l < 15000 ? '#ef4444' : l < 30000 ? '#f59e0b' : '#22c55e'; s.textContent = `⏱️ Còn ${Math.max(0, Math.ceil(l / 1000))} giây`; if (l <= 0 && !done) finish('timeout'); }, 200);
+    async function finish(mode) {
+        if (done) return; done = true; clearInterval(tm); try { window.__mic.abort(); stopAudio(); } catch (e) {} $('dlChal').querySelectorAll('button').forEach(b => b.disabled = true);
+        $('dlRes').textContent = '⏳ Đang chốt kết quả...'; let r = await resolve(c.id, mode);
+        for (let i = 0; i < 4 && r && r.status === 'opened'; i++) { await sleep(1300); r = await resolve(c.id, mode === 'win' ? 'win' : 'timeout'); }
+        const won = r && r.status === 'won', who = c.kind === 'bonus' ? '' : esc(c.from_name);
+        $('dlRes').innerHTML = !r || r.status === 'error' ? `<span style="color:#dc2626">${esc((r && r.err) || 'Lỗi mạng')}</span>` : won ? `<span style="color:#059669;font-size:18px">🎉 Bé THẮNG! +${r.transfer} điểm${who ? ` từ ${who}` : ''}</span>` : `<span style="color:#dc2626;font-size:18px">😢 Bé chưa làm được. −${r.transfer} điểm${who ? ` cho ${who}` : ''}</span>`;
+        if (won) { burst(...ctr(), WIN, 24); fanfare(); } else burst(...ctr(), OOPS, 8);
+        $('dlRes').insertAdjacentHTML('beforeend', '<br><button id="dlOk" class="dl-btn" style="background:#6366f1;margin-top:8px">Đóng</button>'); $('dlOk').onclick = () => o.remove();
+        try { await syncKidsFromCloud(); } catch (e) {} fetchDuel();
+    }
+    const box = $('dlChal');
+    const say = () => {                                    // bước đọc to từ (chỉ khi máy nghe được giọng)
+        if (!(window.SpeechRecognition || window.webkitSpeechRecognition)) { box.innerHTML = '<div style="text-align:center;font-weight:900;color:#059669">🎉 Đúng rồi!</div>'; setTimeout(() => finish('win'), 800); return; }
+        let tries = 0; box.innerHTML = `<div style="text-align:center;font-weight:900;color:#059669">✅ Đúng rồi! Giờ bé đọc to từ <span style="font-size:22px;color:#7e22ce">${esc(ch.w)}</span> nhé</div><div style="text-align:center;margin-top:6px"><button id="dlHear" class="dl-btn" style="background:#0ea5e9">🔊 Nghe mẫu</button> <button id="dlSay" class="dl-btn" style="background:#e11d48">🎤 Bé đọc</button></div><div id="dlSayMsg" style="text-align:center;font-weight:800;font-size:13px;margin-top:6px"></div>`;
+        $('dlHear').onclick = () => speakWordRandom(ch.w);
+        $('dlSay').onclick = async () => { const m = $('dlSayMsg'); m.textContent = '⏳ Đang bật micro...'; const ctl = window.__mic.listen({ maxMs: 7000, extend: true, onPrep: x => m.textContent = x, onReady: () => m.textContent = '🎤 Bé đọc to lên nào!', onText: t => m.textContent = '👂 ' + t }); const r = await ctl.promise; if (done || r.reason === 'stopped') return;
+            if (r.reason === 'error') { m.textContent = 'Micro chưa sẵn sàng, bé thử lại nhé!'; return; }
+            if (r.text && window.__wm.any([...r.alts, r.text], [ch.w])) { m.textContent = '🎉 Chuẩn luôn!'; finish('win'); } else { tries++; m.textContent = tries >= 3 ? 'Bé đã cố gắng rất tốt! 👏' : `Máy nghe là "${r.text || '...'}" — bé thử lại nhé!`; if (tries >= 3) setTimeout(() => finish('win'), 900); } };
+    };
+    if (ch.t === 'scr') {
+        let pk = []; const L = ch.letters;
+        const draw = () => { box.innerHTML = `<div style="text-align:center;font-weight:800;margin-bottom:4px">${esc(ch.q)}<br><span style="color:#7e22ce">Gợi ý: ${esc(ch.hint)}</span> <button id="dlH">🔊</button></div><div style="text-align:center;min-height:42px">${L.map((_, k) => `<span class="dl-lt">${pk[k] ? esc(pk[k].c) : '_'}</span>`).join('')}</div><div style="text-align:center;margin-top:6px">${L.map((c, k) => `<button class="dl-lt lt" ${pk.some(p => p.k === k) ? 'style="opacity:.3"' : ''} data-k="${k}">${esc(c)}</button>`).join('')}<button id="dlUn" class="dl-lt" style="background:#fecaca">⌫</button></div>`;
+            $('dlH').onclick = () => speakWordRandom(ch.w); $('dlUn').onclick = () => { pk.pop(); draw(); };
+            box.querySelectorAll('.lt').forEach(b => b.onclick = () => { const k = +b.dataset.k; if (pk.some(p => p.k === k) || done) return; pk.push({ k, c: L[k] }); draw(); if (pk.length === L.length) { if (pk.map(p => p.c).join('') === ch.w) { speakWordRandom(ch.w); finish('win'); } else { burst(...ctr(), OOPS, 4); pk = []; setTimeout(draw, 500); } } }); }; draw();
+    } else {
+        box.innerHTML = `<div style="text-align:center;font-weight:900;font-size:16px;margin-bottom:6px">${esc(ch.q)}${ch.listen ? ' <button id="dlL" style="font-size:24px">🔊</button>' : ''}</div>${(ch.opts || []).map((x, i) => `<button class="fun-opt" data-i="${i}">${esc(x)}</button>`).join('')}`;
+        if (ch.listen) { $('dlL').onclick = () => speakWordRandom(ch.w); setTimeout(() => speakWordRandom(ch.w), 400); } else if (bonus && ch.say) setTimeout(() => speakWordRandom(ch.w), 300);
+        box.querySelectorAll('.fun-opt').forEach(b => b.onclick = () => { if (done) return; const ok = ch.opts[+b.dataset.i] === ch.a; b.classList.add(ok ? 'ok' : 'bad'); box.querySelectorAll('.fun-opt').forEach(x => x.disabled = true); if (ok) { if (bonus && ch.say) say(); else finish('win'); } else finish('lose'); });
+    }
+}
+async function openCard(id) {
+    const c = inbox.find(x => x.id === id); if (!c || busy) return; busy = true;
+    try {
+        if (c.status === 'sent') {
+            const b = c.kind === 'bonus', ok = confirm(b ? `Nhiệm vụ phụ may mắn!\nĐúng: +${c.reward} điểm • Sai hoặc hết 90 giây: −${c.penalty} điểm.\nBé sẵn sàng làm ngay chưa?` : `Mở thẻ là bắt đầu đếm 60 giây!\nThắng +100 điểm của ${c.from_name} • Sai hoặc hết giờ: mất 100 điểm.\nBé sẵn sàng chưa?`); if (!ok) return;
+            const r = await rpc('lucky_open', { p_id: id, p_payload: b ? null : duelChallenge() });
+            if (r.error) { showToast(noFn(r.error) ? SQLMSG : r.error.message, 'error'); return; } if (!r.data || !r.data.ok) { showToast((r.data && r.data.err) || 'Không mở được thẻ', 'warning'); fetchDuel(); return; }
+            Object.assign(c, { status: 'opened', opened_at: r.data.opened_at, payload: r.data.payload, limit_s: r.data.limit_s }); skew = Date.parse(r.data.server_now) - Date.now();
+        } else { const n = await rpc('lucky_now', {}); if (n.data) skew = Date.parse(n.data) - Date.now(); }
+        runChallenge(c);
+    } finally { busy = false; }
+}
+// ---------- gửi thẻ thách đấu ----------
+$('dlSend').onclick = async () => {
+    if (!db) return msg('Cần kết nối Cloud để gửi thẻ.', true); if (!sel) return msg('Bé chọn một bạn đối thủ trước nhé!', true);
+    const me = kidOf(currentKidId); if ((me.score || 0) < 100) return msg(`Bé cần ít nhất 100 điểm để gửi thẻ (hiện có ${me.score || 0} điểm).`, true);
+    const id = 'lc_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), r = await rpc('lucky_send', { p_id: id, p_from: currentKidId, p_to: sel, p_animal: pick(['bear', 'panda', 'bunny', 'fox']) });
+    if (r.error) return msg(noFn(r.error) ? SQLMSG : r.error.message, true); if (r.data && r.data.ok === false) return msg(r.data.err, true);
+    burst(...ctr(), WIN, 14); showToast('Đã gửi thẻ bài may mắn! 🎴', 'success'); msg('Đã gửi! Bạn ấy sẽ nhận thông báo và có 60 giây để làm khi mở thẻ.'); sel = null; fetchDuel();
+};
+// ---------- bốc thăm may mắn sau mỗi nhiệm vụ ----------
+async function startDraw(q) {
+    const b = bonusCfg(); if (!b.on || !db || !q) return;
+    const id = 'lb_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), r = await rpc('lucky_draw', { p_id: id, p_drawer: currentKidId, p_quest: String(q.id), p_reward: b.reward, p_penalty: b.penalty, p_minutes: b.minutes, p_payload: bonusPayload() });
+    if (r.error) { if (noFn(r.error)) showToast(SQLMSG, 'warning'); return; } if (!r.data || !r.data.ok || r.data.dup) return;
+    const c = r.data.card, kids = cachedKids.length ? cachedKids : [kidOf(c.to_kid)], o = document.createElement('div'); o.className = 'mj-ov'; o.id = 'dlDraw';
+    o.innerHTML = `<div class="mj-card" style="background:#fff7ed;padding:14px;text-align:center"><div style="font-size:22px;font-weight:900;color:#be123c">🎰 Bốc thăm may mắn!</div><div style="font-size:12px;font-weight:700;color:#7c2d12;margin:4px 0">Máy chọn ngẫu nhiên 1 bạn làm nhiệm vụ phụ: đúng +${c.reward}, sai/không làm −${c.penalty} điểm</div><div class="dl-roll" id="dlRoll">🎲</div><div id="dlDrawRes" style="font-weight:900;min-height:60px"></div></div>`;
+    closeAll(); document.body.appendChild(o); let i = 0, n = 0; const roll = setInterval(() => { const k = kids[i++ % kids.length]; $('dlRoll').textContent = `${k.icon || '🙂'} ${k.name || ''}`; try { sfx(500 + (i % 5) * 80, .05); } catch (e) {} if (++n > 24) { clearInterval(roll); land(); } }, 120);
+    function land() {
+        const me = c.to_kid === currentKidId; $('dlRoll').textContent = `${c.to_icon || '🙂'} ${c.to_name}`; burst(...ctr(), WIN, 20); try { fanfare(); } catch (e) {}
+        $('dlDrawRes').innerHTML = me ? `<div style="color:#be123c;font-size:16px">🎉 Bé được chọn! Làm nhiệm vụ phụ ngay nhé (90 giây).</div><button id="dlNow" class="dl-btn" style="background:#e11d48;margin:6px 4px 0">🎯 Làm ngay</button><button id="dlLater" class="dl-btn" style="background:#64748b;margin:6px 4px 0">Để sau</button>` : `<div style="color:#1d4ed8;font-size:15px">Đã giao cho <b>${esc(c.to_name)}</b>! Bạn ấy sẽ nhận thông báo và có ${b.minutes} phút để làm.</div><button id="dlLater" class="dl-btn" style="background:#6366f1;margin-top:8px">Đóng</button>`;
+        $('dlLater').onclick = () => { o.remove(); fetchDuel(); };
+        if (me) $('dlNow').onclick = async () => { o.remove(); await fetchDuel(); openCard(c.id); };
+    }
+}
+window.__onQuestClaimed = q => { let n = 0; const t = setInterval(() => { if (++n > 170) return clearInterval(t); if (!document.querySelector('.mj-ov')) { clearInterval(t); startDraw(q); } }, 700); };   // chờ vòng quay đóng rồi mới bốc thăm
+// ---------- nút "Quay thử" luôn hiện dưới Nhiệm vụ tuần này ----------
+(() => { const host = $('kidReminderMsg') && $('kidReminderMsg').parentElement; if (!host) return; const b = document.createElement('button'); b.id = 'wheelTry'; b.type = 'button'; b.className = 'w-full mt-2 py-2 rounded-xl font-black text-sm text-white bg-gradient-to-r from-orange-500 to-pink-500'; b.textContent = '🎡 Quay thử phần thưởng'; b.onclick = () => window.__fun.showWheel(); host.appendChild(b); })();
+// ---------- Bố Mẹ chỉnh bốc thăm nhiệm vụ phụ ----------
+const _dc15 = drawCfg;
+drawCfg = function (c) {
+    _dc15(c); const ind = $('cfgInd'); if (!ind) return; c.bonus = { on: true, reward: 100, penalty: 300, minutes: 30, ...(c.bonus || CFG.bonus || {}) }; const bn = c.bonus, box = document.createElement('div');
+    box.innerHTML = `<div class="font-black text-purple-600 mb-1">🎰 Bốc thăm nhiệm vụ phụ (sau mỗi nhiệm vụ)</div><label class="flex items-center gap-2 text-[12px] mb-1"><input type="checkbox" id="bnOn" ${bn.on ? 'checked' : ''}> Bật bốc thăm may mắn</label><div class="grid grid-cols-3 gap-2 mb-3"><label class="text-[11px]">Làm đúng: +điểm<input type="number" min="0" max="1000" id="bnR" value="${bn.reward}" class="border-2 border-purple-200 rounded-lg px-2 py-1 text-sm font-bold w-full"></label><label class="text-[11px]">Sai/không làm: −điểm<input type="number" min="1" max="1000" id="bnP" value="${bn.penalty}" class="border-2 border-purple-200 rounded-lg px-2 py-1 text-sm font-bold w-full"></label><label class="text-[11px]">Thời gian chờ (phút)<input type="number" min="5" max="240" id="bnM" value="${bn.minutes}" class="border-2 border-purple-200 rounded-lg px-2 py-1 text-sm font-bold w-full"></label></div>`;
+    ind.before(box); const upd = () => { c.bonus = { on: $('bnOn').checked, reward: Math.max(0, Math.min(1000, +$('bnR').value || 0)), penalty: Math.max(1, Math.min(1000, +$('bnP').value || 300)), minutes: Math.max(5, Math.min(240, +$('bnM').value || 30)) }; }; ['bnOn', 'bnR', 'bnP', 'bnM'].forEach(id => $(id).addEventListener('input', upd)); $('bnOn').addEventListener('change', upd);
+};
+const _rks = renderKidSelector; renderKidSelector = function () { const r = _rks.apply(this, arguments); try { render(); } catch (e) {} return r; };   // danh sách đối thủ luôn khớp danh sách bé trên Cloud
+const _st15 = setTab; setTab = function (t) { const r = _st15.apply(this, arguments); if (t === 'play') { try { render(); fetchDuel(); } catch (e) {} } return r; };
+document.addEventListener('visibilitychange', () => { if (!document.hidden) fetchDuel(); });
+setInterval(() => { if (!document.hidden && db) fetchDuel(); }, 30000);
+setTimeout(() => { render(); fetchDuel(); }, 3500);
+window.__duel = { fetchDuel, startDraw, bonusPayload, duelChallenge, scoreOf: () => ({ inbox, outbox }) };
+})();
+
+
+// ================== V15: MINI GAME Ô CHỮ BÍ MẬT (hàng ngang + từ khóa hàng dọc) ==================
+(() => {
+const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const st = document.createElement('style');
+st.textContent = `.cr-row{display:flex;align-items:center;margin:4px 0;padding:2px 3px;border-radius:10px;border:2px solid transparent}.cr-row.act{border-color:#38bdf8;background:#f0f9ff}.cr-row.ok{background:#f0fdf4}
+.cr-n{width:18px;font-size:11px;font-weight:900;color:#64748b;flex:none}.cr-c{width:var(--cw,26px);height:var(--cw,26px);flex:none;margin:1px;border-radius:6px;border:2px solid #cbd5e1;background:#fff;text-align:center;font-weight:900;font-size:calc(var(--cw,26px) * .62);line-height:calc(var(--cw,26px) - 4px);text-transform:uppercase;color:#1e293b}
+.cr-c.sp{border:0;background:transparent}.cr-c.key{border-color:#f59e0b;background:#fef3c7}.cr-c.rev{background:#e0f2fe;color:#0369a1}.cr-c.done{background:#bbf7d0;border-color:#22c55e;color:#166534}.cr-c.key.done{background:#fde047}
+.cr-clue{font-size:12px;font-weight:700;color:#334155;margin:0 0 2px 20px}.cr-k{display:inline-block;width:30px;height:34px;margin:2px;border:3px solid #f59e0b;border-radius:8px;background:#fef3c7;font-weight:900;font-size:20px;line-height:28px;text-transform:uppercase}.cr-k.q{color:#d97706}
+@keyframes crPop{0%{transform:scale(1)}50%{transform:scale(1.25)}100%{transform:scale(1)}}.cr-c.pop{animation:crPop .5s}`;
+document.head.appendChild(st);
+function puzzle() {
+    const seen = new Set(), all = [];
+    [...V(), ...dictWords()].forEach(x => { const w = String(x.word || '').toLowerCase(); if (/^[a-z]{3,8}$/.test(w) && !seen.has(w) && x.meaning && x.meaning.length < 40) { seen.add(w); all.push({ word: w, meaning: x.meaning }); } });
+    const by = {}; all.forEach(x => new Set(x.word).forEach(ch => (by[ch] = by[ch] || []).push(x)));
+    const story = new Set((globalVocabData || []).map(v => v.word)), secrets = all.filter(x => x.word.length >= 5 && x.word.length <= 7 && [...x.word].every(ch => (by[ch] || []).length >= 4));
+    for (let a = 0; a < 80; a++) {
+        const S = a < 40 ? fresh(secrets, 1)[0] : pick(secrets), used = new Set([S.word]), rows = []; let ok = true;
+        for (const ch of S.word) {
+            const cand = shuf(by[ch].filter(x => !used.has(x.word))).sort((p, q) => (story.has(q.word) ? 1 : 0) - (story.has(p.word) ? 1 : 0)); if (!cand.length) { ok = false; break; }
+            const w = cand[0], pos = [...w.word].map((c, i) => c === ch ? i : -1).filter(i => i >= 0); used.add(w.word); rows.push({ word: w.word, meaning: w.meaning, p: pick(pos), solved: false, hints: 0, rev: new Set() });
+        }
+        if (!ok) continue;
+        const maxP = Math.max(...rows.map(r => r.p)); rows.forEach(r => { r.off = maxP - r.p; const free = [...r.word].map((_, i) => i).filter(i => i !== r.p); shuf(free).slice(0, r.word.length >= 6 ? 2 : 1).forEach(i => r.rev.add(i)); });
+        return { S, rows, maxP, width: Math.max(...rows.map(r => r.off + r.word.length)) };
+    }
+    return null;
+}
+function gCross() {
+    const P = puzzle(); if (!P) { area().innerHTML = '<div class="text-center text-sm">Chưa đủ từ để tạo ô chữ, bé thử lại nhé!</div>'; return; }
+    window.__cross.cur = P; let act = 0, secretDone = false, typed = '', note = '';
+    const { S, rows, maxP, width } = P, solvedN = () => rows.filter(r => r.solved).length, cw = Math.max(18, Math.min(30, Math.floor((Math.min(innerWidth, 420) - 90) / width)));
+    const cells = (r, i) => { let h = ''; for (let k = 0; k < r.off; k++) h += '<span class="cr-c sp"></span>'; [...r.word].forEach((ch, j) => { const key = r.off + j === maxP, show = r.solved || secretDone ? ch : r.rev.has(j) ? ch : (i === act && typed[j]) || ''; h += `<span class="cr-c ${key ? 'key' : ''} ${r.solved || secretDone ? 'done' : r.rev.has(j) ? 'rev' : ''}" data-r="${i}">${esc(show)}</span>`; }); return h; };
+    const draw = () => {
+        area().innerHTML = `<div style="--cw:${cw}px"><div class="text-center text-xs text-sky-600 font-bold">🧩 Ô chữ bí mật • ${G.score}đ • đã giải ${solvedN()}/${rows.length} hàng</div><div class="text-[11px] text-slate-500 text-center mb-1">Chạm một hàng, gõ cả từ rồi bấm ✔. Cột vàng ghép thành <b>TỪ BÍ MẬT</b>. Điền đúng, máy sẽ đọc to từ đó!</div>
+        ${rows.map((r, i) => `<div class="cr-clue">${i + 1}. ${esc(r.meaning)} <span style="color:#94a3b8">(${r.word.length} chữ)</span> ${r.solved ? '' : `<button class="crH" data-i="${i}" style="font-size:12px">💡 Gợi ý</button>`}</div><div class="cr-row ${i === act && !r.solved ? 'act' : ''} ${r.solved ? 'ok' : ''}" data-i="${i}"><span class="cr-n">${i + 1}</span>${cells(r, i)}</div>`).join('')}
+        <div class="flex gap-1 mt-2"><input id="crIn" maxlength="9" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Gõ từ cho hàng ${act + 1}" value="${esc(typed)}" class="flex-1 min-w-0 border-2 border-sky-300 rounded-xl px-3 py-2 text-base font-bold outline-none"><button id="crGo" class="px-4 rounded-xl bg-green-500 text-white font-black">✔</button></div>
+        <div id="crMsg" class="text-xs font-bold min-h-[16px] mt-1" style="color:#d97706">${esc(note)}</div>
+        <div class="text-center mt-2 font-black text-amber-700">🔑 Từ bí mật (${S.word.length} chữ): ${[...S.word].map((ch, i) => `<span class="cr-k ${rows[i].solved || secretDone ? '' : 'q'}">${rows[i].solved || secretDone ? esc(ch) : '?'}</span>`).join('')}</div>
+        <div class="text-[11px] text-center text-slate-600">${solvedN() >= 3 || secretDone ? 'Gợi ý nghĩa từ bí mật: <b>' + esc(S.meaning) + '</b>' : 'Giải được 3 hàng sẽ có gợi ý nghĩa của từ bí mật'}</div>
+        <div class="flex gap-1 mt-1"><input id="crSec" maxlength="9" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Đoán từ bí mật..." class="flex-1 min-w-0 border-2 border-amber-300 rounded-xl px-3 py-2 text-base font-bold outline-none"><button id="crSecGo" class="px-4 rounded-xl bg-amber-500 text-white font-black">🔑 Đoán</button></div>
+        <div class="text-center mt-2"><button id="crEnd" class="px-3 py-1.5 rounded-lg bg-slate-200 text-slate-700 text-xs font-black">🏳️ Kết thúc ô chữ</button></div></div>`;
+        const inp = $('crIn'); inp.oninput = () => { typed = inp.value.toLowerCase().replace(/[^a-z]/g, ''); rows[act] && !rows[act].solved && [...area().querySelectorAll(`.cr-c[data-r="${act}"]`)].forEach((el, j) => { if (!rows[act].rev.has(j)) el.textContent = typed[j] || ''; }); };
+        inp.onkeydown = e => { if (e.key === 'Enter') check(); }; $('crGo').onclick = check;
+        area().querySelectorAll('.cr-row').forEach(el => el.onclick = () => { const i = +el.dataset.i; if (!rows[i].solved) { act = i; typed = ''; note = ''; draw(); $('crIn').focus(); } });
+        area().querySelectorAll('.crH').forEach(b => b.onclick = e => { e.stopPropagation(); hint(+b.dataset.i); });
+        $('crSec').onkeydown = e => { if (e.key === 'Enter') guess(); }; $('crSecGo').onclick = guess; $('crEnd').onclick = () => { abortSpeech(); fin(); };
+    };
+    const abortSpeech = () => { try { stopAudio(); } catch (e) {} };
+    function hint(i) {
+        const r = rows[i]; if (r.solved) return; const free = [...r.word].map((_, k) => k).filter(k => !r.rev.has(k)); if (free.length <= 1) { note = 'Còn 1 chữ thôi, bé tự nghĩ nhé! 💪'; draw(); return; }
+        r.rev.add(pick(free.filter(k => k !== r.p).length ? free.filter(k => k !== r.p) : free)); r.hints++; G.score = Math.max(0, G.score - 2); act = i; note = 'Đã mở thêm 1 chữ (−2 điểm).'; draw();
+    }
+    function check() {
+        const r = rows[act]; if (!r || r.solved) return; const t = ($('crIn').value || '').toLowerCase().trim();
+        if (!t) { note = 'Bé gõ từ vào ô rồi bấm ✔ nhé!'; return draw(); }
+        if (t === r.word) {
+            r.solved = true; G.score += r.hints ? 5 : 8; note = `🎉 Đúng rồi: ${r.word.toUpperCase()}!`; burst(...ctr(), WIN, 10); speakWordRandom(r.word);       // đọc to từ vừa điền đúng
+            const nx = rows.findIndex(x => !x.solved); if (nx >= 0) act = nx; typed = ''; draw(); area().querySelectorAll(`.cr-c[data-r="${rows.indexOf(r)}"]`).forEach(el => el.classList.add('pop'));
+            if (rows.every(x => x.solved)) note += ' Giờ bé nhìn cột vàng và đoán từ bí mật nhé! 🔑', draw();
+        } else {
+            const bad = [...r.rev].some(k => t[k] !== r.word[k]); note = t.length !== r.word.length ? `Từ này có ${r.word.length} chữ cái nhé!` : bad ? 'Chữ cái đã cho sẵn phải khớp với từ bé gõ nhé!' : 'Chưa đúng, bé thử lại hoặc bấm 💡 Gợi ý nhé!'; wig(area()); sfx(200, .25); draw();
+        }
+    }
+    function guess() {
+        const t = ($('crSec').value || '').toLowerCase().trim(); if (!t) { note = 'Bé gõ từ bí mật vào ô nhé!'; return draw(); }
+        if (t === S.word) {
+            const left = rows.filter(r => !r.solved).length; secretDone = true; rows.forEach(r => { r.solved = true; }); G.score += 20 + left * 3; burst(...ctr(), WIN, 30); try { fanfare(); } catch (e) {}
+            note = `🏆 Giỏi quá! Từ bí mật là ${S.word.toUpperCase()}!`; draw(); speakWordRandom(S.word); setTimeout(() => fin(), 2600);
+        } else { note = 'Chưa đúng, bé nhìn các chữ trong cột vàng để đoán nhé!'; wig(area()); sfx(200, .25); draw(); }
+    }
+    draw(); talk('Ô chữ bí mật đây! Bé chạm vào hàng ngang để điền từ nhé! 🧩');
+}
+const _pg = window.playGame;
+window.playGame = k => { if (k !== 'cross') return _pg(k); if (V().length < 4) return _pg('quiz'); clearInterval(GT); G.score = 0; G.k = 'cross'; gCross(); area().scrollIntoView({ behavior: 'smooth', block: 'center' }); };
+const gm = $('gameMenu'); if (gm) { gm.insertAdjacentHTML('beforeend', '<button class="gtile" style="background:#14b8a6" onclick="playGame(\'cross\')"><b>🧩</b>Ô chữ bí mật</button>'); }
+window.__cross = { puzzle, gCross };
 })();
 
 </script>
