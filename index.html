@@ -4216,6 +4216,7 @@ const closeAll = () => document.querySelectorAll('.mj-ov,.mj-mini').forEach(x =>
 async function resolve(id, mode) { const r = await rpc('lucky_resolve', { p_id: id, p_mode: mode }); return r.error ? { status: 'error', err: r.error.message } : r.data; }
 function runChallenge(c) {
     closeAll(); const ch = c.payload || {}, bonus = c.kind === 'bonus', limit = (c.limit_s || (bonus ? 90 : 60)) * 1000, o = document.createElement('div'); o.className = 'mj-ov'; o.id = 'dlOv';
+    <button type="button" onclick="this.closest('.mj-ov, .fixed')?.remove()" style="position:absolute;top:10px;right:10px;width:34px;height:34px;border-radius:50%;background:#f1f5f9;border:2px solid #cbd5e1;font-weight:900">✕</button>
     o.innerHTML = `<div class="mj-card" style="background:#fff7ed;padding:12px"><div class="dl-ani">${window.__fun.animalSVG(bonus ? 'fox' : c.animal)}</div><div style="text-align:center;font-weight:900;color:#be123c">${bonus ? '🎰 Nhiệm vụ phụ may mắn' : `🎴 Thẻ bài từ ${esc(c.from_icon)} ${esc(c.from_name)}`}</div><div style="font-size:12px;text-align:center;font-weight:700;color:#7c2d12">${bonus ? `Đúng +${c.reward} điểm • Sai / hết giờ −${c.penalty} điểm` : 'Thắng nhận 100 điểm • Sai / hết giờ mất 100 điểm'}</div><div class="mic-cd"><div class="mic-bar"><i></i></div><span></span></div><div id="dlChal" style="margin-top:6px"></div><div id="dlRes" style="text-align:center;font-weight:900;margin-top:8px"></div></div>`;
     document.body.appendChild(o);
     const end = TS(c.opened_at) + limit - skew; let done = false;
@@ -4226,6 +4227,7 @@ function runChallenge(c) {
         for (let i = 0; i < 4 && r && r.status === 'opened'; i++) { await sleep(1300); r = await resolve(c.id, mode === 'win' ? 'win' : 'timeout'); }
         const won = r && r.status === 'won', who = c.kind === 'bonus' ? '' : esc(c.from_name);
         $('dlRes').innerHTML = !r || r.status === 'error' ? `<span style="color:#dc2626">${esc((r && r.err) || 'Lỗi mạng')}</span>` : won ? `<span style="color:#059669;font-size:18px">🎉 Bé THẮNG! +${r.transfer} điểm${who ? ` từ ${who}` : ''}</span>` : `<span style="color:#dc2626;font-size:18px">😢 Bé chưa làm được. −${r.transfer} điểm${who ? ` cho ${who}` : ''}</span>`;
+        setTimeout(() => { document.querySelectorAll('.mj-ov').forEach(e => e.remove()); }, 2000);
         if (won) { burst(...ctr(), WIN, 24); fanfare(); } else burst(...ctr(), OOPS, 8);
         $('dlRes').insertAdjacentHTML('beforeend', '<br><button id="dlOk" class="dl-btn" style="background:#6366f1;margin-top:8px">Đóng</button>'); $('dlOk').onclick = () => o.remove();
         try { await syncKidsFromCloud(); } catch (e) {} fetchDuel();
@@ -4383,101 +4385,5 @@ window.__cross = { puzzle, gCross };
 })();
 
 </script>
-
-<!-- BẮT ĐẦU ĐOẠN SỬA LỖI POPUP THẺ BÀI -->
-<script id="fix-card-battle-popup">
-(() => {
-    function closeCardPopup(ov) {
-        if (!ov || ov.dataset.closing === '1') return;
-        ov.dataset.closing = '1';
-        clearTimeout(ov._autoCloseTimer);
-        ov.style.transition = 'opacity 0.25s ease';
-        ov.style.opacity = '0';
-        setTimeout(() => {
-            try { ov.remove(); } catch (e) { ov.style.display = 'none'; }
-        }, 250);
-    }
-
-    function enhanceCardPopup(ov) {
-        if (!ov || ov.dataset.enhanced === '1') return;
-        const card = ov.firstElementChild;
-        if (!card) return;
-
-        ov.dataset.enhanced = '1';
-        if (getComputedStyle(card).position === 'static') {
-            card.style.position = 'relative';
-        }
-
-        // 1. Thêm nút X góc trên bên phải popup
-        if (!card.querySelector('.card-close-x-btn')) {
-            const xBtn = document.createElement('button');
-            xBtn.type = 'button';
-            xBtn.className = 'card-close-x-btn';
-            xBtn.innerHTML = '✕';
-            xBtn.style.cssText = 'position:absolute;top:12px;right:12px;z-index:50;width:36px;height:36px;min-height:36px;border-radius:9999px;background:#f1f5f9;border:2px solid #cbd5e1;color:#475569;font-weight:900;font-size:18px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.12);';
-            xBtn.onclick = (e) => {
-                e.stopPropagation();
-                closeCardPopup(ov);
-            };
-            card.appendChild(xBtn);
-        }
-
-        // 2. Bấm ra vùng tối bên ngoài để đóng
-        ov.addEventListener('click', (e) => {
-            if (e.target === ov) closeCardPopup(ov);
-        });
-
-        // 3. Tự động tắt sau 2 giây khi hiện kết quả Thắng / Thua / Hết giờ
-        const checkFinished = () => {
-            if (ov.dataset.finished === '1') return;
-            const text = card.innerText || '';
-            if (!/Bé\s+THẮNG|Bé\s+THUA|Hết\s+giờ|mất\s+100\s+điểm|\+100\s+điểm\s+từ/i.test(text)) return;
-
-            ov.dataset.finished = '1';
-
-            if (!card.querySelector('.card-manual-close-btn')) {
-                const doneBtn = document.createElement('button');
-                doneBtn.type = 'button';
-                doneBtn.className = 'card-manual-close-btn';
-                doneBtn.style.cssText = 'margin-top:10px;width:100%;padding:10px 16px;border-radius:14px;background:linear-gradient(90deg,#10b981,#059669);color:#fff;font-weight:900;font-size:15px;border:none;cursor:pointer;box-shadow:0 4px 0 #047857;';
-                let secLeft = 60;
-                doneBtn.textContent = `✅ Đóng (${secLeft}s)`;
-                doneBtn.onclick = () => closeCardPopup(ov);
-                card.appendChild(doneBtn);
-
-                const cdInterval = setInterval(() => {
-                    secLeft--;
-                    if (secLeft > 0 && document.body.contains(doneBtn)) {
-                        doneBtn.textContent = `✅ Đóng (${secLeft}s)`;
-                    } else {
-                        clearInterval(cdInterval);
-                    }
-                }, 1000);
-            }
-
-            ov._autoCloseTimer = setTimeout(() => closeCardPopup(ov), 2200);
-        };
-
-        const innerObserver = new MutationObserver(checkFinished);
-        innerObserver.observe(card, { childList: true, subtree: true, characterData: true });
-        card.addEventListener('click', () => setTimeout(checkFinished, 80));
-        checkFinished();
-    }
-
-    const scanPopups = () => {
-        document.querySelectorAll('body > div').forEach(el => {
-            const txt = el.innerText || '';
-            if (txt.includes('Thẻ bài từ') && txt.includes('100 điểm')) {
-                enhanceCardPopup(el);
-            }
-        });
-    };
-
-    new MutationObserver(scanPopups).observe(document.body, { childList: true, subtree: true });
-    scanPopups();
-})();
-</script>
-<!-- KẾT THÚC ĐOẠN SỬA LỖI POPUP THẺ BÀI -->
-
 </body>
 </html>
