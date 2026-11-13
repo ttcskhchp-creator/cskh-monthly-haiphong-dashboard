@@ -4130,6 +4130,193 @@ window.__questTimer = { tick, left, rollover };
 (() => {
 const TS = t => window.__qTime({ created_at: t }), sleep = ms => new Promise(r => setTimeout(r, ms));
 const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fanfare = () => [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => { try { sfx(f, .18); } catch (e) {} }, i * 140));
+const SQL_TEXT = `-- =====================================================================
+--  CÀI ĐẶT THẺ BÀI MAY MẮN + BỐC THĂM NHIỆM VỤ PHỤ  (chạy 1 LẦN trong Supabase)
+--  Cách làm:  supabase.com -> dự án của bé -> SQL Editor -> New query -> dán TOÀN BỘ file này -> Run
+--  Không có lệnh xóa dữ liệu. An toàn khi chạy lại nhiều lần. Chạy xong quay lại web bấm "Kiểm tra lại".
+-- =====================================================================
+
+-- (chỉ để chắc chắn các bảng nền có sẵn; không ghi đè nếu đã có)
+create table if not exists public.magic_settings (id text primary key, data jsonb not null, updated_at timestamptz default now());
+
+-- ============ THẺ BÀI MAY MẮN (thách đấu) + BỐC THĂM NHIỆM VỤ PHỤ + LƯU CÀI ĐẶT QUA HÀM ============
+create table if not exists public.lucky_cards (
+  id          text primary key,
+  kind        text not null default 'duel' check (kind in ('duel','bonus')),   -- duel: bé thách bé | bonus: bốc thăm nhiệm vụ phụ
+  quest_id    text,
+  from_kid    text not null, from_name text, from_icon text,
+  to_kid      text not null, to_name   text, to_icon   text,
+  animal      text not null default 'bear',
+  stake       integer not null default 100 check (stake between 1 and 1000),
+  reward      integer not null default 0,
+  penalty     integer not null default 0,
+  limit_s     integer not null default 60,
+  status      text not null default 'sent' check (status in ('sent','opened','won','lost','expired')),
+  payload     jsonb,
+  transfer    integer not null default 0,
+  created_at  timestamptz not null default now(),
+  expires_at  timestamptz,
+  opened_at   timestamptz,
+  resolved_at timestamptz
+);
+-- (nếu bảng lucky_cards đã tạo ở bản trước, các lệnh dưới đây bổ sung cột mới)
+alter table public.lucky_cards add column if not exists kind text not null default 'duel';
+alter table public.lucky_cards add column if not exists quest_id text;
+alter table public.lucky_cards add column if not exists reward integer not null default 0;
+alter table public.lucky_cards add column if not exists penalty integer not null default 0;
+alter table public.lucky_cards add column if not exists limit_s integer not null default 60;
+alter table public.lucky_cards add column if not exists expires_at timestamptz;
+create index if not exists idx_lucky_to   on public.lucky_cards (to_kid, status, created_at desc);
+create index if not exists idx_lucky_from on public.lucky_cards (from_kid, created_at desc);
+create unique index if not exists uq_lucky_bonus on public.lucky_cards (quest_id, from_kid) where kind = 'bonus';   -- mỗi bé chỉ bốc thăm 1 lần cho mỗi nhiệm vụ
+alter table public.lucky_cards enable row level security;
+do $$ begin
+  if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'lucky_cards' and policyname = 'mr_lucky_select') then
+    create policy mr_lucky_select on public.lucky_cards for select to anon, authenticated using (true);
+  end if;
+end $$;
+grant select on public.lucky_cards to anon, authenticated;     -- KHÔNG cho ghi trực tiếp: mọi thay đổi đi qua các hàm dưới đây
+
+-- Gửi thẻ thách đấu: người gửi cần >= 100 điểm, mỗi cặp chỉ 1 thẻ chờ, tối đa 3 thẻ chờ
+create or replace function public.lucky_send(p_id text, p_from text, p_to text, p_animal text) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare a public.magic_kids; b public.magic_kids; n integer;
+begin
+  if p_from = p_to then return jsonb_build_object('ok', false, 'err', 'Không thể gửi thẻ cho chính mình'); end if;
+  if p_id is null or char_length(p_id) > 40 then return jsonb_build_object('ok', false, 'err', 'Mã thẻ không hợp lệ'); end if;
+  select * into a from public.magic_kids where id::text = p_from;
+  select * into b from public.magic_kids where id::text = p_to;
+  if a.id is null or b.id is null then return jsonb_build_object('ok', false, 'err', 'Không tìm thấy thành viên'); end if;
+  if coalesce(a.score, 0) < 100 then return jsonb_build_object('ok', false, 'err', 'Cần ít nhất 100 điểm để gửi thẻ'); end if;
+  select count(*) into n from public.lucky_cards where kind = 'duel' and from_kid = p_from and to_kid = p_to and status in ('sent','opened');
+  if n > 0 then return jsonb_build_object('ok', false, 'err', 'Bạn này đang có thẻ chờ của bé, đợi bạn ấy mở nhé'); end if;
+  select count(*) into n from public.lucky_cards where kind = 'duel' and from_kid = p_from and status in ('sent','opened');
+  if n >= 3 then return jsonb_build_object('ok', false, 'err', 'Bé đang có 3 thẻ chờ rồi, đợi các bạn mở nhé'); end if;
+  insert into public.lucky_cards (id, kind, from_kid, from_name, from_icon, to_kid, to_name, to_icon, animal, limit_s, expires_at)
+  values (p_id, 'duel', a.id::text, a.name, a.icon, b.id::text, b.name, b.icon,
+          case when p_animal in ('bear','panda','bunny','fox') then p_animal else 'bear' end, 60, now() + interval '24 hours');
+  return jsonb_build_object('ok', true);
+end $$;
+
+-- Bốc thăm may mắn sau mỗi nhiệm vụ: máy chủ chọn NGẪU NHIÊN 1 bé trong danh sách để giao nhiệm vụ phụ
+create or replace function public.lucky_draw(p_id text, p_drawer text, p_quest text, p_reward integer, p_penalty integer, p_minutes integer, p_payload jsonb) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare d public.magic_kids; t public.magic_kids; ex public.lucky_cards; rw integer; pn integer;
+begin
+  if p_id is null or char_length(p_id) > 40 or p_quest is null then return jsonb_build_object('ok', false, 'err', 'Dữ liệu không hợp lệ'); end if;
+  select * into d from public.magic_kids where id::text = p_drawer;
+  if d.id is null then return jsonb_build_object('ok', false, 'err', 'Không tìm thấy thành viên'); end if;
+  select * into ex from public.lucky_cards where kind = 'bonus' and quest_id = p_quest and from_kid = p_drawer limit 1;
+  if ex.id is not null then return jsonb_build_object('ok', true, 'dup', true, 'card', to_jsonb(ex)); end if;   -- đã bốc rồi: trả kết quả cũ
+  select * into t from public.magic_kids order by random() limit 1;
+  rw := least(greatest(coalesce(p_reward, 100), 0), 1000);
+  pn := least(greatest(coalesce(p_penalty, 300), 1), 1000);
+  insert into public.lucky_cards (id, kind, quest_id, from_kid, from_name, from_icon, to_kid, to_name, to_icon, animal, stake, reward, penalty, limit_s, expires_at, payload)
+  values (p_id, 'bonus', p_quest, d.id::text, d.name, d.icon, t.id::text, t.name, t.icon, 'fox', pn, rw, pn, 90,
+          now() + make_interval(mins => least(greatest(coalesce(p_minutes, 30), 5), 240)), p_payload);
+  return jsonb_build_object('ok', true, 'card', (select to_jsonb(c) from public.lucky_cards c where c.id = p_id));
+end $$;
+
+-- Mở thẻ: bắt đầu đếm giờ (60 giây thách đấu / 90 giây nhiệm vụ phụ) theo đồng hồ máy chủ
+create or replace function public.lucky_open(p_id text, p_payload jsonb) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare c public.lucky_cards;
+begin
+  update public.lucky_cards
+     set status = 'opened', opened_at = now(), payload = case when kind = 'duel' then p_payload else coalesce(payload, p_payload) end
+   where id = p_id and status = 'sent' and (expires_at is null or kind = 'duel' or expires_at > now())
+   returning * into c;
+  if c.id is null then return jsonb_build_object('ok', false, 'err', 'Thẻ đã được mở, đã hết hạn hoặc không còn nữa'); end if;
+  return jsonb_build_object('ok', true, 'opened_at', c.opened_at, 'server_now', now(), 'payload', c.payload, 'limit_s', c.limit_s);
+end $$;
+
+create or replace function public.lucky_now() returns timestamptz language sql stable as $$ select now() $$;
+
+-- Chốt kết quả (chỉ 1 lần, tính giờ ở máy chủ)
+--  duel : thắng -> nhận điểm của người gửi | thua/hết giờ -> mất điểm cho người gửi (tối đa 100)
+--  bonus: đúng -> +reward (mặc định 100)   | sai/không làm/hết giờ -> -penalty (mặc định 300), điểm không chuyển cho ai
+create or replace function public.lucky_resolve(p_id text, p_mode text) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare c public.lucky_cards; el numeric; win boolean; amt integer; s integer;
+begin
+  select * into c from public.lucky_cards where id = p_id for update;
+  if c.id is null then return jsonb_build_object('status', 'missing'); end if;
+  if c.status in ('won','lost','expired') then return jsonb_build_object('status', c.status, 'transfer', c.transfer); end if;
+  if c.status = 'sent' then
+    if p_mode = 'expire' and c.kind = 'duel' and c.created_at < now() - interval '24 hours' then
+      update public.lucky_cards set status = 'expired', resolved_at = now() where id = p_id;
+      return jsonb_build_object('status', 'expired', 'transfer', 0);
+    elsif p_mode = 'expire' and c.kind = 'bonus' and c.expires_at is not null and c.expires_at < now() then   -- không làm nhiệm vụ phụ => bị trừ điểm
+      select coalesce(score, 0) into s from public.magic_kids where id::text = c.to_kid;
+      amt := least(c.penalty, greatest(coalesce(s, 0), 0));
+      update public.magic_kids set score = score - amt, updated_at = now() where id::text = c.to_kid;
+      update public.lucky_cards set status = 'lost', transfer = amt, resolved_at = now() where id = p_id;
+      return jsonb_build_object('status', 'lost', 'transfer', amt);
+    end if;
+    return jsonb_build_object('status', 'sent', 'transfer', 0);
+  end if;
+  el := extract(epoch from (now() - c.opened_at));
+  if p_mode = 'win' then win := el <= c.limit_s + 5;
+  elsif p_mode = 'lose' then win := false;
+  elsif p_mode = 'timeout' then
+    if el < c.limit_s then return jsonb_build_object('status', 'opened', 'transfer', 0); end if;
+    win := false;
+  else return jsonb_build_object('status', 'opened', 'transfer', 0);
+  end if;
+  if c.kind = 'bonus' then
+    if win then
+      amt := c.reward;
+      update public.magic_kids set score = score + amt, updated_at = now() where id::text = c.to_kid;
+    else
+      select coalesce(score, 0) into s from public.magic_kids where id::text = c.to_kid;
+      amt := least(c.penalty, greatest(coalesce(s, 0), 0));
+      update public.magic_kids set score = score - amt, updated_at = now() where id::text = c.to_kid;
+    end if;
+  elsif win then
+    select coalesce(score, 0) into s from public.magic_kids where id::text = c.from_kid;
+    amt := least(c.stake, greatest(coalesce(s, 0), 0));
+    update public.magic_kids set score = score - amt, updated_at = now() where id::text = c.from_kid;
+    update public.magic_kids set score = score + amt, updated_at = now() where id::text = c.to_kid;
+  else
+    select coalesce(score, 0) into s from public.magic_kids where id::text = c.to_kid;
+    amt := least(c.stake, greatest(coalesce(s, 0), 0));
+    update public.magic_kids set score = score - amt, updated_at = now() where id::text = c.to_kid;
+    update public.magic_kids set score = score + amt, updated_at = now() where id::text = c.from_kid;
+  end if;
+  update public.lucky_cards set status = case when win then 'won' else 'lost' end, transfer = amt, resolved_at = now() where id = p_id;
+  return jsonb_build_object('status', case when win then 'won' else 'lost' end, 'transfer', amt);
+end $$;
+
+-- Lưu cài đặt/quà bằng hàm: vẫn hoạt động kể cả khi chính sách ghi của bảng bị thiếu
+create or replace function public.magic_save_setting(p_id text, p_data jsonb) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if p_id not in ('cfg','prizes') then raise exception 'id khong hop le'; end if;
+  insert into public.magic_settings (id, data, updated_at) values (p_id, p_data, now())
+  on conflict (id) do update set data = excluded.data, updated_at = now();
+end $$;
+
+revoke all on function public.lucky_send(text,text,text,text), public.lucky_draw(text,text,text,integer,integer,integer,jsonb),
+       public.lucky_open(text,jsonb), public.lucky_now(), public.lucky_resolve(text,text), public.magic_save_setting(text,jsonb) from public;
+grant execute on function public.lucky_send(text,text,text,text), public.lucky_draw(text,text,text,integer,integer,integer,jsonb),
+       public.lucky_open(text,jsonb), public.lucky_now(), public.lucky_resolve(text,text), public.magic_save_setting(text,jsonb) to anon, authenticated;
+
+-- dọn thẻ cũ cùng các dữ liệu khác
+create or replace function public.magic_cleanup() returns void language sql security definer set search_path = public as $$
+  delete from public.shared_quests    where created_at   < now() - interval '14 days';
+  delete from public.kid_read_history where last_read_at < now() - interval '90 days';
+  delete from public.kid_rewards      where created_at   < now() - interval '90 days';
+  delete from public.lucky_cards      where created_at   < now() - interval '14 days';
+$$;
+
+-- báo cho Supabase nạp lại danh sách hàm để web gọi được ngay
+notify pgrst, 'reload schema';
+
+-- kiểm tra nhanh: kết quả phải liệt kê đủ 6 hàm
+select proname as ham_da_cai from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+where n.nspname = 'public' and proname in ('lucky_send','lucky_draw','lucky_open','lucky_now','lucky_resolve','magic_save_setting') order by 1;
+`;
 const bonusCfg = () => ({ on: true, reward: 100, penalty: 300, minutes: 30, ...(CFG.bonus || {}) });
 const kidOf = id => cachedKids.find(k => k.id === id) || {};
 const seenKey = () => 'magicDuelSeen_' + currentKidId, seenL = () => { try { return JSON.parse(store.get(seenKey())) || []; } catch (e) { return []; } };
@@ -4147,10 +4334,34 @@ document.head.appendChild(st);
 const card = document.createElement('div'); card.id = 'cardDuel'; card.className = 'guide-card hid bg-white p-3 rounded-[1.5rem] shadow-lg border-4 border-rose-300';
 card.innerHTML = `<div class="flex items-center justify-between gap-2 mb-1"><h2 class="font-black text-rose-600 text-base md:text-lg">🎴 Thẻ bài may mắn</h2><span id="dlBadge" class="text-[11px] font-black bg-rose-100 text-rose-700 px-2 py-1 rounded-full">0 thẻ chờ</span></div>
 <div class="text-[12px] font-bold text-slate-600 bg-rose-50 border border-rose-200 rounded-xl p-2 mb-2">📜 <b>Thách đấu:</b> gửi thẻ cho bạn. Bạn mở thẻ phải làm câu đố tiếng Anh trong <b>60 giây</b>: <b>thắng</b> nhận 100 điểm của người gửi, <b>sai/hết giờ</b> mất 100 điểm cho người gửi.<br>🎰 <b>Nhiệm vụ phụ:</b> sau mỗi nhiệm vụ, máy bốc thăm ngẫu nhiên một bạn làm câu hỏi về từ của bài: <b>đúng +100</b>, <b>sai/không làm −300</b> điểm.</div>
-<div id="dlInbox"></div><div class="font-black text-rose-700 mt-2 mb-1">🎯 Tìm đối thủ để gửi thẻ</div><div id="dlOpp" class="grid grid-cols-2 gap-1.5"></div>
+<div id="dlSetup" class="hid"></div><div id="dlInbox"></div><div class="font-black text-rose-700 mt-2 mb-1">🎯 Tìm đối thủ để gửi thẻ</div><div id="dlOpp" class="grid grid-cols-2 gap-1.5"></div>
 <button id="dlSend" class="w-full mt-2 py-3 rounded-2xl bg-rose-500 text-white font-black">🎴 Gửi thẻ bài may mắn</button><div id="dlMsg" class="text-xs font-bold mt-1 min-h-[16px]"></div>
 <div class="font-black text-rose-700 mt-3 mb-1">📬 Thẻ đã gửi / bốc thăm gần đây</div><div id="dlOut" class="text-[12px] font-bold"></div>`;
 $('cardGameSection').after(card); TABS.cardDuel = 'play'; card.classList.toggle('hid', document.body.dataset.tab !== 'play');
+const exists = r => !(r.error && /Could not find|PGRST202|42883|does not exist|schema cache/i.test((r.error.message || '') + (r.error.code || '')));
+const PROBES = [['Bảng lucky_cards', async () => { const r = await db.from('lucky_cards').select('id').limit(1); return !r.error; }],
+    ['Hàm lucky_send (gửi thẻ)', async () => exists(await rpc('lucky_send', { p_id: null, p_from: 'x', p_to: 'x', p_animal: 'bear' }))],
+    ['Hàm lucky_draw (bốc thăm)', async () => exists(await rpc('lucky_draw', { p_id: null, p_drawer: 'x', p_quest: null, p_reward: 0, p_penalty: 1, p_minutes: 5, p_payload: null }))],
+    ['Hàm lucky_open (mở thẻ)', async () => exists(await rpc('lucky_open', { p_id: '__probe__', p_payload: null }))],
+    ['Hàm lucky_resolve (chốt điểm)', async () => exists(await rpc('lucky_resolve', { p_id: '__probe__', p_mode: 'win' }))],
+    ['Hàm lucky_now (đồng hồ)', async () => exists(await rpc('lucky_now', {}))],
+    ['Hàm magic_save_setting (lưu quà)', async () => exists(await rpc('magic_save_setting', { p_id: '__probe__', p_data: {} }))]];
+async function copySQL() {
+    try { await navigator.clipboard.writeText(SQL_TEXT); } catch (e) { const t = document.createElement('textarea'); t.value = SQL_TEXT; t.style.cssText = 'position:fixed;left:-999px;top:0'; document.body.appendChild(t); t.select(); try { document.execCommand('copy'); } catch (x) {} t.remove(); }
+    showToast('Đã sao chép lệnh SQL! Mở Supabase → SQL Editor → dán → Run 📋', 'success');
+}
+async function diag() {
+    const out = $('dlDiag'); out.textContent = '⏳ Đang kiểm tra Supabase...'; if (!db) { out.innerHTML = '<span style="color:#dc2626">Chưa kết nối được Supabase (kiểm tra mạng).</span>'; return false; }
+    const res = []; for (const [n, f] of PROBES) { let ok = false; try { ok = await f(); } catch (e) {} res.push([n, ok]); }
+    out.innerHTML = res.map(([n, ok]) => `<div style="color:${ok ? '#059669' : '#dc2626'}">${ok ? '✅' : '❌'} ${n}</div>`).join('');
+    const all = res.every(r => r[1]); if (all) { out.innerHTML += '<div style="color:#059669;font-weight:900;margin-top:4px">🎉 Đã cài đủ! Thẻ bài sẵn sàng chơi.</div>'; $('dlSetup').classList.add('hid'); showToast('Thẻ bài đã sẵn sàng! 🎴', 'success'); fetchDuel(); }
+    return all;
+}
+function showSetup() {
+    const b = $('dlSetup'); if (!b.classList.contains('hid')) return; b.classList.remove('hid'); b.className = 'p-3 mb-2 rounded-2xl bg-amber-50 border-2 border-amber-300 text-[12px] font-bold text-slate-700';
+    b.innerHTML = `<div class="font-black text-amber-800 text-sm mb-1">⚙️ Cần cài đặt thẻ bài trên Supabase (làm 1 lần, khoảng 1 phút)</div><ol class="list-decimal ml-5 space-y-0.5"><li>Bấm nút <b>📋 Sao chép lệnh SQL</b> bên dưới.</li><li>Mở <b>supabase.com</b> → dự án của bé → <b>SQL Editor</b> → <b>New query</b>.</li><li>Dán lệnh vào ô trống rồi bấm <b>Run</b>.</li><li>Quay lại đây bấm <b>🔄 Kiểm tra lại</b>.</li></ol><div class="flex gap-2 mt-2"><button id="dlCopy" class="dl-btn" style="background:#f59e0b">📋 Sao chép lệnh SQL</button><button id="dlRecheck" class="dl-btn" style="background:#6366f1">🔄 Kiểm tra lại</button></div><div id="dlDiag" class="mt-2"></div><details class="mt-2"><summary class="cursor-pointer">Xem lệnh SQL (nếu nút sao chép không chạy, nhấn giữ để chọn rồi sao chép)</summary><textarea readonly rows="6" class="w-full text-[10px] mt-1 border rounded-lg p-1" id="dlSqlBox"></textarea></details>`;
+    $('dlSqlBox').value = SQL_TEXT; $('dlCopy').onclick = copySQL; $('dlRecheck').onclick = diag;
+}
 const msg = (t, bad) => { const m = $('dlMsg'); m.style.color = bad ? '#dc2626' : '#059669'; m.textContent = t || ''; };
 function render() {
     const me = kidOf(currentKidId), others = cachedKids.filter(k => k.id !== currentKidId);
@@ -4183,7 +4394,7 @@ async function fetchDuel() {
     if (!db) { msg('Cần kết nối Cloud để chơi thẻ bài.', true); return; }
     try {
         const [a, b] = await Promise.all([db.from('lucky_cards').select('*').eq('to_kid', currentKidId).in('status', ['sent', 'opened']).order('created_at', { ascending: false }).limit(10), db.from('lucky_cards').select('*').eq('from_kid', currentKidId).order('created_at', { ascending: false }).limit(8)]);
-        if (a.error || b.error) { msg(SQLMSG, true); return; }
+        if (a.error || b.error) { const er = a.error || b.error; if (/lucky_cards|relation|42P01|schema cache|PGRST/i.test((er.message || '') + (er.code || ''))) showSetup(); else msg('Chưa tải được thẻ bài (mạng chậm?). Bé thử lại sau nhé.', true); return; }
         inbox = a.data || []; outbox = b.data || []; let changed = false;
         for (const c of [...inbox, ...outbox]) {                // hết giờ / hết hạn mà chưa ai chốt → chốt giúp
             const late = c.status === 'opened' && Date.now() + skew - TS(c.opened_at) > (c.limit_s || 60) * 1000 + 3000, gone = c.status === 'sent' && c.expires_at && Date.now() + skew > TS(c.expires_at) + 2000;
@@ -4216,9 +4427,11 @@ const closeAll = () => document.querySelectorAll('.mj-ov,.mj-mini').forEach(x =>
 async function resolve(id, mode) { const r = await rpc('lucky_resolve', { p_id: id, p_mode: mode }); return r.error ? { status: 'error', err: r.error.message } : r.data; }
 function runChallenge(c) {
     closeAll(); const ch = c.payload || {}, bonus = c.kind === 'bonus', limit = (c.limit_s || (bonus ? 90 : 60)) * 1000, o = document.createElement('div'); o.className = 'mj-ov'; o.id = 'dlOv';
-    <button type="button" onclick="this.closest('.mj-ov, .fixed')?.remove()" style="position:absolute;top:10px;right:10px;width:34px;height:34px;border-radius:50%;background:#f1f5f9;border:2px solid #cbd5e1;font-weight:900">✕</button>
     o.innerHTML = `<div class="mj-card" style="background:#fff7ed;padding:12px"><div class="dl-ani">${window.__fun.animalSVG(bonus ? 'fox' : c.animal)}</div><div style="text-align:center;font-weight:900;color:#be123c">${bonus ? '🎰 Nhiệm vụ phụ may mắn' : `🎴 Thẻ bài từ ${esc(c.from_icon)} ${esc(c.from_name)}`}</div><div style="font-size:12px;text-align:center;font-weight:700;color:#7c2d12">${bonus ? `Đúng +${c.reward} điểm • Sai / hết giờ −${c.penalty} điểm` : 'Thắng nhận 100 điểm • Sai / hết giờ mất 100 điểm'}</div><div class="mic-cd"><div class="mic-bar"><i></i></div><span></span></div><div id="dlChal" style="margin-top:6px"></div><div id="dlRes" style="text-align:center;font-weight:900;margin-top:8px"></div></div>`;
     document.body.appendChild(o);
+    const x = document.createElement('button'); x.type = 'button'; x.textContent = '✕'; x.setAttribute('aria-label', 'Đóng'); x.style.cssText = 'position:absolute;top:8px;right:10px;z-index:5;width:36px;height:36px;border-radius:99px;background:#fff;border:2px solid #fda4af;font-weight:900;color:#be123c;font-size:16px'; o.firstElementChild.appendChild(x);
+    const leave = () => { if (o.dataset.fin || !document.body.contains(o)) { o.remove(); return; } if (confirm('Thoát bây giờ sẽ tính là bỏ cuộc (thua). Bé muốn thoát thật không?')) { finish('lose'); } };
+    x.onclick = leave; o.addEventListener('click', e => { if (e.target === o) leave(); });
     const end = TS(c.opened_at) + limit - skew; let done = false;
     const tm = setInterval(() => { const l = end - Date.now(), i = o.querySelector('.mic-bar i'), s = o.querySelector('.mic-cd span'); if (!i) { clearInterval(tm); return; } i.style.width = Math.max(0, Math.min(100, l / limit * 100)) + '%'; i.style.background = l < 15000 ? '#ef4444' : l < 30000 ? '#f59e0b' : '#22c55e'; s.textContent = `⏱️ Còn ${Math.max(0, Math.ceil(l / 1000))} giây`; if (l <= 0 && !done) finish('timeout'); }, 200);
     async function finish(mode) {
@@ -4227,8 +4440,8 @@ function runChallenge(c) {
         for (let i = 0; i < 4 && r && r.status === 'opened'; i++) { await sleep(1300); r = await resolve(c.id, mode === 'win' ? 'win' : 'timeout'); }
         const won = r && r.status === 'won', who = c.kind === 'bonus' ? '' : esc(c.from_name);
         $('dlRes').innerHTML = !r || r.status === 'error' ? `<span style="color:#dc2626">${esc((r && r.err) || 'Lỗi mạng')}</span>` : won ? `<span style="color:#059669;font-size:18px">🎉 Bé THẮNG! +${r.transfer} điểm${who ? ` từ ${who}` : ''}</span>` : `<span style="color:#dc2626;font-size:18px">😢 Bé chưa làm được. −${r.transfer} điểm${who ? ` cho ${who}` : ''}</span>`;
-        if (won) { burst(...ctr(), WIN, 24); fanfare(); } else burst(...ctr(), OOPS, 8);
-        $('dlRes').insertAdjacentHTML('beforeend', '<br><button id="dlOk" class="dl-btn" style="background:#6366f1;margin-top:8px">Đóng</button>'); $('dlOk').onclick = () => o.remove();
+        $('dlRes').insertAdjacentHTML('beforeend', '<br><button id="dlOk" class="dl-btn" style="background:#6366f1;margin-top:8px">Đóng</button>'); $('dlOk').onclick = () => o.remove(); o.dataset.fin = '1';
+        try { if (won) { burst(...ctr(), WIN, 24); fanfare(); } else burst(...ctr(), OOPS, 8); } catch (e) {}
         try { await syncKidsFromCloud(); } catch (e) {} fetchDuel();
     }
     const box = $('dlChal');
@@ -4257,7 +4470,7 @@ async function openCard(id) {
         if (c.status === 'sent') {
             const b = c.kind === 'bonus', ok = confirm(b ? `Nhiệm vụ phụ may mắn!\nĐúng: +${c.reward} điểm • Sai hoặc hết 90 giây: −${c.penalty} điểm.\nBé sẵn sàng làm ngay chưa?` : `Mở thẻ là bắt đầu đếm 60 giây!\nThắng +100 điểm của ${c.from_name} • Sai hoặc hết giờ: mất 100 điểm.\nBé sẵn sàng chưa?`); if (!ok) return;
             const r = await rpc('lucky_open', { p_id: id, p_payload: b ? null : duelChallenge() });
-            if (r.error) { showToast(noFn(r.error) ? SQLMSG : r.error.message, 'error'); return; } if (!r.data || !r.data.ok) { showToast((r.data && r.data.err) || 'Không mở được thẻ', 'warning'); fetchDuel(); return; }
+            if (r.error) { if (noFn(r.error)) { showSetup(); setTab('play'); } showToast(noFn(r.error) ? SQLMSG : r.error.message, 'error'); return; } if (!r.data || !r.data.ok) { showToast((r.data && r.data.err) || 'Không mở được thẻ', 'warning'); fetchDuel(); return; }
             Object.assign(c, { status: 'opened', opened_at: r.data.opened_at, payload: r.data.payload, limit_s: r.data.limit_s }); skew = Date.parse(r.data.server_now) - Date.now();
         } else { const n = await rpc('lucky_now', {}); if (n.data) skew = Date.parse(n.data) - Date.now(); }
         runChallenge(c);
@@ -4268,14 +4481,14 @@ $('dlSend').onclick = async () => {
     if (!db) return msg('Cần kết nối Cloud để gửi thẻ.', true); if (!sel) return msg('Bé chọn một bạn đối thủ trước nhé!', true);
     const me = kidOf(currentKidId); if ((me.score || 0) < 100) return msg(`Bé cần ít nhất 100 điểm để gửi thẻ (hiện có ${me.score || 0} điểm).`, true);
     const id = 'lc_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), r = await rpc('lucky_send', { p_id: id, p_from: currentKidId, p_to: sel, p_animal: pick(['bear', 'panda', 'bunny', 'fox']) });
-    if (r.error) return msg(noFn(r.error) ? SQLMSG : r.error.message, true); if (r.data && r.data.ok === false) return msg(r.data.err, true);
+    if (r.error) { if (noFn(r.error)) showSetup(); return msg(noFn(r.error) ? SQLMSG : r.error.message, true); } if (r.data && r.data.ok === false) return msg(r.data.err, true);
     burst(...ctr(), WIN, 14); showToast('Đã gửi thẻ bài may mắn! 🎴', 'success'); msg('Đã gửi! Bạn ấy sẽ nhận thông báo và có 60 giây để làm khi mở thẻ.'); sel = null; fetchDuel();
 };
 // ---------- bốc thăm may mắn sau mỗi nhiệm vụ ----------
 async function startDraw(q) {
     const b = bonusCfg(); if (!b.on || !db || !q) return;
     const id = 'lb_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), r = await rpc('lucky_draw', { p_id: id, p_drawer: currentKidId, p_quest: String(q.id), p_reward: b.reward, p_penalty: b.penalty, p_minutes: b.minutes, p_payload: bonusPayload() });
-    if (r.error) { if (noFn(r.error)) showToast(SQLMSG, 'warning'); return; } if (!r.data || !r.data.ok || r.data.dup) return;
+    if (r.error) { if (noFn(r.error)) { showSetup(); showToast(SQLMSG, 'warning'); } return; } if (!r.data || !r.data.ok || r.data.dup) return;
     const c = r.data.card, kids = cachedKids.length ? cachedKids : [kidOf(c.to_kid)], o = document.createElement('div'); o.className = 'mj-ov'; o.id = 'dlDraw';
     o.innerHTML = `<div class="mj-card" style="background:#fff7ed;padding:14px;text-align:center"><div style="font-size:22px;font-weight:900;color:#be123c">🎰 Bốc thăm may mắn!</div><div style="font-size:12px;font-weight:700;color:#7c2d12;margin:4px 0">Máy chọn ngẫu nhiên 1 bạn làm nhiệm vụ phụ: đúng +${c.reward}, sai/không làm −${c.penalty} điểm</div><div class="dl-roll" id="dlRoll">🎲</div><div id="dlDrawRes" style="font-weight:900;min-height:60px"></div></div>`;
     closeAll(); document.body.appendChild(o); let i = 0, n = 0; const roll = setInterval(() => { const k = kids[i++ % kids.length]; $('dlRoll').textContent = `${k.icon || '🙂'} ${k.name || ''}`; try { sfx(500 + (i % 5) * 80, .05); } catch (e) {} if (++n > 24) { clearInterval(roll); land(); } }, 120);
@@ -4298,10 +4511,11 @@ drawCfg = function (c) {
 };
 const _rks = renderKidSelector; renderKidSelector = function () { const r = _rks.apply(this, arguments); try { render(); } catch (e) {} return r; };   // danh sách đối thủ luôn khớp danh sách bé trên Cloud
 const _st15 = setTab; setTab = function (t) { const r = _st15.apply(this, arguments); if (t === 'play') { try { render(); fetchDuel(); } catch (e) {} } return r; };
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { const o = document.getElementById('dlOv'); if (o && o.dataset.fin) o.remove(); } });
 document.addEventListener('visibilitychange', () => { if (!document.hidden) fetchDuel(); });
 setInterval(() => { if (!document.hidden && db) fetchDuel(); }, 30000);
 setTimeout(() => { render(); fetchDuel(); }, 3500);
-window.__duel = { fetchDuel, startDraw, bonusPayload, duelChallenge, scoreOf: () => ({ inbox, outbox }) };
+window.__duel = { diag, showSetup, fetchDuel, startDraw, bonusPayload, duelChallenge, scoreOf: () => ({ inbox, outbox }) };
 })();
 
 
